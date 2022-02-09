@@ -1,0 +1,5 @@
+flash-loans
+https://money-legos.studydefi.com/#/dydx?id=flashloans-on-dydx
+
+the source of the minimal implementation
+https://www.reddit.com/r/ethdev/comments/jfa0l0/minimal_dydx_flash_loan_contract_template/

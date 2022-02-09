@@ -1,0 +1,37 @@
+Arguments: 
+  /home/petr/.nvm/versions/node/v16.9.0/bin/node /home/petr/.yarn/bin/yarn.js add --save-dev hardhat
+
+PATH: 
+  /home/petr/.yarn/bin:/home/petr/.config/yarn/global/node_modules/.bin:/home/petr/.nvm/versions/node/v16.9.0/bin:/home/petr/.local/share/solana/install/active_release/bin:/home/petr/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/home/petr/work/bin:/home/petr/.npm-packages/bin
+
+Yarn version: 
+  1.22.5
+
+Node version: 
+  16.9.0
+
+Platform: 
+  linux x64
+
+Trace: 
+  SyntaxError: /home/petr/Projects/2021-09-27-MEH-Ressurections/package.json: Unexpected token } in JSON at position 116
+      at JSON.parse (<anonymous>)
+      at /home/petr/.yarn/lib/cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (/home/petr/.yarn/lib/cli.js:310:30)
+      at /home/petr/.yarn/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "meh-resurrections",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "private": true,
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
