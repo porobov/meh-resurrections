@@ -2,19 +2,15 @@ pragma solidity ^0.8.0;
 
 // import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-interface IOldMeh {
-    function signIn (address) external;
-    function withdrawAll() external;
-}
+import "./UsingConstants.sol";
 
 interface IWrapper {
     function referralPayback() external payable;
 }
 
-contract Referral is Ownable {
+contract Referral is UsingConstants, Ownable {
 
-    IOldMeh private oldMeh;
+    // IOldMeh private oldMeh;
     IWrapper private wrapper;
 
     constructor (address oldMehAddr, address referal) {
