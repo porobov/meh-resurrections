@@ -3,12 +3,14 @@
 // todo Your solo margin DyDx address is wrong, the correct address is 0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE
 // probably Kovan
 
+//
 
 // The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 // These definitions are taken from across multiple dydx contracts, and are
 // limited to just the bare minimum necessary to make flash loans work.
@@ -76,11 +78,11 @@ interface IWETH is IERC20 {
 interface IOldMeh {
     function signIn (address) external;
     function withdrawAll() external;
-    function buyBlocks(uint8, uint8, uint8, uint8) external payable;
+    function buyBlocks(uint8, uint8, uint8, uint8) external payable returns(uint256);
     function sellBlocks(uint8, uint8, uint8, uint8, uint256) external;
     function getAreaPrice(uint8, uint8, uint8, uint8) external view returns(uint256);
     function getBlockInfo(uint8, uint8) external view returns (address, uint, uint);
-    function placeImage(uint8, uint8, uint8, uint8, string calldata, string calldata, string calldata) external payable; //production calldata ok
+    function placeImage(uint8, uint8, uint8, uint8, string calldata, string calldata, string calldata) external payable; //todo calldata ok
 }
 
 interface IReferral {
@@ -116,7 +118,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
 
     // wrapping-unwrapping
     // stores unwrapped blocks
-    // production check ordering
+    // todo check ordering
     struct Receipt {
         address receiverAddress;
         bool isWithdrawn;
@@ -205,7 +207,8 @@ contract MehWrapper is ICallee, ERC721, Ownable {
                 denomination: Types.AssetDenomination.Wei,
                 ref: Types.AssetReference.Delta,
                 value: loanAmount + 2 // Repayment amount with 2 wei fee 
-                // todo pay on every tx?! (important!!!)
+                // todo. test pay on every tx?! (important!!!)
+                // require 2 wei * 10000 on contract creation
             }),
             primaryMarketId: 0, // WETH
             secondaryMarketId: 0,
@@ -220,9 +223,11 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         soloMargin.operate(accountInfos, operations);
     }
     
-    // This is the function called by dydx after giving us the loan
-    // TODO only by dxdy
+    // This is the function called by dydx after giving us the loan    
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
+        // only by dxdy
+        require(msg.sender == address(soloMargin), "Caller is not soloMargin");
+
         // Decode the passed variables from the data object
         (
             uint256 loanAmount,
@@ -261,9 +266,11 @@ contract MehWrapper is ICallee, ERC721, Ownable {
 
     // withrdaws money from all registered referrals
     function _withdrawFromReferrals() private {
-        // todo use reverse order and do only 7 (or is it 6?) referrals, 
-        // not length
-        for (uint i=0; i<referrals.length; i++) {
+        // using reverse order and do only 7 (or is it 6?) referrals
+        // a way to upgrade referrals
+        console.log("... _withdrawFromReferrals");
+        for (uint i = 6; i > 0; i--) { // TODO does not withdraw from refferal[0]
+            console.log("... withdrawed from %s", referrals[i]);
             IReferral(referrals[i]).withdraw();
         }
     }
@@ -297,15 +304,19 @@ contract MehWrapper is ICallee, ERC721, Ownable {
 
     // is called by SoloMargin (see callFunction function above)
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
-        oldMeh.buyBlocks
+        console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
+        require((oldMeh.buyBlocks
             {value: price}
-            (fromX, fromY, toX, toY);
-
+            (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");
+        
+        console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
         // get all the funds back from referrals
         _withdrawFromReferrals();
         // convert ETH to weth
+        console.log("... Converting to WETH..., wrapper balance is: %s", address(this).balance);
         WETH.deposit{value:price}();
-        
+        console.log("... Converted to WETH..., wrapper balance is: %s", address(this).balance);
+
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
@@ -315,7 +326,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         // royalties
         royalties += price;
 
-        // solomargin withdraws loan amount on it's own 
+        // solomargin withdraws loan amount on it's own
     }
 
 
@@ -383,7 +394,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
     // at the original contract (have to buy at 2016 and have to withdraw from this wrapper)
     // priceForEachBlockInWei - specify unique price? 
     // unwrap flow: call unwrap on wrapper -> buy on 2016MEH -> withdraw on wrapper
-    // production setSome random sell price in the UX, so that it won't be 
+    // todo setSome random sell price in the UX, so that it won't be 
     // repeated on accident 
     function unwrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
@@ -414,7 +425,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
     // Web interface should guide through all wrap-unwrap stages gracefully. 
 
     // withdraw money for the unwrapped block.
-    // production mention in the docs to withdraw money immediately. 
+    // todo mention in the docs to withdraw money immediately. 
     function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call 
         // check receipts
         // if sell price is different than that assigned in unwrap function
@@ -441,7 +452,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         // payout 
         assert (unclaimed >= payment); // sanity check (check funds)
         unclaimed -= payment;
-        payable(msg.sender).transfer(payment); // production is this ok? 
+        payable(msg.sender).transfer(payment); // todo is this ok? 
     }
 
     // receive() external payable {} 
@@ -461,7 +472,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         require(msg.sender == peter || msg.sender == adam, "Not a beneficiary");
         splitIncome();
         internalBalOf[msg.sender] = 0;
-        payable(msg.sender).transfer(internalBalOf[msg.sender]); // production is this ok?
+        payable(msg.sender).transfer(internalBalOf[msg.sender]); // todo is this ok?
     }
 
     function setAdam(address newAdamsAddress) external {
@@ -487,7 +498,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         return (uint16(y) - 1) * 100 + uint16(x);
     }
 
-    // production check
+    // todo check in tests
     function blockXY(uint16 blockId) internal pure returns (uint8, uint8) {
         uint8 x = uint8(blockId % 100);
         uint8 y = uint8(blockId / 100 + 1);
@@ -528,7 +539,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
     {
         return (toX - fromX + 1) * (toY - fromY + 1);
     }
-    // production set img url prefix (allow another hosting for images)
+    // todo set img url prefix (allow another hosting for images)
 
     /// @notice insures that area coordinates are within 100x100 field and 
     ///  from-coordinates >= to-coordinates

@@ -1,4 +1,5 @@
-const { ethers, network } = require("hardhat");
+const { expect } = require("chai");
+const { ethers } = require("hardhat");
 const conf = require('../conf.js')
 
 const oldMehAbi = conf.oldMehAbi
@@ -8,9 +9,7 @@ const newMehAddress = conf.newMehAddress
 const wethAbi = conf.wethAbi
 const wethAddress = conf.wethAddress
 const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
-
-
-
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
 async function increaseTimeBy(seconds) {
@@ -22,7 +21,6 @@ async function increaseTimeBy(seconds) {
 async function getFormattedBalance(address) {
   return ethers.utils.formatEther(await network.provider.send("eth_getBalance", [address]))
 }
-
 
 async function waitForActivationTime(level) {
   await increaseTimeBy(3600 * (2 ** (level - 1)))
@@ -36,9 +34,10 @@ async function setUpReferral(referralAddress, level, wrapperAddress) {
     await waitForActivationTime(level)
     return referral
 }
+  
+describe("Flashloan", function () {
 
-async function main() {
-    // setup acounts and contracts
+  it("Should should return block info", async function () {
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [mehAdminAddress],
@@ -46,6 +45,9 @@ async function main() {
     const mehAdmin = await ethers.getSigner(mehAdminAddress)
     ;[owner] = await ethers.getSigners()
     const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
+
+    // unpause oldMEH
+    await oldMeh.adminContractSecurity(ZERO_ADDRESS, false, false, false)
 
     //deploy wrapper
     const MehWrapper = await ethers.getContractFactory("MehWrapper");
@@ -73,38 +75,50 @@ async function main() {
 
     // wrapper signs in to old meh
     await mehWrapper.signIn(referrals[referrals.length-1].address)
+  
+    console.log("owner balance:", await getFormattedBalance(owner.address))
+    console.log("meh balance:", await getFormattedBalance(oldMehAddress))
+    console.log("charity internal meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
+    console.log("charity referral balance:", await getFormattedBalance(referrals[0].address))
+    console.log("wrapper balance:", await getFormattedBalance(mehWrapper.address))
     
+    // temp. sending eth to the contract
+    // await mehWrapper.connect(owner).referralPayback({value: ethers.utils.parseEther("1")});
+    // await owner.sendTransaction({
+    //   to: mehWrapper.address,
+    //   value: ethers.utils.parseEther("1")
+    // })
+
     // buy blocks
     // now wrapper can buy blocks for free 
     // as it collects all the revenue from referrals and charity
-    const tx = await mehWrapper.buyFromMEH(82,82,82,82);
+    const tx = await mehWrapper.connect(owner).buyFromMEH(82,82,82,82,{value: ethers.utils.parseEther("0.25")});
     const receipt = await tx.wait(1)
     const gasCosts = receipt.cumulativeGasUsed.mul(ethers.utils.parseUnits ("60", "gwei"))
     console.log("gas:", receipt.cumulativeGasUsed.toNumber())
     console.log("gas:", ethers.utils.formatEther(gasCosts))
 
-    // temp. sending eth to the contract
-    // await owner.sendTransaction({
-    //   to: mehWrapper.address,
-    //   value: ethers.utils.parseEther("0.1")
-    // })
+
 
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
-    console.log("charity meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
-    console.log("charity balance:", await getFormattedBalance(referrals[0].address))
+    console.log("charity internal meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
+    console.log("charity referral balance:", await getFormattedBalance(referrals[0].address))
     console.log("wrapper balance:", await getFormattedBalance(mehWrapper.address))
     
     console.log("referrals[0].address", referrals[0].address)
     console.log("charityAddress:", await oldMeh.charityAddress())
     console.log("wrapper:", mehWrapper.address)
     console.log("landlord:", (await oldMeh.getBlockInfo(82,82)).landlord)
+    
+    for (const referral of referrals) {
+      console.log(
+        "Referral: %s, meh-bal: %s, bal: %s", 
+        referral.address, 
+        ethers.utils.formatEther((await oldMeh.getUserInfo(referral.address)).balance),
+        await getFormattedBalance(referral.address))
+    }
+
+  });
   
-  }
-  
-  main()
-    .then(() => process.exit(0))
-    .catch((error) => {
-      console.error(error);
-      process.exit(1);
-    });
+});

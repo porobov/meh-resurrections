@@ -1,3 +1,5 @@
+// this script is needed to export old MEH blocks
+
 const hre = require("hardhat");
 const fs = require('fs')
 const BigNumber = require ("ethers")
