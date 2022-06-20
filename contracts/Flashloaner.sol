@@ -1,80 +1,18 @@
 // The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
+import "./libs/dydx.sol";
+import "./interfaces/IDydx.sol";
+import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
-import "./UsingConstants.sol";
+import "./Receiver.sol";
 
-// These definitions are taken from across multiple dydx contracts, and are
-// limited to just the bare minimum necessary to make flash loans work.
-library Types {
-    enum AssetDenomination { Wei, Par }
-    enum AssetReference { Delta, Target }
-    struct AssetAmount {
-        bool sign;
-        AssetDenomination denomination;
-        AssetReference ref;
-        uint256 value;
-    }
-}
-
-library Account {
-    struct Info {
-        address owner;
-        uint256 number;
-    }
-}
-
-library Actions {
-    enum ActionType {
-        Deposit, Withdraw, Transfer, Buy, Sell, Trade, Liquidate, Vaporize, Call
-    }
-    struct ActionArgs {
-        ActionType actionType;
-        uint256 accountId;
-        Types.AssetAmount amount;
-        uint256 primaryMarketId;
-        uint256 secondaryMarketId;
-        address otherAddress;
-        uint256 otherAccountId;
-        bytes data;
-    }
-}
-
-interface ISoloMargin {
-    function operate(Account.Info[] memory accounts, Actions.ActionArgs[] memory actions) external;
-}
-
-// The interface for a contract to be callable after receiving a flash loan
-interface ICallee {
-    function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external;
-}
-
-// Standard ERC-20 interface
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
-    function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-// Additional methods available for WETH
-interface IWETH is IERC20 {
-    function deposit() external payable;
-    function withdraw(uint wad) external;
-}
-
-contract Flashloaner is ICallee, UsingConstants {
+contract Flashloaner is ICallee, Receiver {
     // The dydx Solo Margin contract, as can be found here:
     // https://github.com/dydxprotocol/solo/blob/master/migrations/deployed.json
     ISoloMargin private soloMargin = ISoloMargin(0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e);
-    // The WETH token contract, since we're assuming we want a loan in WETH
-    IWETH internal WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
 
     constructor() {
         // Give infinite approval to dydx to withdraw WETH on contract deployment,
@@ -82,7 +20,6 @@ contract Flashloaner is ICallee, UsingConstants {
         // The approval is used by the dydx contract to pay the loan back to itself.
         WETH.approve(address(soloMargin), uint(2**256 - 1));
     }
-
 
     // ** FLASHLOAN ** //
     
@@ -203,16 +140,5 @@ contract Flashloaner is ICallee, UsingConstants {
     // is called by SoloMargin (see callFunction function above)
     // overriden further
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) virtual internal {
-    }
-
-    // Receives eth from WETH contract when converting weth to eth
-    // Also receives eth from oldMEH when unwrapping blocks
-    // prevents accidental sending of eth
-    // TODO can we do it better? (mixing functionality here: flashloan and wrapper)
-    // in current version wrapping and unwrapping won't work
-    receive() external payable {
-        require(
-            msg.sender == address(WETH) || msg.sender == address(oldMeh),
-            "Only receives from oldMEH or WETH");
     }
 }

@@ -2,16 +2,12 @@ pragma solidity ^0.8.0;
 
 // import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./UsingConstants.sol";
+import "./Receiver.sol";
+import "./Collector.sol";
 
-interface IWrapper {
-    function referralPayback() external payable;
-}
+contract Referral is Receiver, Ownable {
 
-contract Referral is UsingConstants, Ownable {
-
-    // IOldMeh private oldMeh;
-    IWrapper private wrapper;
+    Collector private wrapper;
 
     constructor (address oldMehAddr, address referal) {
         oldMeh = IOldMeh(oldMehAddr);
@@ -27,12 +23,9 @@ contract Referral is UsingConstants, Ownable {
     }
 
     function setWrapper(address wrapperAddr) external onlyOwner {
-        wrapper = IWrapper(wrapperAddr);
+        wrapper = Collector(wrapperAddr);
     }
 
-    receive() external payable {
-        require(
-            msg.sender == address(oldMeh), 
-            "Can only receive from Old Meh");
-    }
+    // Using receive function from Receiver
+    // Can receive ETH from WETH contract. That's ok.
 }

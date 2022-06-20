@@ -1,11 +1,12 @@
 // The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
-import "./UsingConstants.sol";
+import "./Receiver.sol";
+
 import "./UsingTools.sol";
 // import "./MehERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-contract MehERC721 is UsingConstants, UsingTools, ERC721 {
+contract MehERC721 is Receiver, UsingTools, ERC721 {
     // wrapping-unwrapping
     // stores unwrapped blocks
     // todo check ordering

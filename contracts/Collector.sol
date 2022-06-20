@@ -3,12 +3,12 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./UsingConstants.sol";
+import "./UsingGlobals.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Referral.sol";
 
 // Collector contract deals with MEH referrals
-contract Collector is UsingConstants, Ownable {
+contract Collector is UsingGlobals, Ownable {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
 
@@ -39,4 +39,6 @@ contract Collector is UsingConstants, Ownable {
     function referralPayback() external payable {
         // note: not checking for sender - optimizing for gas
     }
+
+    // doesn't need receive function referrals pay via referralPayback()
 }

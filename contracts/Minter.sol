@@ -1,6 +1,6 @@
 // The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
-// import "./UsingConstants.sol";
+// import "./UsingGlobals.sol";
 // import "./UsingTools.sol";
 import "./Flashloaner.sol";
 import "./Collector.sol";
