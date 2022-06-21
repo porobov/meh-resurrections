@@ -6,8 +6,6 @@ require("hardhat-gas-reporter");
 require("solidity-coverage");
 const os = require('os');
 
-const secrets = require("/Volumes/Secrets/dev/ah-token/Ah-mnemonic.js");
-const gateway = require("/Volumes/Secrets/dev/ah-token/gateway.js");
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -53,13 +51,13 @@ module.exports = {
     },
     hardhat: {
       forking: {
-        url: gateway.alchemyMainnet,
+        url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         // blockNumber: 13132200 /// 13352488 //  // not paused contract
         blockNumber: 14979315 // fixed recent block number (contracts paused)
       }
     },
     tenderly: {
-      url: "https://rpc.tenderly.co/fork/cf72f80b-cbb5-4651-8620-eb91cfbf8478"
+      url: "https://rpc.tenderly.co/fork/deleted"
     }
     // ropsten: {
     //   url: process.env.ROPSTEN_URL || "",

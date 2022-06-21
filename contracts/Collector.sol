@@ -16,7 +16,6 @@ contract Collector is UsingGlobals, Ownable {
     function signIn(address referral) external onlyOwner {
         oldMeh.signIn(referral);
     }
-
     // all referrals must be registered through this function
     function addRefferal(address newReferral) external onlyOwner {
         // leaving some flexibility - pushing as many referrals as needed 
