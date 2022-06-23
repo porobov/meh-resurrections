@@ -227,7 +227,7 @@ async function main() {
   fs.writeFileSync('old_MEH_blocks/data/2018_LogBuys_Events.json', JSON.stringify(newMehEvents, null, 2))
 
   // const newMehEvents = JSON.parse(fs.readFileSync('data/2018_LogBuys.json'))
-  const newBlocks = extractNewBlocks(newMehEvents)
+  const newBlocks = removeDuplicates(extractNewBlocks(newMehEvents))
   console.log("Extracted %s blocks info from 2018 meh events", newBlocks.length)
   fs.writeFileSync('old_MEH_blocks/data/2018_Blocks.json', JSON.stringify(newBlocks, null, 2))
 
