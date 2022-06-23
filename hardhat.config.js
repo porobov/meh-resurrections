@@ -56,22 +56,33 @@ module.exports = {
         blockNumber: 14979315 // fixed recent block number (contracts paused)
       }
     },
-    tenderly: {
-      url: "https://rpc.tenderly.co/fork/deleted"
-    }
+    // read-only mainnet (for blocks import)
+    readMain: {
+      url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+      accounts: {
+            mnemonic: "test test test test test test test test test test test junk"
+          },
+      timeout: 200000,
+    },
+
+    // main: {
+    //   url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+    //   accounts: {
+    //     mnemonic: test test test test test test test test test test test junk
+    //   },
+    //   timeout: 200000,
+    // },
+
+    // tenderly: {
+    //   url: "https://rpc.tenderly.co/fork/deleted"
+    // }
     // ropsten: {
     //   url: process.env.ROPSTEN_URL || "",
     //   accounts:
     //     process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     // // },
 
-    // main: {
-    //   url: gateway.alchemyMainnet,
-    //   accounts: {
-    //     mnemonic: secrets.mnemonic
-    //   },
-    //   timeout: 200000,
-    // },
+    
       
   },
 
