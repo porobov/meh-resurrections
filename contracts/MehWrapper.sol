@@ -270,7 +270,6 @@ contract MehWrapper is ICallee, ERC721, Ownable {
         // a way to upgrade referrals
         console.log("... _withdrawFromReferrals");
         for (uint i = 6; i > 0; i--) { // TODO does not withdraw from refferal[0]
-            console.log("... withdrawed from %s", referrals[i]);
             IReferral(referrals[i]).withdraw();
         }
     }

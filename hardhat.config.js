@@ -54,7 +54,8 @@ module.exports = {
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         // blockNumber: 13132200 /// 13352488 //  // not paused contract
         blockNumber: 14979315 // fixed recent block number (contracts paused)
-      }
+      },
+      timeout: 12000000,
     },
     // read-only mainnet (for blocks import)
     readMain: {
@@ -62,7 +63,7 @@ module.exports = {
       accounts: {
             mnemonic: "test test test test test test test test test test test junk"
           },
-      timeout: 200000,
+      timeout: 2000000,
     },
 
     // main: {

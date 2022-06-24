@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Receiver.sol";
 import "./Collector.sol";
+import "hardhat/console.sol";
+
 
 contract Referral is Receiver, Ownable {
 
