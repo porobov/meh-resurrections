@@ -50,7 +50,7 @@ describe("Flashloan", function () {
     await oldMeh.adminContractSecurity(ZERO_ADDRESS, false, false, false)
 
     //deploy wrapper
-    const MehWrapper = await ethers.getContractFactory("MehWrapper");
+    const MehWrapper = await ethers.getContractFactory("Main");
     const mehWrapper = await MehWrapper.deploy();
     await mehWrapper.deployed();
     
