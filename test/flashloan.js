@@ -34,48 +34,65 @@ async function setUpReferral(referralAddress, level, wrapperAddress) {
     await waitForActivationTime(level)
     return referral
 }
+
+async function setup() {
+  await hre.network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [mehAdminAddress],
+  });
+  const mehAdmin = await ethers.getSigner(mehAdminAddress)
+  ;[owner] = await ethers.getSigners()
+  const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
+
+  // unpause oldMEH
+  await oldMeh.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+
+  //deploy wrapper
+  const MehWrapper = await ethers.getContractFactory("Main");
+  const mehWrapper = await MehWrapper.deploy();
+  await mehWrapper.deployed();
   
+  // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
+  const weth = new ethers.Contract(wethAddress, wethAbi, owner)
+  await weth.deposit({value: 2})
+  await weth.transfer(mehWrapper.address, 2)
+
+  // deploy and setup chain of referrals
+  const referrals = []
+  let currentReferral = mehAdmin
+  let newRef
+  for (let level = 1; level <= 7; level++) {
+    newRef = await setUpReferral(currentReferral.address, level, mehWrapper.address)
+    referrals.push(newRef)
+    await (await mehWrapper.addRefferal(newRef.address)).wait()
+    currentReferral = newRef
+  }
+
+  // set first referral as charity address
+  await oldMeh.adminContractSettings(0, referrals[0].address, 0)
+
+  // wrapper signs in to old meh
+  await mehWrapper.signIn(referrals[referrals.length-1].address)
+
+  return {
+    oldMeh: oldMeh,
+    mehWrapper: mehWrapper,
+    referrals: referrals,
+    owner: owner
+  }
+}
+
 describe("Flashloan", function () {
 
+  before('setup', async () => {
+    let env = await setup()
+    owner = env.owner
+    mehWrapper = env.mehWrapper
+    referrals= env.referrals
+    oldMeh = env.oldMeh
+  })
+
   it("Should should return block info", async function () {
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [mehAdminAddress],
-    });
-    const mehAdmin = await ethers.getSigner(mehAdminAddress)
-    ;[owner] = await ethers.getSigners()
-    const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
-
-    // unpause oldMEH
-    await oldMeh.adminContractSecurity(ZERO_ADDRESS, false, false, false)
-
-    //deploy wrapper
-    const MehWrapper = await ethers.getContractFactory("Main");
-    const mehWrapper = await MehWrapper.deploy();
-    await mehWrapper.deployed();
-    
-    // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
-    const weth = new ethers.Contract(wethAddress, wethAbi, owner)
-    await weth.deposit({value: 2})
-    await weth.transfer(mehWrapper.address, 2)
-
-    // deploy and setup chain of referrals
-    const referrals = []
-    let currentReferral = mehAdmin
-    let newRef
-    for (let level = 1; level <= 7; level++) {
-      newRef = await setUpReferral(currentReferral.address, level, mehWrapper.address)
-      referrals.push(newRef)
-      await (await mehWrapper.addRefferal(newRef.address)).wait()
-      currentReferral = newRef
-    }
-
-    // set first referral as charity address
-    await oldMeh.adminContractSettings(0, referrals[0].address, 0)
-
-    // wrapper signs in to old meh
-    await mehWrapper.signIn(referrals[referrals.length-1].address)
-  
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
     console.log("charity internal meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
@@ -97,8 +114,6 @@ describe("Flashloan", function () {
     const gasCosts = receipt.cumulativeGasUsed.mul(ethers.utils.parseUnits ("60", "gwei"))
     console.log("gas:", receipt.cumulativeGasUsed.toNumber())
     console.log("gas:", ethers.utils.formatEther(gasCosts))
-
-
 
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
