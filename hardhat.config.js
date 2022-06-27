@@ -90,6 +90,8 @@ module.exports = {
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
+    token: "ETH",
+    gasPrice: 30,
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
