@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
+const { reportGas } = require("../src/tools.js")
 const conf = require('../conf.js')
 
 const oldMehAbi = conf.oldMehAbi
@@ -12,14 +13,6 @@ const wethAddress = conf.wethAddress
 const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-// gas report
-function reportGas(functionName, gasUsed) {
-  const gasPrice = process.env.GAS_PRICE_GWEI !== undefined ? process.env.GAS_PRICE_GWEI : 0
-  const usd = process.env.ETH_USD_USD !== undefined ? process.env.ETH_USD_USD : 0
-  const gasCostsEth = ethers.utils.formatEther(gasUsed.mul(ethers.utils.parseUnits (gasPrice, "gwei")))
-  const gasCostsUsd = gasCostsEth * usd
-  console.log("Gas used by %s is %s gas | %s Eth | %s USD | (gas price: %s Gwei, ETHUSD: %s)", functionName, gasUsed, gasCostsEth, gasCostsUsd, gasPrice, usd)
-}
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
 async function increaseTimeBy(seconds) {
@@ -36,12 +29,20 @@ async function waitForActivationTime(level) {
   await increaseTimeBy(3600 * (2 ** (level - 1)))
 }
 
-async function setUpReferral(referralAddress, level, wrapperAddress) {
-    const referralFactory = await ethers.getContractFactory("Referral");
-    const referral = await referralFactory.deploy(oldMehAddress, referralAddress);
-    const reciept = await referral.deployTransaction.wait();
+
+async function setUpReferral(referralFactory, referralAddress, level, wrapperAddress, tempOwner) {
+    const tx = await referralFactory.createReferral(oldMehAddress, referralAddress)
+
+    // const chainId = await referralFactory.signer.getChainId()
+    const reciept = await tx.wait(1) // TODO check numconfirmation depending on network 
+    const blockNumber = reciept.blockNumber
+    const eventFilter = referralFactory.filters.NewReferral()
+    const events = await referralFactory.queryFilter(eventFilter, blockNumber, blockNumber)
+    const newRefAddress = events[0].args.newReferralAddr
+
     const refGasUsed = reciept.gasUsed;
-    await referral.deployed();
+    const referral = await ethers.getContractAt("Referral", newRefAddress)
+
     await referral.setWrapper(wrapperAddress)
     await waitForActivationTime(level)
     reportGas("Referrals", refGasUsed)
@@ -77,8 +78,10 @@ async function setup() {
   let currentReferral = mehAdmin
   let newRef
   let referralsGas = BigNumber.from(0)
+  const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
+  const referralFactory = await referralFactoryFactory.deploy(oldMehAddress, currentReferral.address);
   for (let level = 1; level <= 7; level++) {
-    newRef = await setUpReferral(currentReferral.address, level, mehWrapper.address)
+    newRef = await setUpReferral(referralFactory, currentReferral.address, level, mehWrapper.address, owner)
     referrals.push(newRef)
     const receipt = await (await mehWrapper.addRefferal(newRef.address)).wait()
     referralsGas.add(receipt.gasUsed)
@@ -103,7 +106,7 @@ async function setup() {
 }
 
 describe("Flashloan", function () {
-
+  this.timeout(142000)
   before('setup', async () => {
     let env = await setup()
     owner = env.owner
@@ -156,7 +159,6 @@ describe("Flashloan", function () {
         ethers.utils.formatEther((await oldMeh.getUserInfo(referral.address)).balance),
         await getFormattedBalance(referral.address))
     }
-
   });
   
 });

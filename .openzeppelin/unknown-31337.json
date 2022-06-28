@@ -1,0 +1,145 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x8fC8CFB7f7362E44E472c690A6e025B80E406458",
+    "txHash": "0xc03e97bbe1269f45dd6b03dffc4ed16cc0e4693f027ecf3f7f0102c9725fd22b"
+  },
+  "proxies": [
+    {
+      "address": "0xC7143d5bA86553C06f5730c8dC9f8187a621A8D4",
+      "txHash": "0xd007ef371f197fb8d2d4ad750d2ab9fc9ca52da7466d273ee9d75f963c36f36e",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xDde063eBe8E85D666AD99f731B4Dbf8C98F29708",
+      "txHash": "0x3e78e63e9862eee01affea0f52228d65f62ddba178adea8753af95082c25fcd7",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8B190573374637f144AC8D37375d97fd84cBD3a0",
+      "txHash": "0x2a3f2ace61f15a9f2fecc3c3f9cc06235610d687a4a806cd73e65fcc3d3f4513",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x67aD6EA566BA6B0fC52e97Bc25CE46120fdAc04c",
+      "txHash": "0x2f94aba24eab0284e4ca8182fbba24e89679b096de5e5019bb95877f828f94a8",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x976C214741b4657bd99DFD38a5c0E3ac5C99D903",
+      "txHash": "0x4347c5115a6d3ec6a0f85475ee07662bd1da2e979bf8ddc85cf6e5160cfb5315",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x8D81A3DCd17030cD5F23Ac7370e4Efb10D2b3cA4",
+      "txHash": "0xf7148267a2007c59e28053b818e0eea4e47cbe4d2bb8d2dcfa5e8e1021563466",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xc7cDb7A2E5dDa1B7A0E792Fe1ef08ED20A6F56D4",
+      "txHash": "0x0d237c6a3703983fd2eea4f67632bf108044d5d7808005aa742344c5e4b9ea62",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "a65ecce8d69c614051a06dc9aeb637259755e98e520bd351fc80ca23cf65685a": {
+      "address": "0x51C65cd0Cdb1A8A8b79dfc2eE965B1bA0bb8fc89",
+      "txHash": "0xab5fc923ebab5a73ac3b7bd41dceda75e2a2fd1265f956b8b70f20a19343476d",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "oldMeh",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_contract(IOldMeh)5636",
+            "contract": "Referral",
+            "src": "contracts/Referral.sol:15"
+          },
+          {
+            "label": "wrapper",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_contract(Collector)2494",
+            "contract": "Referral",
+            "src": "contracts/Referral.sol:16"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(Collector)2494": {
+            "label": "contract Collector",
+            "numberOfBytes": "20"
+          },
+          "t_contract(IOldMeh)5636": {
+            "label": "contract IOldMeh",
+            "numberOfBytes": "20"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}
