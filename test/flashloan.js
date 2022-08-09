@@ -3,7 +3,6 @@ const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
 const { reportGas } = require("../src/tools.js")
 const conf = require('../conf.js')
-
 const oldMehAbi = conf.oldMehAbi
 const newMehAbi = conf.newMehAbi
 const oldMehAddress = conf.oldMehAddress
@@ -108,6 +107,18 @@ async function setup() {
 describe("Flashloan", function () {
   this.timeout(142000)
   before('setup', async () => {
+    // reset fork
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+            blockNumber: 14979315,
+          },
+        },
+      ],
+    });
     let env = await setup()
     owner = env.owner
     mehWrapper = env.mehWrapper
@@ -116,6 +127,9 @@ describe("Flashloan", function () {
   })
 
   it("Should should return block info", async function () {
+    
+    
+
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
     console.log("charity internal meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
@@ -132,7 +146,7 @@ describe("Flashloan", function () {
     // buy blocks
     // now wrapper can buy blocks for free 
     // as it collects all the revenue from referrals and charity
-    const tx = await mehWrapper.connect(owner).buyFromMEH(82,82,82,82,{value: ethers.utils.parseEther("0.25")});
+    const tx = await mehWrapper.connect(owner).buyFromMEH(83,83,83,83,{value: ethers.utils.parseEther("0.25")});
     const receipt = await tx.wait(1)
     // gas
     const gasCosts = receipt.cumulativeGasUsed.mul(ethers.utils.parseUnits ("30", "gwei"))
@@ -150,7 +164,7 @@ describe("Flashloan", function () {
     console.log("referrals[0].address", referrals[0].address)
     console.log("charityAddress:", await oldMeh.charityAddress())
     console.log("wrapper:", mehWrapper.address)
-    console.log("landlord:", (await oldMeh.getBlockInfo(82,82)).landlord)
+    console.log("landlord:", (await oldMeh.getBlockInfo(83,83)).landlord)
     
     for (const referral of referrals) {
       console.log(

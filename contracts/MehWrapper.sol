@@ -3,7 +3,7 @@
 // todo Your solo margin DyDx address is wrong, the correct address is 0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE
 // probably Kovan
 
-//
+// TODO depricate???
 
 // The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
@@ -302,6 +302,7 @@ contract MehWrapper is ICallee, ERC721, Ownable {
     }
 
     // is called by SoloMargin (see callFunction function above)
+    // TODO only soloMargin?
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         require((oldMeh.buyBlocks

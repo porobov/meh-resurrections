@@ -109,7 +109,8 @@ contract Flashloaner is ICallee, Receiver {
         soloMargin.operate(accountInfos, operations);
     }
     
-    // This is the function called by dydx after giving us the loan    
+    // This is the function called by dydx after giving us the loan
+    // todo check sender - callFunction(address sender... console.log it. Can it be called by arbitary contract
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
         // only by dxdy
         require(msg.sender == address(soloMargin), "Caller is not soloMargin");
@@ -138,7 +139,7 @@ contract Flashloaner is ICallee, Receiver {
     // also see receive function below
 
     // is called by SoloMargin (see callFunction function above)
-    // overriden further
+    // overriden further (todo where? in MehWrapper?)
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) virtual internal {
     }
 }
