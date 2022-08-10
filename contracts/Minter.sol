@@ -9,51 +9,61 @@ import "./Admin.sol";
 
 contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
-    // mapping (uint => bool) public is2018block;
-    
-    // constructor () {
-    //     is2018block[12] = true;
-    //     is2018block[22] = true;
-    // }
-    // is called by user
-    // only used to mint pixels (owner == address(0))
-    function buyFromMEH(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
+    // Coordinates reserved for founders
+    uint8 X_RESERVED_FROM = 77;
+    uint8 X_RESERVED_TO = 77;
+    uint8 Y_RESERVED_FROM = 77;
+    uint8 Y_RESERVED_TO = 77;
+
+    function _landlordFrom2018(uint8 x, uint8 y) internal view returns (address) {
+        address landlord = address(0);
+        console.log("......x, y", x, y);
+        // try meh2018.ownerOf(i) returns (address landlord2018) {  // todo why this doesn't work? check starting block
+        // use coordinates (54,54). they are present on 2018 contract and not minted in 2016
+        // getBlockOwner function fails on empty coordinates => using try/catch
+        // note WARNING 2018 contract got both 2016 and 2018 pixels
+        try meh2018.getBlockOwner(x, y) returns (address landlord2018) {
+            console.log("......landlord2018", landlord2018);
+            landlord = landlord2018;
+        } catch (bytes memory reason) {
+            console.log("......reason");
+        }
+        return landlord;
+    }
+
+    function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
+        (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
+        return landlord;
+    }
+
+    function _isReservedForFounders(uint8 x, uint8 y) internal view returns (bool) {
+        if (x >= X_RESERVED_FROM &&
+            x <= X_RESERVED_TO &&
+            y >= Y_RESERVED_FROM &&
+            y <= Y_RESERVED_TO) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // ordinary user minting // is called by user
+    function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
         require(msg.value == crowdsalePrice, "Not enough eth to mint");
         require(isLegalCoordinates(fromX, fromY, toX, toY), "Wrong coordinates");
-        // require landlord == address(0) ↓↓↓
+        // check that blocks are not 2018 blocks and not founders
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
-
         // check if already minted at 2016 contract
         // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
         // good for security though. we are separating workflows of minting anew and wrapping. 
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
-            // (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
-            // require(landlord == address(0), "Area is already minted");
-
-            // checking 2018 contract. WARNING it got both 2016 and 2018 pixels
-            // try meh2018.ownerOf(i) returns (address owner2018) {  // todo why this doesn't work? check starting block
-            // use coordinates (54,54). they are present on 2018 contract and not minted in 2016
-            console.log("......x, y", x, y);
-            try meh2018.getBlockOwner(x, y) returns (address owner2018) {
-                console.log("......owner2018", owner2018);
-            } catch (bytes memory reason) {
-                console.log("......reason");
-            }
+            require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
+            require(_landlordFrom2018(x, y) == address(0), "A block is already minted on 2018 contract");
+            require(_isReservedForFounders(x, y) == false, "A block is reserved for founders");
         }
-
-        uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
-        // todo check the price is > 0???
-        // borrow and call _buyFromMEH with eth amount needed by MEH (1..512 ETH)
-        borrow(price, fromX, fromY, toX, toY);  
+        buyFromMEH(fromX, fromY, toX, toY);
     }
-
-    // function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
-    //     // check that blocks are not 2018 blocks and not founders
-    //     // require(msg.value == crowdsalePrice, "Not enough eth to mint");
-    //     // buyFromMEH...
-    //     // 
-    // }
 
     // // note. to mint 2016 block on the wrapper user wrap function
     // function mint2018block(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external {
@@ -67,8 +77,15 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     //     // buyFromMEH...
     // }
 
-
     
+    // only used to mint pixels (landlord == address(0))
+    function buyFromMEH(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
+        uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
+        // todo check the price is > 0???
+        // borrow and call _buyFromMEH with eth amount needed by MEH (1..512 ETH)
+        borrow(price, fromX, fromY, toX, toY);  
+    }
+
     // is called by SoloMargin (see callFunction function)
     // TODO make sure to override properly
     // only solomargin is checked at callfunction (see Flashloaner.sol)
