@@ -36,53 +36,72 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         return landlord;
     }
 
-    function _isReservedForFounders(uint8 x, uint8 y) internal view returns (bool) {
-        if (x >= X_RESERVED_FROM &&
-            x <= X_RESERVED_TO &&
-            y >= Y_RESERVED_FROM &&
-            y <= Y_RESERVED_TO) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    // check that blocks are not 2018 blocks and not founders
+    function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
+        address landlord = address(0);
 
-    // ordinary user minting // is called by user
-    function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
-        require(msg.value == crowdsalePrice, "Not enough eth to mint");
-        require(isLegalCoordinates(fromX, fromY, toX, toY), "Wrong coordinates");
-        // check that blocks are not 2018 blocks and not founders
-        uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+        // check if reserved for founders
+        if (fromX >= X_RESERVED_FROM &&
+            toX <= X_RESERVED_TO &&
+            fromY >= Y_RESERVED_FROM &&
+            toY <= Y_RESERVED_TO) 
+        {
+            landlord = peter;
+        }
+
         // check if already minted at 2016 contract
         // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
-        // good for security though. we are separating workflows of minting anew and wrapping. 
-        for (uint i = 0; i < blocks.length; i++) {
-            (uint8 x, uint8 y) = blockXY(blocks[i]);
-            require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
-            require(_landlordFrom2018(x, y) == address(0), "A block is already minted on 2018 contract");
-            require(_isReservedForFounders(x, y) == false, "A block is reserved for founders");
+        // good for security though. we are separating workflows of minting anew and wrapping.
+        if (landlord == address(0)) {
+            address singleLandlord;
+            address previousLandlord;
+            uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+            for (uint i = 0; i < blocks.length; i++) {
+                (uint8 x, uint8 y) = blockXY(blocks[i]);
+                require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
+                // the below code can return landlord address(0), it's ok
+                singleLandlord = _landlordFrom2018(x, y);
+                if (singleLandlord != previousLandlord && previousLandlord != address(0)) {
+                    revert("Multiple landlords within area");
+                }
+                previousLandlord = singleLandlord;
+            }
+            landlord = singleLandlord;
         }
+        return landlord;
+    }
+
+    modifier onlyLegalCoordinates(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) {
+        require(isLegalCoordinates(fromX, fromY, toX, toY), "Wrong coordinates");
+        _;
+    }
+
+    // ordinary user minting (is called by user)
+    function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
+        external
+        payable
+        onlyLegalCoordinates(fromX, fromY, toX, toY)
+    {
+        require(msg.value == crowdsalePrice, "Not enough eth to mint");
+        require(_reservedFor(fromX, fromY, toX, toY) == address(0), "A block is reserved for 2018 landlords or founders");
         buyFromMEH(fromX, fromY, toX, toY);
     }
 
-    // // note. to mint 2016 block on the wrapper user wrap function
-    // function mint2018block(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external {
-    //     // check if blocks are in hardcoded range
-    //     // buyFromMEH...
-    // }
+    // minting blocks reserved for founders and 2018 landlords
+    // anyone can call - will mint to a predefined owner
+    function mintReservedBlock(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        external
+        onlyLegalCoordinates(fromX, fromY, toX, toY)
+    {
+        address landlord = _reservedFor(fromX, fromY, toX, toY);
+        buyFromMEH(fromX, fromY, toX, toY);
+        // buyFromMEH(fromX, fromY, toX, toY, landlord);
+    }
 
-    // function mintFoundeBlock(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external {
-    //     // check if blocks are in hardcoded range
-    //     // check if founder
-    //     // buyFromMEH...
-    // }
-
-    
-    // only used to mint pixels (landlord == address(0))
+    // borrows ETH and calls _buyFromMEH with eth amount needed by MEH (1..512 ETH)
     function buyFromMEH(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
         // todo check the price is > 0???
-        // borrow and call _buyFromMEH with eth amount needed by MEH (1..512 ETH)
         borrow(price, fromX, fromY, toX, toY);  
     }
 
@@ -100,6 +119,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         _withdrawFromReferrals();
 
         // royalties (todo wrong price here???!!! should be crowdsale price!)
+        // sould not apply for reserved blocks
         royalties += price;
 
         // mint NFT to buyer
