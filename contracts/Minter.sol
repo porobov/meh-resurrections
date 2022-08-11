@@ -81,10 +81,11 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         external
         payable
         onlyLegalCoordinates(fromX, fromY, toX, toY)
-    {
-        require(msg.value == crowdsalePrice, "Not enough eth to mint");
+    {   
+        uint16 numOfBlocks = countBlocks(fromX, fromY, toX, toY);
+        require(msg.value == crowdsalePrice * numOfBlocks, "Not enough eth to mint");  // todo not calculating price for multiple blocks!!!
         require(_reservedFor(fromX, fromY, toX, toY) == address(0), "A block is reserved for 2018 landlords or founders");
-        buyFromMEH(fromX, fromY, toX, toY);
+        _borrowAndBuyFromMEH(msg.sender, fromX, fromY, toX, toY);
     }
 
     // minting blocks reserved for founders and 2018 landlords
@@ -94,21 +95,21 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         onlyLegalCoordinates(fromX, fromY, toX, toY)
     {
         address landlord = _reservedFor(fromX, fromY, toX, toY);
-        buyFromMEH(fromX, fromY, toX, toY);
+        _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
         // buyFromMEH(fromX, fromY, toX, toY, landlord);
     }
 
     // borrows ETH and calls _buyFromMEH with eth amount needed by MEH (1..512 ETH)
-    function buyFromMEH(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
+    function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
         // todo check the price is > 0???
-        borrow(price, fromX, fromY, toX, toY);  
+        _borrow(price, buyer, fromX, fromY, toX, toY);  
     }
 
     // is called by SoloMargin (see callFunction function)
     // TODO make sure to override properly
     // only solomargin is checked at callfunction (see Flashloaner.sol)
-    function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal override {
+    function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal override (Flashloaner) {
         console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         require((oldMeh.buyBlocks
             {value: price}

@@ -24,7 +24,7 @@ contract Flashloaner is ICallee, Receiver {
     // ** FLASHLOAN ** //
     
     // This is the function we call
-    function borrow(uint256 loanAmount, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
+    function _borrow(uint256 loanAmount, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         /*
         The flash loan functionality in dydx is predicated by their "operate" function,
         which takes a list of operations to execute, and defers validating the state of
@@ -77,7 +77,7 @@ contract Flashloaner is ICallee, Receiver {
                 otherAccountId: 0,
                 data: abi.encode(
                     loanAmount,
-                    msg.sender,
+                    buyer,
                     fromX,
                     fromY,
                     toX,
@@ -130,7 +130,7 @@ contract Flashloaner is ICallee, Receiver {
         // convert WETH to eth
         WETH.withdraw(loanAmount);
         // buy from MEH and get all the money back
-        _buyFromMEH(loanAmount, buyer,fromX, fromY, toX, toY);
+        _buyFromMEH(loanAmount, buyer, fromX, fromY, toX, toY);
         // convert ETH to back to weth
         WETH.deposit{value:loanAmount}();
         // ... solomargin withdraws loan amount on it's own
