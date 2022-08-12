@@ -34,6 +34,12 @@ contract Collector is UsingGlobals, Ownable {
         }
     }
 
+    // admin can call this function in case someone buys from 2016MEH directly
+    // makes no sense in any other case. Referrals balance are always kept 0. 
+    function adminWithdrawFromReferrals() external onlyOwner {
+        _withdrawFromReferrals();
+    }
+
     // Referrals send eth back to wrapper through this function
     function referralPayback() external payable {
         // note: not checking for sender - optimizing for gas
