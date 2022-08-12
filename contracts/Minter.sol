@@ -11,8 +11,8 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // Coordinates reserved for founders
     uint8 X_RESERVED_FROM = 77;
-    uint8 X_RESERVED_TO = 77;
     uint8 Y_RESERVED_FROM = 77;
+    uint8 X_RESERVED_TO = 77;
     uint8 Y_RESERVED_TO = 77;
 
     function _landlordFrom2018(uint8 x, uint8 y) internal view returns (address) {
@@ -71,6 +71,11 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         return landlord;
     }
 
+    function _areaCrowdsalePrice(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (uint256) {
+        uint16 numOfBlocks = countBlocks(fromX, fromY, toX, toY);
+        return crowdsalePrice * numOfBlocks;
+    }
+
     modifier onlyLegalCoordinates(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) {
         require(isLegalCoordinates(fromX, fromY, toX, toY), "Wrong coordinates");
         _;
@@ -81,14 +86,19 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         external
         payable
         onlyLegalCoordinates(fromX, fromY, toX, toY)
-    {   
-        uint16 numOfBlocks = countBlocks(fromX, fromY, toX, toY);
-        require(msg.value == crowdsalePrice * numOfBlocks, "Not enough eth to mint");  // todo not calculating price for multiple blocks!!!
+    {
         require(_reservedFor(fromX, fromY, toX, toY) == address(0), "A block is reserved for 2018 landlords or founders");
+        
+        // checking if enough eth is sent, adding to royalties
+        uint256 areaCrowdsalePrice = _areaCrowdsalePrice(fromX, fromY, toX, toY);
+        require(msg.value == areaCrowdsalePrice, "Not enough eth to mint");
+        royalties += areaCrowdsalePrice;
+
         _borrowAndBuyFromMEH(msg.sender, fromX, fromY, toX, toY);
     }
 
     // minting blocks reserved for founders and 2018 landlords
+    // 2016 blocks must be transferred via wrap function
     // anyone can call - will mint to a predefined owner
     function mintReservedBlock(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         external
@@ -96,32 +106,32 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     {
         address landlord = _reservedFor(fromX, fromY, toX, toY);
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
-        // buyFromMEH(fromX, fromY, toX, toY, landlord);
     }
 
     // borrows ETH and calls _buyFromMEH with eth amount needed by MEH (1..512 ETH)
     function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
-        // todo check the price is > 0???
-        _borrow(price, buyer, fromX, fromY, toX, toY);  
+        // if the price is 0, it means that a block within the area is not for sale
+        // as both mint functions point to vacant areas, the price should always be > 0
+        // except if someone buys within founder's share
+        // better check the price here for clearer error message
+        require(price > 0, "Area price is 0");
+        _borrow(price, buyer, fromX, fromY, toX, toY);
     }
 
     // is called by SoloMargin (see callFunction function)
-    // TODO make sure to override properly
     // only solomargin is checked at callfunction (see Flashloaner.sol)
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal override (Flashloaner) {
+        
+        // minting on 2016 contract
         console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         require((oldMeh.buyBlocks
             {value: price}
             (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");
-        
         console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
+
         // get all the funds back from referrals to repay the loan 
         _withdrawFromReferrals();
-
-        // royalties (todo wrong price here???!!! should be crowdsale price!)
-        // sould not apply for reserved blocks
-        royalties += price;
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
