@@ -10,10 +10,10 @@ import "./Admin.sol";
 contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // Coordinates reserved for founders
-    uint8 X_RESERVED_FROM = 77;
-    uint8 Y_RESERVED_FROM = 77;
-    uint8 X_RESERVED_TO = 77;
-    uint8 Y_RESERVED_TO = 77;
+    uint8 FROM_X_RESERVED = 77;
+    uint8 FROM_Y_RESERVED = 77;
+    uint8 TO_X_RESERVED = 77;
+    uint8 TO_Y_RESERVED = 77;
 
     function _landlordFrom2018(uint8 x, uint8 y) internal view returns (address) {
         address landlord = address(0);
@@ -31,6 +31,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         return landlord;
     }
 
+    // must check the 2016 contract directly. As it will unpaused. 
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
         (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
         return landlord;
@@ -38,37 +39,41 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // check that blocks are not 2018 blocks and not founders
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
-        address landlord = address(0);
-
-        // check if reserved for founders
-        if (fromX >= X_RESERVED_FROM &&
-            toX <= X_RESERVED_TO &&
-            fromY >= Y_RESERVED_FROM &&
-            toY <= Y_RESERVED_TO) 
-        {
-            landlord = peter;
-        }
 
         // check if already minted at 2016 contract
         // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
         // good for security though. we are separating workflows of minting anew and wrapping.
-        if (landlord == address(0)) {
-            address singleLandlord;
-            address previousLandlord;
-            uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
-            for (uint i = 0; i < blocks.length; i++) {
-                (uint8 x, uint8 y) = blockXY(blocks[i]);
-                require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
-                // the below code can return landlord address(0), it's ok
-                singleLandlord = _landlordFrom2018(x, y);
-                if (singleLandlord != previousLandlord && previousLandlord != address(0)) {
-                    revert("Multiple landlords within area");
-                }
-                previousLandlord = singleLandlord;
+        address singleLandlord = address(0);
+        address NULL = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
+        address previousLandlord = NULL;  // must be specific, not just 0
+        uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+        for (uint i = 0; i < blocks.length; i++) {
+            (uint8 x, uint8 y) = blockXY(blocks[i]);
+            require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
+            // the below code can return landlord address(0), it's ok
+            singleLandlord = _landlordFrom2018(x, y);
+            // todo test area with owners [address(0), any_other...]
+            if (singleLandlord != previousLandlord && previousLandlord != NULL) {
+                revert("Multiple landlords within area");
             }
-            landlord = singleLandlord;
+            previousLandlord = singleLandlord;
         }
-        return landlord;
+        if (singleLandlord != address(0)) {
+            return singleLandlord;
+        }
+        
+        // moving this below _landlordFrom2016 check to cover the case when
+        // a block within founders share is bouht directly from 2016
+        // check if reserved for founders
+        if (fromX >= FROM_X_RESERVED &&
+            toX <= TO_X_RESERVED &&
+            fromY >= FROM_Y_RESERVED &&
+            toY <= TO_Y_RESERVED) 
+        {
+            return peter;
+        } else {
+            return address(0);
+        }
     }
 
     function _areaCrowdsalePrice(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (uint256) {
@@ -113,7 +118,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
         // if the price is 0, it means that a block within the area is not for sale
         // as both mint functions point to vacant areas, the price should always be > 0
-        // except if someone buys within founder's share
+        // except if someone buys a block within founder's share area
         // better check the price here for clearer error message
         require(price > 0, "Area price is 0");
         _borrow(price, buyer, fromX, fromY, toX, toY);
