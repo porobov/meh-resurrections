@@ -43,6 +43,15 @@ module.exports = {
           }
         }
       },
+      {
+        version: "0.4.2",
+        // settings: {
+        //   optimizer: {
+        //     // enabled: true,
+        //     // runs: 200
+        //   }
+        // }
+      },
     ]
   },
   defaultNetwork: "localhost",

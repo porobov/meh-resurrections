@@ -26,7 +26,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
             console.log("......landlord2018", landlord2018);
             landlord = landlord2018;
         } catch (bytes memory reason) {
-            console.log("......reason");
+            console.log("......reason");  // TODO why cannot add reason here?
         }
         return landlord;
     }

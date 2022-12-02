@@ -34,4 +34,28 @@ library Actions {
         uint256 otherAccountId;
         bytes data;
     }
+
+    // used for tests in SoloMarginMock
+    struct CallArgs {
+        Account.Info account;
+        address callee;
+        bytes data;
+    }
+
+    // used for tests in SoloMarginMock
+    function parseCallArgs(
+        Account.Info[] memory accounts,
+        ActionArgs memory args
+    )
+        internal
+        pure
+        returns (CallArgs memory)
+    {
+        assert(args.actionType == ActionType.Call);
+        return CallArgs({
+            account: accounts[args.accountId],
+            callee: args.otherAddress,
+            data: args.data
+        });
+    }
 }

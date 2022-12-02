@@ -12,8 +12,8 @@ const conf = require('../conf.js')
 // let newMeh
 
 /// READING EVENTS
-
-// read old MEH events
+// npx hardhat run scripts/export_old_blocks.js
+// read old MEH events saves on disk 
 // event NewAreaStatus (uint ID, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint price);
 // The event shows both sales and buys. Filtering buys further. 
 // Owner is no specified here. Fetching owner further.
@@ -97,6 +97,7 @@ function removeDuplicates(oldBlocks) {
   const lib = []
   const blocks = []
   for (const block of oldBlocks) {
+    // TODO shouldn't we look for x-y pair only here? 
     const record = block.x + " " + block.y + " " + block.landlord
     const found = lib.find(element => element == record);
     if (found) {

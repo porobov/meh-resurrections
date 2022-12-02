@@ -1,28 +1,16 @@
-/*
-MillionEther smart contract - decentralized advertising platform.
+// original MEH contract modified for ^0.8.4 version
+// getBlockPrice function is virtual here to be overiden
+// in mock contract.
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-pragma solidity ^0.4.2;
+// pragma solidity ^0.4.2;
+pragma solidity ^0.8.4;
 
 contract MillionEther {
 
-    address private admin;
+    address internal admin;
 
     // Users
-    uint private numUsers = 0;
+    uint internal numUsers = 0;
     struct User {
         address referal;
         uint8 handshakes;
@@ -33,21 +21,21 @@ contract MillionEther {
         bool refunded;
         uint investments;
     }
-    mapping(address => User) private users;
-    mapping(uint => address) private userAddrs;
+    mapping(address => User) internal users;
+    mapping(uint => address) internal userAddrs;
 
     // Blocks. Blocks are 10x10 pixel areas. There are 10 000 blocks.
-    uint16 private blocksSold = 0;
-    uint private numNewStatus = 0;
+    uint16 internal blocksSold = 0;
+    uint internal numNewStatus = 0;
     struct Block {
         address landlord;
         uint imageID;
         uint sellPrice;
     }
-    Block[101][101] private blocks; 
+    Block[101][101] internal blocks; 
 
     // Images
-    uint private numImages = 0;
+    uint internal numImages = 0;
     struct Image {
         uint8 fromX;
         uint8 fromY;
@@ -57,17 +45,17 @@ contract MillionEther {
         string adUrl;
         string adText;
     }
-    mapping(uint => Image) private images;
+    mapping(uint => Image) internal images;
 
     // Contract settings and security
     uint public charityBalance = 0;
     address public charityAddress;
-    uint8 private refund_percent = 0;
-    uint private totalWeiInvested = 0; //1 024 000 Ether max
-    bool private setting_stopped = false;
-    bool private setting_refundMode = false;
-    uint32 private setting_delay = 3600;
-    uint private setting_imagePlacementPriceInWei = 0;
+    uint8 internal refund_percent = 0;
+    uint internal totalWeiInvested = 0; //1 024 000 Ether max
+    bool internal setting_stopped = false;
+    bool internal setting_refundMode = false;
+    uint32 internal setting_delay = 3600;
+    uint internal setting_imagePlacementPriceInWei = 0;
 
     // Events
     event NewUser(uint ID, address newUser, address invitedBy, uint32 activationTime);
@@ -77,11 +65,11 @@ contract MillionEther {
 
 // ** INITIALIZE ** //
 
-    function MillionEther () {
+    constructor () {
         admin = msg.sender;
         users[admin].referal = admin;
         users[admin].handshakes = 0;
-        users[admin].activationTime = uint32(now);
+        users[admin].activationTime = uint32(block.timestamp);
         users[admin].userID = 0;
         userAddrs[0] = admin;
         userAddrs[numUsers] = admin;
@@ -91,61 +79,61 @@ contract MillionEther {
 // ** FUNCTION MODIFIERS (PERMISSIONS) ** //
 
     modifier onlyAdmin {
-        if (msg.sender != admin) throw;
+        if (msg.sender != admin) revert();
         _;
     }
 
     modifier onlyWhenInvitedBy (address someUser) {
-        if (users[msg.sender].referal != address(0x0)) throw;   //user already exists
-        if (users[someUser].referal == address(0x0)) throw;     //referral does not exist
-        if (now < users[someUser].activationTime) throw;        //referral is not active yet
+        if (users[msg.sender].referal != address(0x0)) revert();   //user already exists
+        if (users[someUser].referal == address(0x0)) revert();     //referral does not exist
+        if (block.timestamp < users[someUser].activationTime) revert();        //referral is not active yet
         _;
     }
 
     modifier onlySignedIn {
-        if (users[msg.sender].referal == address(0x0)) throw;   //user does not exist
+        if (users[msg.sender].referal == address(0x0)) revert();   //user does not exist
         _;
     }
 
     modifier onlyForSale (uint8 _x, uint8 _y) {
-        if (blocks[_x][_y].landlord != address(0x0) && blocks[_x][_y].sellPrice == 0) throw;
+        if (blocks[_x][_y].landlord != address(0x0) && blocks[_x][_y].sellPrice == 0) revert();
         _;
     }
 
     modifier onlyWithin100x100Area (uint8 _fromX, uint8 _fromY, uint8 _toX, uint8 _toY) {
-        if ((_fromX < 1) || (_fromY < 1)  || (_toX > 100) || (_toY > 100)) throw;
+        if ((_fromX < 1) || (_fromY < 1)  || (_toX > 100) || (_toY > 100)) revert();
         _;
     }    
 
     modifier onlyByLandlord (uint8 _x, uint8 _y) {
         if (msg.sender != admin) {
-            if (blocks[_x][_y].landlord != msg.sender) throw;
+            if (blocks[_x][_y].landlord != msg.sender) revert();
         }
         _;
     }
 
     modifier noBannedUsers {
-        if (users[msg.sender].banned == true) throw;
+        if (users[msg.sender].banned == true) revert();
         _;
     }
 
     modifier stopInEmergency { 
         if (msg.sender != admin) {
-            if (setting_stopped) throw; 
+            if (setting_stopped) revert(); 
         }
         _;
     }
 
     modifier onlyInRefundMode { 
-        if (!setting_refundMode) throw;
+        if (!setting_refundMode) revert();
         _;
     }
 
 
 // ** USER SIGN IN ** //
 
-    function getActivationTime (uint _currentLevel, uint _setting_delay) private constant returns (uint32) {
-        return uint32(now + _setting_delay * (2**(_currentLevel-1)));
+    function getActivationTime (uint _currentLevel, uint _setting_delay) internal view returns (uint32) {
+        return uint32(block.timestamp + _setting_delay * (2**(_currentLevel-1)));
     }
 
     function signIn (address referal) 
@@ -164,14 +152,14 @@ contract MillionEther {
         users[msg.sender].refunded = false;
         users[msg.sender].userID = numUsers;
         userAddrs[numUsers] = msg.sender;
-        NewUser(numUsers, msg.sender, referal, users[msg.sender].activationTime);
+        emit NewUser(numUsers, msg.sender, referal, users[msg.sender].activationTime);
         return numUsers;
     }
 
 
  // ** BUY AND SELL BLOCKS ** //
 
-    function getBlockPrice (uint8 fromX, uint8 fromY, uint blocksSold) private constant returns (uint) {
+    function getBlockPrice (uint8 fromX, uint8 fromY, uint blocksSold) internal view virtual returns (uint) {
         if (blocks[fromX][fromY].landlord == address(0x0)) { 
                 // when buying at initial sale price doubles every 1000 blocks sold
                 return 1 ether * (2 ** (blocksSold/1000));
@@ -182,7 +170,7 @@ contract MillionEther {
         }
 
     function buyBlock (uint8 x, uint8 y) 
-        private  
+        internal  
         onlyForSale (x, y) 
         returns (uint)
     {
@@ -210,7 +198,7 @@ contract MillionEther {
         returns (uint) 
     {   
         // Put funds to buyerBalance
-        if (users[msg.sender].balance + msg.value < users[msg.sender].balance) throw; //checking for overflow
+        if (users[msg.sender].balance + msg.value < users[msg.sender].balance) revert(); //checking for overflow
         uint previousWeiInvested = totalWeiInvested;
         uint buyerBalance = users[msg.sender].balance + msg.value;
 
@@ -219,7 +207,7 @@ contract MillionEther {
         for (uint8 ix=fromX; ix<=toX; ix++) {
             for (uint8 iy=fromY; iy<=toY; iy++) {
                 purchasePrice = buyBlock (ix,iy);
-                if (buyerBalance < purchasePrice) throw;
+                if (buyerBalance < purchasePrice) revert();
                 buyerBalance -= purchasePrice;
             }
         }
@@ -231,14 +219,14 @@ contract MillionEther {
         payOut (totalWeiInvested - previousWeiInvested, users[msg.sender].referal);
         numNewStatus += 1;
         // fire new area status event (0 sell price means the area is not for sale)
-        NewAreaStatus (numNewStatus, fromX, fromY, toX, toY, 0);
+        emit NewAreaStatus (numNewStatus, fromX, fromY, toX, toY, 0);
         return purchasePrice;
     }
 
 
     //Mark block for sale (set a sell price)
     function sellBlock (uint8 x, uint8 y, uint sellPrice) 
-        private
+        internal
         onlyByLandlord (x, y) 
     {
         blocks[x][y].sellPrice = sellPrice;
@@ -251,7 +239,7 @@ contract MillionEther {
         onlyWithin100x100Area (fromX, fromY, toX, toY) 
         returns (bool) 
     {
-        if (priceForEachBlockInWei == 0) throw;
+        if (priceForEachBlockInWei == 0) revert();
         for (uint8 ix=fromX; ix<=toX; ix++) {
             for (uint8 iy=fromY; iy<=toY; iy++) {
                 sellBlock (ix, iy, priceForEachBlockInWei);
@@ -259,17 +247,17 @@ contract MillionEther {
         }
         numNewStatus += 1;
         // fire NewAreaStatus event
-        NewAreaStatus (numNewStatus, fromX, fromY, toX, toY, priceForEachBlockInWei);
+        emit NewAreaStatus (numNewStatus, fromX, fromY, toX, toY, priceForEachBlockInWei);
         return true;
     }
 
 
 // ** ASSIGNING IMAGES ** //
     
-    function chargeForImagePlacement () private {
-        if (users[msg.sender].balance + msg.value < users[msg.sender].balance) throw; //check for overflow`
+    function chargeForImagePlacement () internal {
+        if (users[msg.sender].balance + msg.value < users[msg.sender].balance) revert(); //check for overflow`
         uint buyerBalance = users[msg.sender].balance + msg.value;
-        if (buyerBalance < setting_imagePlacementPriceInWei) throw;
+        if (buyerBalance < setting_imagePlacementPriceInWei) revert();
         buyerBalance -= setting_imagePlacementPriceInWei;
         users[admin].balance += setting_imagePlacementPriceInWei;
         users[msg.sender].balance = buyerBalance;
@@ -277,14 +265,14 @@ contract MillionEther {
 
     // every block has its own image id assigned
     function assignImageID (uint8 x, uint8 y, uint _imageID) 
-        private
+        internal
         onlyByLandlord (x, y) 
     {
         blocks[x][y].imageID = _imageID;
     }
 
     // place new ad to user owned area
-    function placeImage (uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, string imageSourceUrl, string adUrl, string adText) 
+    function placeImage (uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, string calldata imageSourceUrl, string calldata adUrl, string calldata adText) 
         public 
         payable
         stopInEmergency ()
@@ -306,7 +294,8 @@ contract MillionEther {
         images[numImages].imageSourceUrl = imageSourceUrl;
         images[numImages].adUrl = adUrl;
         images[numImages].adText = adText;
-        NewImage(numImages, fromX, fromY, toX, toY, imageSourceUrl, adUrl, adText);
+        // solved "stack too deep" problem by referencing to storage vars. 
+        emit NewImage(numImages, images[numImages].fromX, images[numImages].fromY, images[numImages].toX, images[numImages].toY, images[numImages].imageSourceUrl, images[numImages].adUrl, images[numImages].adText);
         return numImages;
     }
 
@@ -317,7 +306,7 @@ contract MillionEther {
 // ** PAYOUTS ** //
 
     // reward the chain of referrals, admin and charity
-    function payOut (uint _amount, address referal) private {
+    function payOut (uint _amount, address referal) internal {
         address iUser = referal;
         address nextUser;
         uint totalPayed = 0;
@@ -332,7 +321,7 @@ contract MillionEther {
     }
 
     // charity is the same type of user as everyone else
-    function goesToCharity (uint amount) private {
+    function goesToCharity (uint amount) internal {
         // if no charityAddress is set yet funds go to charityBalance (see further)
         if (charityAddress == address(0x0)) {
             charityBalance += amount;
@@ -348,7 +337,7 @@ contract MillionEther {
     {
         uint withdrawAmount = users[msg.sender].balance;
         users[msg.sender].balance = 0;
-        if (!msg.sender.send(withdrawAmount)) {
+        if (!payable(msg.sender).send(withdrawAmount)) {
             users[msg.sender].balance = withdrawAmount;
         }
     }
@@ -357,7 +346,7 @@ contract MillionEther {
  // ** GET INFO (CONSTANT FUNCTIONS)** //
 
     //USERS
-    function getUserInfo (address userAddress) public constant returns (
+    function getUserInfo (address userAddress) public view returns (
         address referal,
         uint8 handshakes,
         uint balance,
@@ -378,27 +367,27 @@ contract MillionEther {
     }
 
     function getUserAddressByID (uint userID) 
-        public constant returns (address userAddress) 
+        public view returns (address userAddress) 
     {
         return userAddrs[userID];
     }
     
     function getMyInfo() 
-        public constant returns(uint balance, uint32 activationTime) 
+        public view returns(uint balance, uint32 activationTime) 
     {   
         return (users[msg.sender].balance, users[msg.sender].activationTime);
     }
 
     //BLOCKS
     function getBlockInfo(uint8 x, uint8 y) 
-        public constant returns (address landlord, uint imageID, uint sellPrice) 
+        public view returns (address landlord, uint imageID, uint sellPrice) 
     {
         return (blocks[x][y].landlord, blocks[x][y].imageID, blocks[x][y].sellPrice);
     }
 
     function getAreaPrice (uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         public
-        constant
+        view
         onlyWithin100x100Area (fromX, fromY, toX, toY)
         returns (uint) 
     {
@@ -422,14 +411,14 @@ contract MillionEther {
 
     //IMAGES
     function getImageInfo(uint imageID) 
-        public constant returns (uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, string imageSourceUrl, string adUrl, string adText)
+        public view returns (uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, string memory imageSourceUrl, string memory adUrl, string memory adText)
     {
-        Image i = images[imageID];
+        Image memory i = images[imageID];
         return (i.fromX, i.fromY, i.toX, i.toY, i.imageSourceUrl, i.adUrl, i.adText);
     }
 
     //CONTRACT STATE
-    function getStateInfo () public constant returns (
+    function getStateInfo () public view returns (
         uint _numUsers, 
         uint16 _blocksSold, 
         uint _totalWeiInvested, 
@@ -458,7 +447,7 @@ contract MillionEther {
         //terminate contract, refund investments
         if (refundInvestments) {
             setting_refundMode = refundInvestments;
-            refund_percent = uint8((this.balance*100)/totalWeiInvested);
+            refund_percent = uint8((address(this).balance*100)/totalWeiInvested);
         }
     }
 
@@ -470,7 +459,7 @@ contract MillionEther {
         if (newDelayInSeconds > 0) setting_delay = newDelayInSeconds;
         // when the charityAddress is set charityBalance immediately transfered to it's balance 
         if (newCharityAddress != address(0x0)) {
-            if (users[newCharityAddress].referal == address(0x0)) throw;
+            if (users[newCharityAddress].referal == address(0x0)) revert();
             charityAddress = newCharityAddress;
             users[charityAddress].balance += charityBalance;
             charityBalance = 0;
@@ -489,15 +478,15 @@ contract MillionEther {
             uint availableForRefund = (totalInvested*refund_percent)/100;
             users[msg.sender].investments -= availableForRefund;
             users[msg.sender].refunded = true;
-            if (!msg.sender.send(availableForRefund)) {
+            if (!payable(msg.sender).send(availableForRefund)) {
                 users[msg.sender].investments = totalInvested;
                 users[msg.sender].refunded = false;
             }
         }
     }
 
-    function () {
-        throw;
+    fallback () external {
+        revert();
     }
 
 }
