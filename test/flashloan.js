@@ -1,7 +1,7 @@
 const { expect } = require("chai");
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
-const { reportGas } = require("../src/tools.js")
+const { GasReporter } = require("../src/tools.js")
 const conf = require('../conf.js')
 const oldMehAbi = conf.oldMehAbi
 const newMehAbi = conf.newMehAbi
@@ -11,7 +11,7 @@ const wethAbi = conf.wethAbi
 const wethAddress = conf.wethAddress
 const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-
+const gasReporter = new GasReporter()
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
 async function increaseTimeBy(seconds) {
@@ -44,17 +44,21 @@ async function setUpReferral(referralFactory, referralAddress, level, wrapperAdd
 
     await referral.setWrapper(wrapperAddress)
     await waitForActivationTime(level)
-    reportGas("Referrals", refGasUsed)
+    gasReporter.addGasRecord("Referrals", refGasUsed)
     return referral
 }
 
 async function setup() {
+
+
   await hre.network.provider.request({
     method: "hardhat_impersonateAccount",
     params: [mehAdminAddress],
   });
   const mehAdmin = await ethers.getSigner(mehAdminAddress)
   ;[owner] = await ethers.getSigners()
+
+  // get oldMeh instance
   const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
 
   // unpause oldMEH
@@ -93,8 +97,8 @@ async function setup() {
   // wrapper signs in to old meh
   await mehWrapper.signIn(referrals[referrals.length-1].address)
 
-
-  reportGas("Meh wrapper deployment", mehWrapperGasUsed)
+  gasReporter.addGasRecord("Meh wrapper deployment", mehWrapperGasUsed)
+  gasReporter.reportToConsole()
 
   return {
     oldMeh: oldMeh,
