@@ -1,5 +1,16 @@
 const { ethers } = require("hardhat");
 
+// open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
+async function increaseTimeBy(seconds) {
+  await network.provider.send("evm_increaseTime", [seconds])
+  await network.provider.send("evm_mine") // this one will have 02:00 PM as its timestamp
+}
+
+//await ethers.getDefaultProvider().getBalance(address) - will always querry chain data
+async function getFormattedBalance(address) {
+  return ethers.utils.formatEther(await network.provider.send("eth_getBalance", [address]))
+}
+
 class GasReporter {
 
   constructor() {
@@ -20,4 +31,4 @@ class GasReporter {
   }
 }
 
-module.exports = { GasReporter }
+module.exports = { GasReporter, increaseTimeBy, getFormattedBalance }
