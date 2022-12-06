@@ -13,10 +13,12 @@ const conf = require('../conf.js')
 
 /// READING EVENTS
 // npx hardhat run scripts/export_old_blocks.js
-// read old MEH events saves on disk 
+// reads old MEH events saves on disk 
+
 // event NewAreaStatus (uint ID, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint price);
 // The event shows both sales and buys. Filtering buys further. 
 // Owner is no specified here. Fetching owner further.
+
 async function readOldMehEvents(oldMeh) {
   const eventFilter = oldMeh.filters.NewAreaStatus()
   const newAreaStatusEvents = await oldMeh.queryFilter(eventFilter)

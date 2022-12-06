@@ -4,6 +4,7 @@ const conf = require('../conf.js')
 
 /// READING EVENTS
 // npx hardhat run scripts/export_old_ads.js
+
 // reads old MEH events both 2016 and 2018 contracts 
 // saves on disk
 // event NewImage(uint ID, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, string imageSourceUrl, string adUrl, string adText);
