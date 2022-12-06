@@ -57,6 +57,7 @@ module.exports = {
   defaultNetwork: "localhost",
   networks: {
     localhost: {
+      chainId: 31337,   // specifying manually, used in getConfigChainID() function from tools
       url: "http://127.0.0.1:8545"
     },
     hardhat: {
@@ -69,6 +70,7 @@ module.exports = {
     },
     // read-only mainnet (for blocks import)
     readMain: {
+      chainId: 1,  // specifying manually, used in getConfigChainID() function from tools
       url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
       accounts: {
             mnemonic: "test test test test test test test test test test test junk"

@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
-const { GasReporter, increaseTimeBy, getFormattedBalance } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID } = require("../src/tools.js")
 const conf = require('../conf.js')
 
 const oldMehAbi = conf.oldMehAbi
@@ -13,12 +13,20 @@ const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
 
+async function deployMocks() {
+    console.log("Deploying mocks to Chain ID:", getConfigChainID())
+    // WETH mock 
+    const weth = await deployContract("WETH9", {"isVerbouse": true})
+
+}
+
 // deployer and setup script used in tests and in production too
 async function setupTestEnvironment() {
     ;[owner] = await ethers.getSigners()
   
     // deploy wrapper
-    const mehWrapper = await deployWrapperCountGas(gasReporter)
+    // const mehWrapper = await deployWrapperCountGas(gasReporter)
+    const mehWrapper = await deployContract("Main", {"isVerbouse": true, "gasReporter": gasReporter})
     
     // FLASHLOAN
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
@@ -42,8 +50,7 @@ async function setupTestEnvironment() {
     await oldMeh.adminContractSettings(0, referrals[0].address, 0)
     // wrapper signs in to old meh
     await mehWrapper.signIn(referrals[referrals.length-1].address)
-  
-  
+
     // gasReporter.addGasRecord("Meh wrapper deployment", mehWrapperGasUsed)
     gasReporter.reportToConsole()
   
@@ -55,16 +62,33 @@ async function setupTestEnvironment() {
     }
   }
 
-// not yet used
-async function deployWrapperCountGas(gasReporter) {
-    const MehWrapper = await ethers.getContractFactory("Main")
-    const mehWrapper = await MehWrapper.deploy()
-    const reciept = await mehWrapper.deployTransaction.wait()
-    gasReporter.addGasRecord("Meh wrapper deployment", reciept.gasUsed)
-    await mehWrapper.deployed()
-    return mehWrapper
+// helper to deploy any contract by name
+async function deployContract(contractName, options) {
+    let isVerbouse = false
+    let gasReporter = undefined
+    if (options) {
+        if (options.hasOwnProperty("isVerbouse")) {
+            isVerbouse = options.isVerbouse
+        }
+        if (options.hasOwnProperty("gasReporter")) {
+            gasReporter = options.gasReporter
+        }
+    }
+    const contrFactory = await ethers.getContractFactory(contractName)
+    const contr = await contrFactory.deploy()
+    const reciept = await contr.deployTransaction.wait()
+    if (gasReporter !== undefined) {
+        gasReporter.addGasRecord(`${contractName} gas`, reciept.gasUsed)
+    }
+    await contr.deployed()
+    if (isVerbouse) {
+        console.log(`Deployed ${contractName} to ${contr.address}`)
+    }
+    return contr
 }
 
+
+// REFERRALS
 async function setupChainOfReferrals(firstReferral, oldMehAddress, mehWrapper, gasReporter) {
     const referrals = []
     let currentReferral = firstReferral
@@ -105,8 +129,7 @@ async function waitForActivationTime(level) {
     await increaseTimeBy(3600 * (2 ** (level - 1)))
 }
 
-module.exports = { 
-    deployWrapperCountGas, 
-    setupChainOfReferrals, 
-    setupTestEnvironment 
+module.exports = {
+    setupTestEnvironment,
+    deployMocks
 }

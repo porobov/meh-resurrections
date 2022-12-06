@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
 async function increaseTimeBy(seconds) {
@@ -9,6 +9,16 @@ async function increaseTimeBy(seconds) {
 //await ethers.getDefaultProvider().getBalance(address) - will always querry chain data
 async function getFormattedBalance(address) {
   return ethers.utils.formatEther(await network.provider.send("eth_getBalance", [address]))
+}
+
+// return network name specified in hardhat.config.js
+function getConfigNetworkName() {
+    return network.name
+}
+
+// return ChainID specified in hardhat.config.js
+function getConfigChainID() {
+  return network.config.chainId
 }
 
 class GasReporter {
@@ -31,4 +41,9 @@ class GasReporter {
   }
 }
 
-module.exports = { GasReporter, increaseTimeBy, getFormattedBalance }
+module.exports = { 
+  GasReporter, 
+  increaseTimeBy, 
+  getFormattedBalance,
+  getConfigChainID
+}
