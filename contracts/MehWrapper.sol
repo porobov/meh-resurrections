@@ -4,7 +4,10 @@ import "./Minter.sol";
 // import "./WrapUnwrapper.sol";
 
 contract MehWrapper is Minter {
-    
+    constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) Minter(wethAddress, soloMarginAddress) {    
+        oldMeh = IOldMeh(meh2016address);
+        meh2018 = IMeh2018(meh2018address);
+    }
     // forward ads placement
     function placeImage(
         uint8 fromX, 

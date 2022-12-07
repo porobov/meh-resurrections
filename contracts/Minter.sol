@@ -15,6 +15,8 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     uint8 TO_X_RESERVED = 77;
     uint8 TO_Y_RESERVED = 77;
 
+    constructor(address wethAddress, address soloMarginAddress) Flashloaner(wethAddress, soloMarginAddress) {}
+
     function _landlordFrom2018(uint8 x, uint8 y) internal view returns (address) {
         address landlord = address(0);
         console.log("......x, y", x, y);

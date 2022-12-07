@@ -5,6 +5,7 @@ import "./libs/dydx.sol";
 import "./interfaces/IDydx.sol";
 import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 import "./Receiver.sol";
@@ -12,15 +13,18 @@ import "./Receiver.sol";
 contract Flashloaner is ICallee, Receiver {
     // The dydx Solo Margin contract, as can be found here:
     // https://github.com/dydxprotocol/solo/blob/master/migrations/deployed.json
-    ISoloMargin private soloMargin = ISoloMargin(0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e);
+    ISoloMargin public soloMargin;
+    IWETH public WETH;
 
-    constructor() {
+    constructor(address wethAddress, address soloMarginAddress) {
+        WETH = IWETH(wethAddress);
+        soloMargin = ISoloMargin(soloMarginAddress);
         // Give infinite approval to dydx to withdraw WETH on contract deployment,
         // so we don't have to approve the loan repayment amount (+2 wei) on each call.
         // The approval is used by the dydx contract to pay the loan back to itself.
         WETH.approve(address(soloMargin), uint(2**256 - 1));
     }
-
+    
     // ** FLASHLOAN ** //
     
     // This is the function we call

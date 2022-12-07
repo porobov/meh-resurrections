@@ -12,6 +12,7 @@ const wethAddress = conf.wethAddress
 const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
+const soloMarginAddress = '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e'
 
 // 😱
 async function deployToProduction () {
@@ -23,9 +24,9 @@ async function deployMocks() {
     console.log("Deploying mocks to Chain ID:", getConfigChainID(), "confirmations:", getConfigNumConfirmations())
     // WETH mock 
     const weth = await deployContract("WETH9", {"isVerbouse": true})
-    const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
-    const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
     const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true})
+    const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
+    const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
 }
 
 // deployer and setup script used in tests and in production too
@@ -33,8 +34,15 @@ async function setupTestEnvironment() {
     ;[owner] = await ethers.getSigners()
   
     // deploy wrapper
-    // const mehWrapper = await deployWrapperCountGas(gasReporter)
-    const mehWrapper = await deployContract("MehWrapper", {"isVerbouse": true, "gasReporter": gasReporter})
+    // constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)   
+    const mehWrapper = await deployContract(
+        "MehWrapper", 
+        {"isVerbouse": true, "gasReporter": gasReporter},
+        oldMehAddress,
+        newMehAddress,
+        wethAddress,
+        soloMarginAddress
+        )
     
     // FLASHLOAN
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
