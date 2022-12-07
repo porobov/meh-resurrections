@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 const { BigNumber } = require("ethers");
-const { GasReporter, increaseTimeBy, getConfigChainID } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations } = require("../src/tools.js")
 const conf = require('../conf.js')
 
 const oldMehAbi = conf.oldMehAbi
@@ -13,11 +13,19 @@ const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
 
+// 😱
+async function deployToProduction () {
+
+}
+
+// deploy mocks to a testnet
 async function deployMocks() {
-    console.log("Deploying mocks to Chain ID:", getConfigChainID())
+    console.log("Deploying mocks to Chain ID:", getConfigChainID(), "confirmations:", getConfigNumConfirmations())
     // WETH mock 
     const weth = await deployContract("WETH9", {"isVerbouse": true})
-
+    const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
+    const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
+    const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true})
 }
 
 // deployer and setup script used in tests and in production too
@@ -26,7 +34,7 @@ async function setupTestEnvironment() {
   
     // deploy wrapper
     // const mehWrapper = await deployWrapperCountGas(gasReporter)
-    const mehWrapper = await deployContract("Main", {"isVerbouse": true, "gasReporter": gasReporter})
+    const mehWrapper = await deployContract("MehWrapper", {"isVerbouse": true, "gasReporter": gasReporter})
     
     // FLASHLOAN
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
@@ -35,11 +43,8 @@ async function setupTestEnvironment() {
     await weth.transfer(mehWrapper.address, 2)
   
     // REFERRALS
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [mehAdminAddress],
-    });
-    const mehAdmin = await ethers.getSigner(mehAdminAddress)
+    const mehAdmin = await getImpersonatedSigner(mehAdminAddress)
+
     // get oldMeh instance
     const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
     // unpause oldMEH
@@ -63,7 +68,7 @@ async function setupTestEnvironment() {
   }
 
 // helper to deploy any contract by name
-async function deployContract(contractName, options) {
+async function deployContract(contractName, options, ...args) {
     let isVerbouse = false
     let gasReporter = undefined
     if (options) {
@@ -75,7 +80,7 @@ async function deployContract(contractName, options) {
         }
     }
     const contrFactory = await ethers.getContractFactory(contractName)
-    const contr = await contrFactory.deploy()
+    const contr = await contrFactory.deploy(...args)
     const reciept = await contr.deployTransaction.wait()
     if (gasReporter !== undefined) {
         gasReporter.addGasRecord(`${contractName} gas`, reciept.gasUsed)
@@ -87,6 +92,14 @@ async function deployContract(contractName, options) {
     return contr
 }
 
+// returns impersonated signer for local hardfork
+async function getImpersonatedSigner(addr) {
+    await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [addr],
+      });
+    return ethers.getSigner(addr)
+}
 
 // REFERRALS
 async function setupChainOfReferrals(firstReferral, oldMehAddress, mehWrapper, gasReporter) {
@@ -94,8 +107,10 @@ async function setupChainOfReferrals(firstReferral, oldMehAddress, mehWrapper, g
     let currentReferral = firstReferral
     let newRef
     let referralsGas = BigNumber.from(0)
+
     const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
     const referralFactory = await referralFactoryFactory.deploy(oldMehAddress, currentReferral.address);
+
     for (let level = 1; level <= 7; level++) {
       newRef = await setUpReferral(referralFactory, currentReferral.address, level, oldMehAddress, mehWrapper.address, gasReporter)
       referrals.push(newRef)

@@ -21,6 +21,10 @@ function getConfigChainID() {
   return network.config.chainId
 }
 
+function getConfigNumConfirmations(){
+  return network.config.numConfirmations
+}
+
 class GasReporter {
 
   constructor() {
@@ -45,5 +49,6 @@ module.exports = {
   GasReporter, 
   increaseTimeBy, 
   getFormattedBalance,
-  getConfigChainID
+  getConfigChainID,
+  getConfigNumConfirmations
 }
