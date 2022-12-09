@@ -1,5 +1,8 @@
-const { ethers } = require("hardhat");
-const { BigNumber } = require("ethers");
+const fs = require('fs')
+const path = require('path')
+const chalk = require('chalk')
+const { ethers } = require("hardhat")
+const { BigNumber } = require("ethers")
 const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations } = require("../src/tools.js")
 const conf = require('../conf.js')
 
@@ -19,6 +22,51 @@ async function deployToProduction () {
 
 }
 
+class ExistingEnvironment {
+    constructor(chainID) {
+        this.chainID = chainID
+        this.path = this.getPath(chainID)
+        this.defaultJSON = {
+            'weth': wethAddress,
+            'soloMargin': soloMarginAddress,
+            'meh2016': oldMehAddress,
+            'meh2018': newMehAddress,
+        }
+    }
+
+    getPath(chainID) {
+        let filename = chainID.toString() + '_addresses.json'
+        return path.join(__dirname, '../test/mocking', filename)
+    }
+
+    load() {
+        let addressesJSON
+        let message
+        try {
+            addressesJSON = JSON.parse(fs.readFileSync(this.path))
+            message = chalk.green('loaded mock addresses for chainID: ' + this.chainID)
+        } catch (err) {
+            addressesJSON = this.defaultJSON
+            message = chalk.red('loaded real contract addresses')
+        } finally {
+            console.log(message)
+            return addressesJSON
+        }
+    }
+
+    save(weth,soloMargin,meh2016,meh2018) {
+        const addressesJSON = {
+            'weth': weth,
+            'soloMargin': soloMargin,
+            'meh2016': meh2016,
+            'meh2018': meh2018,
+        }
+
+        fs.writeFileSync(this.path, JSON.stringify(addressesJSON))
+        console.log('Wrote mock addresses for chainID:', this.chainID)
+        }
+  }
+
 // deploy mocks to a testnet
 async function deployMocks() {
     console.log("Deploying mocks to Chain ID:", getConfigChainID(), "confirmations:", getConfigNumConfirmations())
@@ -27,23 +75,39 @@ async function deployMocks() {
     const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true})
     const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
     const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
+    const mockEnv = new ExistingEnvironment(getConfigChainID())
+    mockEnv.save(weth,soloMargin,meh2016,meh2018)
+}
+async function setupTestEnvironment() {
+    return await releaseWrapper()
 }
 
 // deployer and setup script used in tests and in production too
-async function setupTestEnvironment() {
+// will setup referrals, deploy and setup wrapper
+async function releaseWrapper() {
     ;[owner] = await ethers.getSigners()
-  
+    const exEnv = new ExistingEnvironment(getConfigChainID())
+    const paramExistingEnvironment = exEnv.load()
     // deploy wrapper
-    // constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)   
+    // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     const mehWrapper = await deployContract(
         "MehWrapper", 
         {"isVerbouse": true, "gasReporter": gasReporter},
-        oldMehAddress,
-        newMehAddress,
-        wethAddress,
-        soloMarginAddress
+        paramExistingEnvironment.meh2016, // oldMehAddress,
+        paramExistingEnvironment.meh2018, // newMehAddress,
+        paramExistingEnvironment.weth, //  wethAddress,
+        paramExistingEnvironment.soloMargin // soloMarginAddress
         )
+
+
     
+    // TODO
+    // make mocks work locally
+    // weth and oldMeh should load from mocks when using mocks
+    // chain of referrals
+
+
+
     // FLASHLOAN
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
     const weth = new ethers.Contract(wethAddress, wethAbi, owner)
@@ -154,5 +218,6 @@ async function waitForActivationTime(level) {
 
 module.exports = {
     setupTestEnvironment,
-    deployMocks
+    deployMocks,
+    releaseWrapper
 }
