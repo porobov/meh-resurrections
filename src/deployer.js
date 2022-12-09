@@ -8,14 +8,9 @@ const conf = require('../conf.js')
 
 const oldMehAbi = conf.oldMehAbi
 const newMehAbi = conf.newMehAbi
-const oldMehAddress = conf.oldMehAddress
-const newMehAddress = conf.newMehAddress
 const wethAbi = conf.wethAbi
-const wethAddress = conf.wethAddress
-const mehAdminAddress = "0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1"
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
-const soloMarginAddress = '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e'
 
 // 😱
 async function deployToProduction () {
@@ -27,11 +22,14 @@ class ExistingEnvironment {
         this.chainID = chainID
         this.path = this.getPath(chainID)
         this.defaultJSON = {
-            'weth': wethAddress,
-            'soloMargin': soloMarginAddress,
-            'meh2016': oldMehAddress,
-            'meh2018': newMehAddress,
+            'mehAdminAddress': '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
+            'owner': '',
+            'weth': conf.wethAddress,
+            'soloMargin': '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
+            'meh2016': conf.oldMehAddress,
+            'meh2018': conf.newMehAddress,
         }
+        this.envJSON = {}
     }
 
     getPath(chainID) {
@@ -50,33 +48,38 @@ class ExistingEnvironment {
             message = chalk.red('loaded real contract addresses')
         } finally {
             console.log(message)
+            console.log(addressesJSON)
             return addressesJSON
         }
     }
 
-    save(weth,soloMargin,meh2016,meh2018) {
-        const addressesJSON = {
-            'weth': weth,
-            'soloMargin': soloMargin,
-            'meh2016': meh2016,
-            'meh2018': meh2018,
-        }
-
-        fs.writeFileSync(this.path, JSON.stringify(addressesJSON))
+    save(json) {
+        fs.writeFileSync(this.path, JSON.stringify(json))
         console.log('Wrote mock addresses for chainID:', this.chainID)
         }
   }
 
 // deploy mocks to a testnet
 async function deployMocks() {
-    console.log("Deploying mocks to Chain ID:", getConfigChainID(), "confirmations:", getConfigNumConfirmations())
-    // WETH mock 
+    ;[owner] = await ethers.getSigners()
+    console.log(
+        "Deploying mocks to Chain ID:", getConfigChainID(), 
+        "\nConfirmations:", getConfigNumConfirmations(),
+        "\nDeployed by:", owner.address)
+    // mocks
     const weth = await deployContract("WETH9", {"isVerbouse": true})
     const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true})
     const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
     const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
     const mockEnv = new ExistingEnvironment(getConfigChainID())
-    mockEnv.save(weth,soloMargin,meh2016,meh2018)
+    mockEnv.save({
+        'mehAdminAddress': owner.address,
+        'owner': owner.address,
+        'weth': weth.address,
+        'soloMargin': soloMargin.address,
+        'meh2016': meh2016.address,
+        'meh2018': meh2018.address,
+    })
 }
 async function setupTestEnvironment() {
     return await releaseWrapper()
@@ -87,43 +90,65 @@ async function setupTestEnvironment() {
 async function releaseWrapper() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ExistingEnvironment(getConfigChainID())
-    const paramExistingEnvironment = exEnv.load()
+    const envAddresses = exEnv.load()
+
+    const meh2016address = envAddresses.meh2016 // oldMehAddress
+    const meh2018address = envAddresses.meh2018 // newMehAddress
+    const wethAddress = envAddresses.weth //  wethAddress
+    const soloMarginAddress = envAddresses.soloMargin // soloMarginAddress
+    let mehAdmin
+
+    // select mehAdmin
+    // if deployed form mock meh admin is the one who deployed
+    if (envAddresses.owner == envAddresses.mehAdminAddress) {
+        // current owner must be the sae as the one who deployed mocks
+        if (envAddresses.owner == owner.address) {
+            mehAdmin = owner
+        } else {
+            console.log(chalk.red('Current wallet differs from the one used to deploy mocks'))
+        }
+    } else {
+        if (getConfigChainID() == '1') {
+            throw('read mehAdmin key from disk (not implemented yet)')
+        } else {
+            mehAdmin = await getImpersonatedSigner(envAddresses.mehAdminAddress)
+        }
+    }
+    
     // deploy wrapper
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     const mehWrapper = await deployContract(
         "MehWrapper", 
         {"isVerbouse": true, "gasReporter": gasReporter},
-        paramExistingEnvironment.meh2016, // oldMehAddress,
-        paramExistingEnvironment.meh2018, // newMehAddress,
-        paramExistingEnvironment.weth, //  wethAddress,
-        paramExistingEnvironment.soloMargin // soloMarginAddress
-        )
+        meh2016address,
+        meh2018address,
+        wethAddress,
+        soloMarginAddress,
+    )
 
-
-    
     // TODO
-    // make mocks work locally
-    // weth and oldMeh should load from mocks when using mocks
-    // chain of referrals
 
-
+    // chain of referrals in separate script
 
     // FLASHLOAN
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
     const weth = new ethers.Contract(wethAddress, wethAbi, owner)
     await weth.deposit({value: 2})
     await weth.transfer(mehWrapper.address, 2)
-  
+ 
     // REFERRALS
-    const mehAdmin = await getImpersonatedSigner(mehAdminAddress)
 
     // get oldMeh instance
-    const oldMeh = new ethers.Contract(oldMehAddress, oldMehAbi, mehAdmin)
+    const oldMeh = new ethers.Contract(meh2016address, oldMehAbi, mehAdmin)
+    // const oldMeh = new ethers.Contract(meh2016address, oldMehAbi, owner)
+
     // unpause oldMEH
     await oldMeh.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+    
     // deploy and setup chain of referrals (writes to oldMEH)
-    const referrals = await setupChainOfReferrals(mehAdmin, oldMehAddress, mehWrapper, gasReporter)
+    const referrals = await setupChainOfReferrals(mehAdmin, meh2016address, mehWrapper, gasReporter)
     // set first referral as charity address
+ 
     await oldMeh.adminContractSettings(0, referrals[0].address, 0)
     // wrapper signs in to old meh
     await mehWrapper.signIn(referrals[referrals.length-1].address)
@@ -137,6 +162,7 @@ async function releaseWrapper() {
       referrals: referrals,
       owner: owner
     }
+    
   }
 
 // helper to deploy any contract by name
@@ -170,6 +196,12 @@ async function getImpersonatedSigner(addr) {
         method: "hardhat_impersonateAccount",
         params: [addr],
       });
+    // topup balance
+    // await network.provider.send("hardhat_setBalance", [
+    //     addr,
+    //     "0x100000",
+    // ]);
+
     return ethers.getSigner(addr)
 }
 
