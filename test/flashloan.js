@@ -44,7 +44,7 @@ describe("Flashloan", function () {
     // now wrapper can buy blocks for free 
     // as it collects all the revenue from referrals and charity
     const tx = await mehWrapper.connect(owner).mint(83,83,83,83,{value: ethers.utils.parseEther("0.25")});
-    const receipt = await tx.wait(1)
+    const receipt = await tx.wait(1)  // TODO look for these wait() expressions
     // gas
     const gasCosts = receipt.cumulativeGasUsed.mul(ethers.utils.parseUnits ("30", "gwei"))
     console.log("gas:", receipt.cumulativeGasUsed.toNumber())
