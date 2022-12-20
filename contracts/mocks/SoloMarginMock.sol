@@ -93,6 +93,7 @@ function _call(
             args.account,
             args.data
         );
+        WETH.transferFrom(args.callee, address(this), 2 ether);
 
         // Events.logCall(args);
     }

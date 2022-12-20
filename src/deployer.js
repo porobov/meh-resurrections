@@ -209,7 +209,7 @@ class Deployer {
         await this.mehWrapper.signIn(this.referrals[this.referrals.length-1].address)
 
         // FLASHLOAN
-        await this.exEnv.mintWeth(this.mehWrapper.address, "10000")
+        // await this.exEnv.mintWeth(this.mehWrapper.address, "10000")
 
         // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
         // TODO production check that owner got WETH

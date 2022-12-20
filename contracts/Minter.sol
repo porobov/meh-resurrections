@@ -28,7 +28,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
             console.log("......landlord2018", landlord2018);
             landlord = landlord2018;
         } catch (bytes memory reason) {
-            console.log("......reason landlord2018");  // TODO why cannot add reason here?
+            console.log("no landlord in meh2018");  // TODO why cannot add reason here?
         }
         return landlord;
     }
@@ -102,6 +102,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         royalties += areaCrowdsalePrice;
 
         _borrowAndBuyFromMEH(msg.sender, fromX, fromY, toX, toY);
+        console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
     }
 
     // minting blocks reserved for founders and 2018 landlords
