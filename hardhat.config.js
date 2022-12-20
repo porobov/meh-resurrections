@@ -61,14 +61,14 @@ module.exports = {
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
       url: "http://127.0.0.1:8545"
     },
-    hardhat: {
-      forking: {
-        url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
-        // blockNumber: 13132200 /// 13352488 //  // not paused contract
-        blockNumber: 14979315 // fixed recent block number (contracts paused)
-      },
-      timeout: 12000000,
-    },
+    // hardhat: {
+    //   forking: {
+    //     url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
+    //     // blockNumber: 13132200 /// 13352488 //  // not paused contract
+    //     blockNumber: 14979315 // fixed recent block number (contracts paused)
+    //   },
+    //   timeout: 12000000,
+    // },
     // read-only mainnet (for blocks import)
     readMain: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools

@@ -10,13 +10,13 @@ import "./My15.sol";
 
 contract MillionEtherMock is MillionEther {
     
-    function getBlockPrice (uint8 fromX, uint8 fromY, uint blocksSold) internal view override returns (uint) {
-        if (blocks[fromX][fromY].landlord == address(0x0)) { 
-                // when buying at initial sale price doubles every 1000 blocks sold
-                return 0;
-            } else {
-                // when the block is already bought and landlord have set a sell price
-                return blocks[fromX][fromY].sellPrice;
-            }
-        }
+    // function getBlockPrice (uint8 fromX, uint8 fromY, uint blocksSold) internal view override returns (uint) {
+    //     if (blocks[fromX][fromY].landlord == address(0x0)) { 
+    //             // when buying at initial sale price doubles every 1000 blocks sold
+    //             return 0;
+    //         } else {
+    //             // when the block is already bought and landlord have set a sell price
+    //             return blocks[fromX][fromY].sellPrice;
+    //         }
+    //     }
 }

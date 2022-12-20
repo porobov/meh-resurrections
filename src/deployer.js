@@ -119,6 +119,13 @@ class ProjectEnvironment {
         fs.writeFileSync(this.existingEnvironmentPath, JSON.stringify(json))
         console.log('Wrote mock addresses for chainID:', this.chainID)
         }
+    
+    // mintTo(address guy, uint wad)
+    async mintWeth(recipient, amountInWeth) {
+        const amountInWei = ethers.utils.parseUnits(amountInWeth, "ether")
+        await this.weth.mintTo(recipient, amountInWei)
+        console.log("minted", amountInWeth, "weth to", recipient )
+    }
 
     async waitForActivationTime(level) {
         if (this.isLocalTestnet) {
@@ -138,10 +145,23 @@ async function deployMocks() {
         "\nDeployed by:", owner.address)
     // mocks
     const weth = await deployContract("WETH9", {"isVerbouse": true})
-    const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true})
+    const soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true}, weth.address)
     const meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
     const meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
     const mockEnv = new ProjectEnvironment(getConfigChainID())
+    
+    // sending funds to mocks
+    // sending eth to weth mock
+    await weth.deposit({
+        value: ethers.utils.parseEther("2.0")
+    })
+    // minting weth to soloMargin
+    const amountInWei = ethers.utils.parseUnits("1000000", "ether")
+    await weth.mintTo(soloMargin.address, amountInWei)
+
+
+
+
     mockEnv.createExistingEnvironment({
         'mehAdminAddress': owner.address,
         'mocksOwner': owner.address,
@@ -189,7 +209,10 @@ class Deployer {
         await this.mehWrapper.signIn(this.referrals[this.referrals.length-1].address)
 
         // FLASHLOAN
+        await this.exEnv.mintWeth(this.mehWrapper.address, "10000")
+
         // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
+        // TODO production check that owner got WETH
         await this.exEnv.weth.deposit({value: 2})
         await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
 

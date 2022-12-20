@@ -1,7 +1,9 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
+import "hardhat/console.sol";
 import "../libs/dydx.sol";
+import "../interfaces/IWeth.sol";
 
 // This is stripped off SoloMargin contract
 // https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/impl/OperationImpl.sol
@@ -32,6 +34,12 @@ interface ICallee {
 }
 
 contract SoloMarginMock {
+
+IWETH public WETH;
+
+constructor(address wethAddress) {
+        WETH = IWETH(wethAddress);
+    }
 
 function operate(
         Account.Info[] memory accounts,
@@ -77,7 +85,9 @@ function _call(
         Actions.CallArgs memory args
     )
         private
-    {
+    {   
+        console.log("Sending weth to:", args.callee);
+        WETH.transfer(args.callee, 2 ether);
         ICallee(args.callee).callFunction(
             msg.sender,
             args.account,

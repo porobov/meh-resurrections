@@ -20,12 +20,12 @@ contract Receiver is UsingGlobals {
     // TODO now remove receiver from referral, see what can be simplified now
     receive() external payable {
         // console.log("Receiver: received from %s", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
-        require(
+        // require(
             // msg.sender == address(WETH) || // should use this line, but had to use the following one
             // TODO also check why SoloMargin still works when commenting WETH address
-            msg.sender == address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2) ||  // hardhat bug?
-            msg.sender == address(oldMeh),
-            "Receiver: Only receives from oldMEH or WETH");
+            // msg.sender == address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2) ||  // hardhat bug?
+            // msg.sender == address(oldMeh),
+            // "Receiver: Only receives from oldMEH or WETH");
         // console.log("Receiver: ..."); // add this line to break code 🤷‍♂️ bug
         
         if (msg.sender == address(oldMeh)) {

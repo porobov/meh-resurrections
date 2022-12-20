@@ -129,6 +129,8 @@ contract Flashloaner is ICallee, Receiver {
             uint8 toY
         ) = abi.decode(data, (uint256, address, uint8, uint8, uint8, uint8));
 
+        console.log("Loan:", loanAmount + 2);
+        console.log("balanceOf:", WETH.balanceOf(address(this)));
         require(WETH.balanceOf(address(this)) >= loanAmount + 2, 
             "CANNOT REPAY LOAN");
         // convert WETH to eth
