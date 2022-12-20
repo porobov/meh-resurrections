@@ -52,8 +52,10 @@ class ProjectEnvironment {
         this.envJSON = {}
         this.referralActivationTime = 3600
 
+        this.soloMarginAddress
+        this.mehAdminAddress
         this.meh2018
-        this.soloMargin
+        
         this.meh2016
         this.weth
     }
@@ -105,10 +107,11 @@ class ProjectEnvironment {
         // return addressesJSON
         // TODO put Real meh2018 here ↓↓↓
 
-        this.meh2018 = await ethers.getContractAt("IMeh2018", addressesJSON.meh2018)
-        this.soloMargin = await ethers.getContractAt("ISoloMargin", addressesJSON.soloMargin)
+        // this.meh2018 = await ethers.getContractAt("IMeh2018", addressesJSON.meh2018)
+        this.meh2018 = new ethers.Contract(addressesJSON.meh2018, newMehAbi, this.operatorWallet)
         this.meh2016 = new ethers.Contract(addressesJSON.meh2016, oldMehAbi, mehAdmin)
         this.weth = await ethers.getContractAt("WETH9", addressesJSON.weth)
+        this.soloMarginAddress = addressesJSON.soloMargin
         this.mehAdminAddress = mehAdmin.address
     }
 
@@ -173,11 +176,13 @@ class Deployer {
 
     async deployLocally() {
         await this.initialize()
-       
-        await this.deployReferralFactory()
+
         await this.unpauseMeh2016()
+        await this.deployReferralFactory()
         await this.deployReferrals()
+
         await this.deployWrapper()
+
         await this.pairRefsAndWrapper()
         await this.setMeh2016CharityAddress(this.getFirstReferralAddr())
         // wrapper signs in to old meh
@@ -224,7 +229,9 @@ class Deployer {
         await this.exEnv.meh2016.adminContractSettings(0, charityAddress, 0)
     }
 
+    // will deploy factory. Need unpaused MEH
     async deployReferralFactory() {
+        // TODO check if MEH is paused ()
         console.log("Deploying referral factory")
         const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
         this.referralFactory = await referralFactoryFactory.deploy(
@@ -250,7 +257,7 @@ class Deployer {
         let currentReferralAddr = this.referralsAddr[this.referralsAddr.length-1]
         let level = this.referralsAddr.length + 1  // TODO check this logic
         let newRef
-        for (level; level <= 7; level++) {  // TODO previously it was 7 
+        for (level; level <= 8; level++) {  // TODO previously it was 7 
           newRef = await this.setUpReferral(currentReferralAddr)
           await this.exEnv.waitForActivationTime(level)
           this.referrals.push(newRef)
@@ -281,7 +288,7 @@ class Deployer {
             this.exEnv.meh2016.address,
             this.exEnv.meh2018.address,
             this.exEnv.weth.address,
-            this.exEnv.soloMargin.address,
+            this.exEnv.soloMarginAddress,
         )
         await this.mehWrapper.deployed() // wait numConf TODO?
         console.log("MehWrapper deplyed to:", this.mehWrapper.address)
