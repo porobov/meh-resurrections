@@ -10,3 +10,4 @@ artifacts
 .DS_Store
 .DS_Store
 env_readme.txt
+test/mocking/31337_addresses.json
