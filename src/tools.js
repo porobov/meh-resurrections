@@ -1,18 +1,16 @@
 const { ethers, network } = require("hardhat");
 
 // returns impersonated signer for local hardfork
+// if "ProviderError: unknown account..." see below
+// https://github.com/NomicFoundation/hardhat/issues/1226 
 async function getImpersonatedSigner(addr) {
-  await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [addr],
-    });
-  // topup balance
-  // await network.provider.send("hardhat_setBalance", [
-  //     addr,
-  //     "0x100000",
-  // ]);
-
-  return ethers.getSigner(addr)
+  // old solution
+  // await hre.network.provider.request({
+  //     method: "hardhat_impersonateAccount",
+  //     params: [addr],
+  //   });
+  // return ethers.getSigner(addr)
+  return ethers.getImpersonatedSigner(addr);
 }
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)

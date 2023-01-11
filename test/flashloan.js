@@ -6,19 +6,7 @@ const { setupTestEnvironment } = require("../src/deployer.js")
 describe("Flashloan", function () {
   this.timeout(142000)
   before('setup', async () => {
-    // reset fork
-    // await network.provider.request({
-    //   method: "hardhat_reset",
-    //   params: [
-    //     {
-    //       forking: {
-    //         jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
-    //         blockNumber: 14979315,
-    //       },
-    //     },
-    //   ],
-    // });
-    let env = await setupTestEnvironment()
+    let env = await setupTestEnvironment(true)
     owner = env.owner
     mehWrapper = env.mehWrapper
     referrals= env.referrals
