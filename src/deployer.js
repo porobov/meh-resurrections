@@ -3,7 +3,7 @@ const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
 const { BigNumber } = require("ethers")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { concat } = require('ethers/lib/utils.js')
 
@@ -22,19 +22,7 @@ async function deployToProduction () {
 async function releaseWrapper() {
 }
 
-async function resetHardhatToBlock(blockNumber){
-    await network.provider.request({
-        method: "hardhat_reset",
-        params: [
-            {
-            forking: {
-                jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
-                blockNumber: blockNumber,  
-            },
-            },
-        ],
-        });
-}
+
 // deployer and setup script used in tests
 // will setup referrals, deploy and setup wrapper
 // ensures all contracts are in clean state either by fork or redeploying
@@ -140,7 +128,7 @@ class ProjectEnvironment {
                 addressesJSON = JSON.parse(fs.readFileSync(this.existingEnvironmentPath))
                 message = chalk.green('loaded mock addresses for chainID: ' + this.chainID)
             } catch (err) {
-                console.log("Mocks don's exist")
+                console.log("Mocks don't exist")
                 throw err
             }
         } else {
@@ -205,9 +193,6 @@ class ProjectEnvironment {
 
 
 
-
-
-
 class Deployer {
     constructor(existingEnvironment) {
         this.exEnv = existingEnvironment
@@ -217,10 +202,8 @@ class Deployer {
     async initialize(){
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
         this.isSavingOnDisk = false
-        this.referralFactory
-        this.referralsAddr = [this.exEnv.mehAdminAddress] // TODO remove this array it's an unnecessary duplicate
+        this.referralsAddr  // referral addresses
         this.referrals = []  // referral contracts only
-        this.mehWrapper
     }
 
     async deployLocally() {
@@ -255,7 +238,7 @@ class Deployer {
 
     // this address is used as 0 referral (not a contract)
     getMehAdminAddr() {
-        return this.referralsAddr[0]
+        return this.exEnv.mehAdminAddress
     }
 
     // returns first referral-contract in chain
@@ -304,11 +287,11 @@ class Deployer {
         return referral
     }
 
+    // deploy the whole chain of referrals in tests 
     async deployReferrals() {
-        let currentReferralAddr = this.referralsAddr[this.referralsAddr.length-1]
-        let level = this.referralsAddr.length + 1  // TODO check this logic
+        let currentReferralAddr = this.getMehAdminAddr()
         let newRef
-        for (level; level <= 8; level++) {  // TODO previously it was 7 
+        for (let level = 1; level <= 7; level++) {
           newRef = await this.setUpReferral(currentReferralAddr)
           await this.exEnv.waitForActivationTime(level)
           this.referrals.push(newRef)

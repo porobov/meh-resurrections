@@ -58,11 +58,26 @@ class GasReporter {
   }
 }
 
+async function resetHardhatToBlock(blockNumber){
+  await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+          {
+          forking: {
+              jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+              blockNumber: blockNumber,  
+          },
+          },
+      ],
+      });
+}
+
 module.exports = { 
   GasReporter, 
   increaseTimeBy, 
   getFormattedBalance,
   getConfigChainID,
   getConfigNumConfirmations,
-  getImpersonatedSigner
+  getImpersonatedSigner,
+  resetHardhatToBlock
 }
