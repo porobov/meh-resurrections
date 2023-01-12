@@ -12,7 +12,7 @@ const newMehAbi = conf.newMehAbi
 const wethAbi = conf.wethAbi
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
-
+const NUM_OF_REFERRALS = 7
 // 😱
 async function deployToProduction () {
 
@@ -40,8 +40,11 @@ async function setupTestEnvironment(isUsingMocks = true) {
         await exEnv.loadExistingEnvironment()
     }
     const deployer = new Deployer(exEnv)
-    return await deployer.deployLocally() 
-  }
+    return await deployer.deployLocally()
+}
+
+
+
 
 // deploy params DeployParams
 class ProjectEnvironment {
@@ -190,37 +193,61 @@ class ProjectEnvironment {
 
 
 
+class Constants {
+    constructor() {
+        let constants
+    }
 
+    add(record) {
+        this.constants = {
+            ...this.constants,
+            ...record
+        }
+    }
 
+    save() {
+        console.log(this.constants)
+    }
+}
+let constants = new Constants()
 
 class Deployer {
     constructor(existingEnvironment) {
+        this.isSavingOnDisk = false
         this.exEnv = existingEnvironment
+        this.referrals = []
     }
 
     // will initialize and load previous state
     async initialize(){
+        this.isLiveNetwork = false  // either testnet or mainnet
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
-        this.isSavingOnDisk = false
-        this.referralsAddr  // referral addresses
-        this.referrals = []  // referral contracts only
     }
 
+    loadConstants() {
+
+    }
+
+    // deloy locally
     async deployLocally() {
+
         await this.initialize()
 
-        await this.unpauseMeh2016()
-        await this.deployReferralFactory()
-        await this.deployReferrals()
+        this.referralFactory ? {} : await this.deployReferralFactory()
+
+        this.numOfReferrals() == NUM_OF_REFERRALS ? {} : await this.deployReferrals()
+        constants.save()
 
         await this.deployWrapper()
 
         await this.pairRefsAndWrapper()
-        await this.setMeh2016CharityAddress(this.getFirstReferralAddr())
-        // wrapper signs in to old meh
-        await this.mehWrapper.signIn(this.referrals[this.referrals.length-1].address)
 
-        // FLASHLOAN
+        await this.setMeh2016CharityAddress(this.getFirstReferral().address)
+        // wrapper signs in to old meh
+        await this.unpauseMeh2016()
+        await this.mehWrapper.signIn(this.getLastReferral().address)
+
+        // FLASHLOAN 
         // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
         // TODO production check that owner got WETH
         await this.exEnv.weth.deposit({value: 2})
@@ -233,8 +260,8 @@ class Deployer {
             mehWrapper: this.mehWrapper,
             referrals: this.referrals,
             owner: this.exEnv.operatorWallet
-          }
-    }
+            }
+        }
 
     // this address is used as 0 referral (not a contract)
     getMehAdminAddr() {
@@ -242,18 +269,28 @@ class Deployer {
     }
 
     // returns first referral-contract in chain
-    getFirstReferralAddr() {
-        return this.referrals[0].address
+    getFirstReferral() {
+        return this.referrals[0]
     }
 
-    getLastReferralArrd() {
-        return this.referrals[(this.referrals.length - 1)].address
+    getLastReferral() {
+        return this.referrals[this.referrals.length - 1]
+    }
+
+    numOfReferrals() {
+        return this.referrals.length
     }
 
     // unpause oldMEH (refferals register in oldMeh at deploy)
+    // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
         await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
         console.log("MEH unpaused...")
+    }
+
+    async pauseMeh2016() {
+        await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
+        console.log("MEH paused...")
     }
 
     // set first contract-referral as charity address
@@ -271,9 +308,11 @@ class Deployer {
         this.referralFactory = await referralFactoryFactory.deploy(
             this.exEnv.meh2016.address, 
             this.getMehAdminAddr());
+        constants.add({referralFactoryAddr: this.referralFactory.address})
     }
 
     async setUpReferral(referralAddress) {
+        await this.unpauseMeh2016()
         const tx = await this.referralFactory.createReferral(this.exEnv.meh2016.address, referralAddress)
         const reciept = await tx.wait(this.exEnv.numConf)
         const blockNumber = reciept.blockNumber
@@ -284,19 +323,29 @@ class Deployer {
         const referral = await ethers.getContractAt("Referral", newRefAddress)
         // this.gasReporter.addGasRecord("Referrals", refGasUsed)
         console.log("Deployed referral:", referral.address )
+        await this.pauseMeh2016()
         return referral
     }
 
     // deploy the whole chain of referrals in tests 
     async deployReferrals() {
+        // level shows how far it is from mehAdmin (who is 0)
+        let level = this.numOfReferrals() + 1
         let currentReferralAddr = this.getMehAdminAddr()
-        let newRef
-        for (let level = 1; level <= 7; level++) {
-          newRef = await this.setUpReferral(currentReferralAddr)
-          await this.exEnv.waitForActivationTime(level)
+        if (level > 1) {
+            currentReferralAddr = this.getLastReferral()
+        }
+        for (level; level <= NUM_OF_REFERRALS; level++) {
+          let newRef = await this.setUpReferral(currentReferralAddr)
           this.referrals.push(newRef)
           currentReferralAddr = newRef.address
+          if (this.isLiveNetwork) {
+            console.log("Live network. Wait for activation time and rerun script")
+            break 
+          } else { 
+            await this.exEnv.waitForActivationTime(level) }
         }
+        constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
     
     // Pairs referrals and wrapper
