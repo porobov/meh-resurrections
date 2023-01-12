@@ -13,6 +13,16 @@ const wethAbi = conf.wethAbi
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
 const NUM_OF_REFERRALS = 7
+// current timestamp = 1673521526 = 2 ** 30.64
+// 315360000 = 2 ** 28.23 (10 years)
+// (1) 1988881526 = 2 ** 30.89 (activation time at 1st level) (timestamp + setting delay)
+// (2) 2304241526 = 2 ** 31.1
+// (7) 21856561526 = 2 ** 34.35
+// activation_time = uint32(block.timestamp + _setting_delay * (2**(_currentLevel-1)))
+// TODO // 2 ** 30.64 + 7 * 2 ** t = 2 ** 32 // find t 
+const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in uint32
+
+
 // 😱
 async function deployToProduction () {
 
@@ -40,7 +50,7 @@ async function setupTestEnvironment(isUsingMocks = true) {
         await exEnv.loadExistingEnvironment()
     }
     const deployer = new Deployer(exEnv)
-    return await deployer.deployLocally()
+    return await deployer.deployAndSetup()
 }
 
 
@@ -205,6 +215,10 @@ class Constants {
         }
     }
 
+    get() {
+        return constants
+    }
+
     save() {
         console.log(this.constants)
     }
@@ -215,44 +229,68 @@ class Deployer {
     constructor(existingEnvironment) {
         this.isSavingOnDisk = false
         this.exEnv = existingEnvironment
-        this.referrals = []
+        
     }
 
     // will initialize and load previous state
     async initialize(){
         this.isLiveNetwork = false  // either testnet or mainnet
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
+        this.loadConstants()
     }
 
-    loadConstants() {
+    async loadConstants() {
+        let cnsts = constants.get()
 
+        if (cnsts.referralFactoryAddr) {
+            this.referralFactory = await ethers.getContractAt("ReferralFactory", cnsts.referralFactoryAddr)
+        }
+
+        if (cnsts.referralsAddresses) {
+            for (let referralAddr of cnsts.referralsAddresses) {
+                this.referrals.push(await ethers.getContractAt("Referral", referralAddr))
+            }
+        } else {
+            this.referrals = []
+        }
+        
+        if (cnsts.wrapperAddresses) {
+            this.wrapper = await ethers.getContractAt("MehWrapper", cnsts.wrapperAddresses)
+        }
+        
+        cnsts.areRefsAndWrapperPaired ? this.areRefsAndWrapperPaired = cnsts.areRefsAndWrapperPaired : {} 
     }
 
-    // deloy locally
-    async deployLocally() {
+    // deloy
+    async deployAndSetup() {
 
         await this.initialize()
 
-        this.referralFactory ? {} : await this.deployReferralFactory()
+        this.referralFactory ? {} : 
+            await this.deployReferralFactory()
 
-        this.numOfReferrals() == NUM_OF_REFERRALS ? {} : await this.deployReferrals()
-        constants.save()
+        this.numOfReferrals() >= NUM_OF_REFERRALS ? {} : 
+            await this.deployReferrals()
+        
+        this.wrapper ? {} : 
+            await this.deployWrapper()
 
-        await this.deployWrapper()
+        this.areRefsAndWrapperPaired ? {} :
+            await this.pairRefsAndWrapper()
 
-        await this.pairRefsAndWrapper()
-
-        await this.setMeh2016CharityAddress(this.getFirstReferral().address)
         // wrapper signs in to old meh
         await this.unpauseMeh2016()
         await this.mehWrapper.signIn(this.getLastReferral().address)
+        
+        // setting charity address and NEW_DELAY
+        await this.finalMeh2016settings()
 
         // FLASHLOAN 
         // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
-        // TODO production check that owner got WETH
         await this.exEnv.weth.deposit({value: 2})
         await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
 
+        constants.save()
         gasReporter.reportToConsole()
 
         return {
@@ -294,10 +332,17 @@ class Deployer {
     }
 
     // set first contract-referral as charity address
+    
     // used to be referrals[0].address
-    async setMeh2016CharityAddress(charityAddress) {
+    //function adminContractSettings (
+        // uint32 newDelayInSeconds, 
+        // address newCharityAddress, 
+        // uint newImagePlacementPriceInWei)
+    async finalMeh2016settings() {
+        let charityAddress = this.getFirstReferral().address
         console.log("Setting charity address:", charityAddress)
-        await this.exEnv.meh2016.adminContractSettings(0, charityAddress, 0)
+        console.log("Setting new delay in seconds:", NEW_DELAY)
+        await this.exEnv.meh2016.adminContractSettings(NEW_DELAY, charityAddress, 0)
     }
 
     // will deploy factory. Need unpaused MEH
@@ -358,6 +403,7 @@ class Deployer {
             referralsGas += receipt.gasUsed
             console.log("Registered ref:", referral.address)
         }
+        constants.add({areRefsAndWrapperPaired: true})
         // this.gasReporter.addGasRecord("Registering referrals", referralsGas)
     }
 
@@ -375,6 +421,7 @@ class Deployer {
         )
         await this.mehWrapper.deployed() // wait numConf TODO?
         console.log("MehWrapper deplyed to:", this.mehWrapper.address)
+        constants.add({wrapperAddresses: this.mehWrapper.address})
     }
 
 
