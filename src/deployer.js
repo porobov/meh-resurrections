@@ -3,7 +3,7 @@ const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
 const { BigNumber } = require("ethers")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isThisLiveNetwork } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { concat } = require('ethers/lib/utils.js')
 
@@ -49,7 +49,7 @@ async function setupTestEnvironment(isUsingMocks = true) {
         await resetHardhatToBlock(conf.mainnetBlockWhenMEHWasPaused)  // TODO make configurable depending on chain 
         await exEnv.loadExistingEnvironment()
     }
-    const deployer = new Deployer(exEnv)
+    const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
     return await deployer.deployAndSetup()
 }
 
@@ -61,10 +61,7 @@ class ProjectEnvironment {
     constructor(chainID, operatorWallet) {
         this.chainID = chainID
         this.numConf = getConfigNumConfirmations(chainID)
-        this.isLocalTestnet = false
-        if (this.chainID == '31337') {
-            this.isLocalTestnet = true
-        }
+        this.isLocalTestnet = isLocalTestnet()
         this.operatorWallet = operatorWallet
         this.isUsingMocks = false
         this.existingEnvironmentPath = this.getPath(chainID)
@@ -236,8 +233,9 @@ class Constants {
 
 
 class Deployer {
-    constructor(existingEnvironment) {
-        this.isSavingOnDisk = false
+    constructor(existingEnvironment, options) {
+        this.isSavingOnDisk = options.isSavingOnDisk
+        this.isLiveNetwork = !isLocalTestnet()
         this.exEnv = existingEnvironment
         this.constants = new Constants(getConfigChainID())
         
@@ -245,7 +243,6 @@ class Deployer {
 
     // will initialize and load previous state
     async initialize(){
-        this.isLiveNetwork = false  // either testnet or mainnet
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
         await this.loadConstants()
     }
@@ -306,7 +303,15 @@ class Deployer {
         } catch (e) {
             throw e
         } finally {
-            this.constants.save(getConfigChainID())
+            // add constants from existing environment
+            this.constants.add({
+                'weth': this.exEnv.weth.address,
+                'soloMargin': this.exEnv.soloMargin.address,
+                'meh2016': this.exEnv.meh2016.address,
+                'meh2018': this.exEnv.meh2018.address,
+            })
+            this.isSavingOnDisk || this.isLiveNetwork ? 
+                this.constants.save(getConfigChainID()) : {}
         }
         gasReporter.reportToConsole()
 
