@@ -50,10 +50,12 @@ async function setupMocks() {
 }
 
 // for live testnet
-async function setupWrapper() {
+async function releaseWrapper() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
     await exEnv.loadExistingEnvironment()
+    const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
+    return await deployer.deployAndSetup()
 }
 
 
@@ -493,6 +495,6 @@ async function deployContract(contractName, options, ...args) {
 
 module.exports = {
     setupTestEnvironment,
-    setupWrapper,
+    releaseWrapper,
     setupMocks
 }
