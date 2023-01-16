@@ -1,5 +1,5 @@
 // npx hardhat run scripts/deployMocks.js
 
-const { deployMocks } = require("../src/deployer.js")
+const { setupMocks } = require("../src/deployer.js")
 
-// deployMocks()
+setupMocks()

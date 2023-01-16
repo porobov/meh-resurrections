@@ -22,49 +22,51 @@ const NUM_OF_REFERRALS = 7
 // TODO // 2 ** 30.64 + 7 * 2 ** t = 2 ** 32 // find t 
 const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in uint32
 
-
-// 😱
-async function deployToProduction () {
-
-}
-
-
-async function releaseWrapper() {
-}
-
-
 // deployer and setup script used in tests
 // will setup referrals, deploy and setup wrapper
 // ensures all contracts are in clean state either by fork or redeploying
-async function setupTestEnvironment(isUsingMocks = true) {
+async function setupTestEnvironment(isDeployingMocks = true) {
 
     ;[owner] = await ethers.getSigners()
-    const exEnv = new ProjectEnvironment(getConfigChainID(), owner)
+    const exEnv = new ProjectEnvironment(owner)
 
     // reset fork or redeploy mocks
-    if (isUsingMocks) {
-        await exEnv.deployMocks()
+    if (isDeployingMocks) {
+        await exEnv.deployMocks(false)  // not saving mocks on disk
     } else {
         // resetting hardfork (before loading existing env and impersonating admin!!!)
         await resetHardhatToBlock(conf.mainnetBlockWhenMEHWasPaused)  // TODO make configurable depending on chain 
         await exEnv.loadExistingEnvironment()
     }
-    const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
+    const deployer = new Deployer(exEnv, {isSavingOnDisk: false})
     return await deployer.deployAndSetup()
 }
 
+// for live testnet
+async function setupMocks() {
+    ;[owner] = await ethers.getSigners()
+    const exEnv = new ProjectEnvironment(owner)
+    await exEnv.deployMocks(true)
+}
+
+// for live testnet
+async function setupWrapper() {
+    ;[owner] = await ethers.getSigners()
+    const exEnv = new ProjectEnvironment(owner)
+    await exEnv.loadExistingEnvironment()
+}
 
 
 
 // deploy params DeployParams
 class ProjectEnvironment {
-    constructor(chainID, operatorWallet) {
-        this.chainID = chainID
-        this.numConf = getConfigNumConfirmations(chainID)
+    constructor(operatorWallet) {
+        this.chainID = getConfigChainID()
+        this.numConf = getConfigNumConfirmations(this.chainID)
         this.isLocalTestnet = isLocalTestnet()
-        this.operatorWallet = operatorWallet
         this.isUsingMocks = false
-        this.existingEnvironmentPath = this.getPath(chainID)
+        this.operatorWallet = operatorWallet
+        this.existingEnvironmentPath = this.getPath(this.chainID)
         this.defaultJSON = {
             'mehAdminAddress': '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
             'mocksOwner': '',
@@ -96,6 +98,7 @@ class ProjectEnvironment {
         this.meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
         this.soloMarginAddress = this.soloMargin.address
         this.mehAdminAddress = owner.address
+        this.isUsingMocks = true
 
         // sending ETH to weth mock
         // Flashloaner contract will use this eth to buy from OldMEH
@@ -108,8 +111,6 @@ class ProjectEnvironment {
         // Solomargin needs a pool of weth to issue loans
         const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
         await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
-        
-        this.isUsingMocks = true
 
         if (isSavingToDisk) {
             this.saveExistingEnvironment({
@@ -129,22 +130,33 @@ class ProjectEnvironment {
         }
 
     async loadExistingEnvironment() {
+        // check if contracts already exist - means we are using mocks
+        let mocksAreLoaded = false 
+        if (this.meh2018 && this.meh2016 && this.weth && this.soloMarginAddress && this.mehAdminAddress) {
+            mocksAreLoaded = true
+            this.isUsingMocks = true
+        }
 
         // LOAD MOCKS OR REAL ADDRESSES
         let addressesJSON
         let message
-        if (this.isUsingMocks == true) {
+        // check if mocks are saved on disk - also means we
+        if (!mocksAreLoaded) {
             try {
                 addressesJSON = JSON.parse(fs.readFileSync(this.existingEnvironmentPath))
                 message = chalk.green('loaded mock addresses for chainID: ' + this.chainID)
+                this.isUsingMocks = true
             } catch (err) {
                 console.log("Mocks don't exist")
-                throw err
             }
-        } else {
+        }
+        
+        // load defaults if not using mocks
+        if (this.isUsingMocks != true) {
             addressesJSON = this.defaultJSON
             message = chalk.red('loaded real contract addresses')
         }
+
         console.log(message)
         console.log(addressesJSON)
         
@@ -160,7 +172,8 @@ class ProjectEnvironment {
 
         } else {
             if (getConfigChainID() == '1') {
-                throw('read mehAdmin key from disk (not implemented yet)')
+                // check that operator wallet is real Meh admin
+                throw('read mehAdmin key from disk (not implemented yet)') 
             } else {
                 console.log("Impersonating admin...")
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
@@ -277,8 +290,10 @@ class Deployer {
 
         // 
         try {
+            await this.unpauseMeh2016()
             this.referralFactory ? {} : 
                 await this.deployReferralFactory()
+            await this.pauseMeh2016()
 
             this.numOfReferrals() >= NUM_OF_REFERRALS ? {} : 
                 await this.deployReferrals()
@@ -306,7 +321,7 @@ class Deployer {
             // add constants from existing environment
             this.constants.add({
                 'weth': this.exEnv.weth.address,
-                'soloMargin': this.exEnv.soloMargin.address,
+                'soloMargin': this.exEnv.soloMarginAddress,  // solomargin contract itself is not always present in exEnv
                 'meh2016': this.exEnv.meh2016.address,
                 'meh2018': this.exEnv.meh2018.address,
             })
@@ -478,5 +493,6 @@ async function deployContract(contractName, options, ...args) {
 
 module.exports = {
     setupTestEnvironment,
-    releaseWrapper
+    setupWrapper,
+    setupMocks
 }
