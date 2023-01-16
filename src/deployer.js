@@ -127,7 +127,7 @@ class ProjectEnvironment {
     }
 
     saveExistingEnvironment(json) {
-        fs.writeFileSync(this.existingEnvironmentPath, JSON.stringify(json))
+        fs.writeFileSync(this.existingEnvironmentPath, JSON.stringify(json, null, 2))
         console.log('Wrote mock addresses for chainID:', this.chainID)
         }
 
@@ -204,8 +204,13 @@ class ProjectEnvironment {
 
 
 class Constants {
-    constructor() {
-        let constants
+    constructor(chainID) {
+        try {
+            this.constants = JSON.parse(fs.readFileSync(this.getPath(chainID)))
+        } catch (err) {
+            this.constants = {}
+            console.log("No constants for chain id", chainID)
+        }
     }
 
     add(record) {
@@ -216,19 +221,25 @@ class Constants {
     }
 
     get() {
-        return constants
+        return this.constants
     }
 
-    save() {
-        console.log(this.constants)
+    save(chainID) {
+        fs.writeFileSync(this.getPath(chainID), JSON.stringify(this.constants, null, 2))
+    }
+
+    getPath(chainID) {
+        let filename = chainID.toString() + '_constants.json'
+        return path.join(__dirname, '../constants', filename)
     }
 }
-let constants = new Constants()
+
 
 class Deployer {
     constructor(existingEnvironment) {
         this.isSavingOnDisk = false
         this.exEnv = existingEnvironment
+        this.constants = new Constants(getConfigChainID())
         
     }
 
@@ -236,17 +247,18 @@ class Deployer {
     async initialize(){
         this.isLiveNetwork = false  // either testnet or mainnet
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
-        this.loadConstants()
+        await this.loadConstants()
     }
 
     async loadConstants() {
-        let cnsts = constants.get()
+        let cnsts = this.constants.get()
 
         if (cnsts.referralFactoryAddr) {
             this.referralFactory = await ethers.getContractAt("ReferralFactory", cnsts.referralFactoryAddr)
         }
 
         if (cnsts.referralsAddresses) {
+            this.referrals = []
             for (let referralAddr of cnsts.referralsAddresses) {
                 this.referrals.push(await ethers.getContractAt("Referral", referralAddr))
             }
@@ -266,31 +278,36 @@ class Deployer {
 
         await this.initialize()
 
-        this.referralFactory ? {} : 
-            await this.deployReferralFactory()
+        // 
+        try {
+            this.referralFactory ? {} : 
+                await this.deployReferralFactory()
 
-        this.numOfReferrals() >= NUM_OF_REFERRALS ? {} : 
-            await this.deployReferrals()
-        
-        this.wrapper ? {} : 
-            await this.deployWrapper()
+            this.numOfReferrals() >= NUM_OF_REFERRALS ? {} : 
+                await this.deployReferrals()
+            
+            this.wrapper ? {} : 
+                await this.deployWrapper()
 
-        this.areRefsAndWrapperPaired ? {} :
-            await this.pairRefsAndWrapper()
+            this.areRefsAndWrapperPaired ? {} :
+                await this.pairRefsAndWrapper()
 
-        // wrapper signs in to old meh
-        await this.unpauseMeh2016()
-        await this.mehWrapper.signIn(this.getLastReferral().address)
-        
-        // setting charity address and NEW_DELAY
-        await this.finalMeh2016settings()
+            // wrapper signs in to old meh
+            await this.unpauseMeh2016()
+            await this.mehWrapper.signIn(this.getLastReferral().address)
+            
+            // setting charity address and NEW_DELAY
+            await this.finalMeh2016settings()
 
-        // FLASHLOAN 
-        // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
-        await this.exEnv.weth.deposit({value: 2})
-        await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
-
-        constants.save()
+            // FLASHLOAN 
+            // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
+            await this.exEnv.weth.deposit({value: 2})
+            await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
+        } catch (e) {
+            throw e
+        } finally {
+            this.constants.save(getConfigChainID())
+        }
         gasReporter.reportToConsole()
 
         return {
@@ -353,7 +370,7 @@ class Deployer {
         this.referralFactory = await referralFactoryFactory.deploy(
             this.exEnv.meh2016.address, 
             this.getMehAdminAddr());
-        constants.add({referralFactoryAddr: this.referralFactory.address})
+        this.constants.add({referralFactoryAddr: this.referralFactory.address})
     }
 
     async setUpReferral(referralAddress) {
@@ -390,7 +407,7 @@ class Deployer {
           } else { 
             await this.exEnv.waitForActivationTime(level) }
         }
-        constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
+        this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
     
     // Pairs referrals and wrapper
@@ -403,7 +420,7 @@ class Deployer {
             referralsGas += receipt.gasUsed
             console.log("Registered ref:", referral.address)
         }
-        constants.add({areRefsAndWrapperPaired: true})
+        this.constants.add({areRefsAndWrapperPaired: true})
         // this.gasReporter.addGasRecord("Registering referrals", referralsGas)
     }
 
@@ -421,7 +438,7 @@ class Deployer {
         )
         await this.mehWrapper.deployed() // wait numConf TODO?
         console.log("MehWrapper deplyed to:", this.mehWrapper.address)
-        constants.add({wrapperAddresses: this.mehWrapper.address})
+        this.constants.add({wrapperAddresses: this.mehWrapper.address})
     }
 
 
