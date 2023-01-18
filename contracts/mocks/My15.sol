@@ -54,7 +54,7 @@ contract MillionEther {
     uint internal totalWeiInvested = 0; //1 024 000 Ether max
     bool internal setting_stopped = false;
     bool internal setting_refundMode = false;
-    uint32 internal setting_delay = 3600;
+    uint32 internal setting_delay = 1;  // changed to 1 second for the mock
     uint internal setting_imagePlacementPriceInWei = 0;
 
     // Events
