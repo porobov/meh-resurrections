@@ -27,11 +27,23 @@ contract Collector is UsingGlobals, Ownable {
     function _withdrawFromReferrals() internal {
         // using reverse order and do only 6 referrals
         // a way to upgrade referrals
-        console.log("... _withdrawFromReferrals");
-        for (uint i = 5; i > 0; i--) {
-            Referral(referrals[i]).withdraw();
-            console.log("... withdrawed from %s: %s", i, referrals[i]);
+        uint8 numOfRefs = uint8(referrals.length);
+
+        console.log("... withdrawFromReferrals start index: %s", numOfRefs);
+        console.log("referrals: %s", referrals[0]);
+        // for (uint i = 5; i > 0; i--) {
+        // withdrawing from 6 last referrals
+        uint8 collected = 0;
+        while (collected < 6) {
+            Referral(referrals[numOfRefs-collected-1]).withdraw();
+            collected++;
+            console.log("... withdrawed from %s: %s", collected, referrals[numOfRefs-collected]);
         }
+
+        // for (uint8 i = numOfRefs; i > numOfRefs - 5; i--) {
+        //     Referral(referrals[i-1]).withdraw();
+        //     console.log("... withdrawed from %s: %s", i, referrals[i]);
+        // }
     }
 
     // admin can call this function in case someone buys from 2016MEH directly
