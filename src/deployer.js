@@ -280,7 +280,7 @@ class Deployer {
         }
         
         if (cnsts.wrapperAddresses) {
-            this.wrapper = await ethers.getContractAt("MehWrapper", cnsts.wrapperAddresses)
+            this.mehWrapper = await ethers.getContractAt("MehWrapper", cnsts.wrapperAddresses)
         }
         
         cnsts.areRefsAndWrapperPaired ? this.areRefsAndWrapperPaired = cnsts.areRefsAndWrapperPaired : {} 
@@ -296,14 +296,14 @@ class Deployer {
             !this.referralFactory ?
                 await this.deployReferralFactory() : {}
 
-            this.referralFactory && (this.numOfReferrals() < NUM_OF_REFERRALS) ?
-                await this.deployReferrals() : {}
+            if (this.referralFactory && (this.numOfReferrals() < NUM_OF_REFERRALS)){
+                await this.deployReferrals()}
             
-            (this.numOfReferrals() < NUM_OF_REFERRALS) && !this.wrapper ? 
-                await this.deployWrapper() : {}
+            if ((this.numOfReferrals() >= NUM_OF_REFERRALS) && !this.mehWrapper) {   
+                await this.deployWrapper()}
 
-            this.wrapper && !this.areRefsAndWrapperPaired ?
-                await this.pairRefsAndWrapper() : {}
+            if (this.mehWrapper && !this.areRefsAndWrapperPaired){
+                await this.pairRefsAndWrapper()}
 
             if (this.areRefsAndWrapperPaired) {
                 // wrapper signs in to old meh
@@ -432,7 +432,7 @@ class Deployer {
             break 
           } else { 
             await this.exEnv.waitForActivationTime(level) 
-            break}
+          }
         }
         this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
@@ -448,6 +448,7 @@ class Deployer {
             console.log("Registered ref:", referral.address)
         }
         this.constants.add({areRefsAndWrapperPaired: true})
+        this.areRefsAndWrapperPaired = true
         // this.gasReporter.addGasRecord("Registering referrals", referralsGas)
     }
 
