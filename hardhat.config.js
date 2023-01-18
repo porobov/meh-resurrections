@@ -80,6 +80,15 @@ module.exports = {
       timeout: 2000000,
     },
 
+    goerli: {
+      chainId: 5,   // specifying chainId manually, used in getConfigChainID() function from tools
+      numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
+      url: process.env.ALCHEMY_GOERLI_URL !== undefined ? process.env.ALCHEMY_GOERLI_URL : "",
+      accounts: {
+        mnemonic: process.env.MNEMONIC !== undefined ? process.env.MNEMONIC : "",
+      },
+    }
+
     // main: {
       // chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
       // numConfirmations: 2, // specifying numConfirmations manually, used in tools lib

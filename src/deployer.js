@@ -49,7 +49,7 @@ async function setupMocks() {
     await exEnv.deployMocks(true)
 }
 
-// for live testnet
+// for live testnet 😱
 async function releaseWrapper() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
@@ -92,7 +92,7 @@ class ProjectEnvironment {
         console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
-            "\nDeployed by:", owner.address)
+            "\nDeploying from address:", owner.address)
         // mocks
         this.weth = await deployContract("WETH9", {"isVerbouse": true})
         this.soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true}, this.weth.address)
@@ -105,8 +105,9 @@ class ProjectEnvironment {
         // sending ETH to weth mock
         // Flashloaner contract will use this eth to buy from OldMEH
         // It converts weth from solomargin to eth (and then back)
+        // the cost of a block in meh2016 mock is 2 gwei
         await this.weth.deposit({
-            value: ethers.utils.parseEther("2.0")
+            value: ethers.utils.parseUnits("10", "gwei")
         })
 
         // minting weth to soloMargin
@@ -292,31 +293,31 @@ class Deployer {
 
         // 
         try {
-            await this.unpauseMeh2016()
-            this.referralFactory ? {} : 
-                await this.deployReferralFactory()
-            await this.pauseMeh2016()
+            !this.referralFactory ?
+                await this.deployReferralFactory() : {}
 
-            this.numOfReferrals() >= NUM_OF_REFERRALS ? {} : 
-                await this.deployReferrals()
+            this.referralFactory && (this.numOfReferrals() < NUM_OF_REFERRALS) ?
+                await this.deployReferrals() : {}
             
-            this.wrapper ? {} : 
-                await this.deployWrapper()
+            (this.numOfReferrals() < NUM_OF_REFERRALS) && !this.wrapper ? 
+                await this.deployWrapper() : {}
 
-            this.areRefsAndWrapperPaired ? {} :
-                await this.pairRefsAndWrapper()
+            this.wrapper && !this.areRefsAndWrapperPaired ?
+                await this.pairRefsAndWrapper() : {}
 
-            // wrapper signs in to old meh
-            await this.unpauseMeh2016()
-            await this.mehWrapper.signIn(this.getLastReferral().address)
-            
-            // setting charity address and NEW_DELAY
-            await this.finalMeh2016settings()
+            if (this.areRefsAndWrapperPaired) {
+                // wrapper signs in to old meh
+                await this.unpauseMeh2016()
+                await this.mehWrapper.signIn(this.getLastReferral().address)
+                
+                // setting charity address and NEW_DELAY
+                await this.finalMeh2016settings()
 
-            // FLASHLOAN 
-            // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
-            await this.exEnv.weth.deposit({value: 2})
-            await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
+                // FLASHLOAN 
+                // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
+                await this.exEnv.weth.deposit({value: 2})
+                await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
+            }
         } catch (e) {
             throw e
         } finally {
@@ -361,7 +362,8 @@ class Deployer {
     // unpause oldMEH (refferals register in oldMeh at deploy)
     // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
-        await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+        await tx.wait(getConfigNumConfirmations())
         console.log("MEH unpaused...")
     }
 
@@ -386,6 +388,7 @@ class Deployer {
 
     // will deploy factory. Need unpaused MEH
     async deployReferralFactory() {
+        await this.unpauseMeh2016()
         // TODO check if MEH is paused ()
         console.log("Deploying referral factory")
         const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
@@ -393,6 +396,7 @@ class Deployer {
             this.exEnv.meh2016.address, 
             this.getMehAdminAddr());
         this.constants.add({referralFactoryAddr: this.referralFactory.address})
+        await this.pauseMeh2016()
     }
 
     async setUpReferral(referralAddress) {
@@ -417,7 +421,7 @@ class Deployer {
         let level = this.numOfReferrals() + 1
         let currentReferralAddr = this.getMehAdminAddr()
         if (level > 1) {
-            currentReferralAddr = this.getLastReferral()
+            currentReferralAddr = this.getLastReferral().address
         }
         for (level; level <= NUM_OF_REFERRALS; level++) {
           let newRef = await this.setUpReferral(currentReferralAddr)
@@ -427,7 +431,8 @@ class Deployer {
             console.log("Live network. Wait for activation time and rerun script")
             break 
           } else { 
-            await this.exEnv.waitForActivationTime(level) }
+            await this.exEnv.waitForActivationTime(level) 
+            break}
         }
         this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
