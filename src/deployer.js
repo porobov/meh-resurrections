@@ -12,7 +12,8 @@ const newMehAbi = conf.newMehAbi
 const wethAbi = conf.wethAbi
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
-const NUM_OF_REFERRALS = 7
+// 
+const NUM_OF_REFERRALS = 6  // 6 handshakes // num of referrals to deploy
 // current timestamp = 1673521526 = 2 ** 30.64
 // 315360000 = 2 ** 28.23 (10 years)
 // (1) 1988881526 = 2 ** 30.89 (activation time at 1st level) (timestamp + setting delay)
@@ -346,11 +347,6 @@ class Deployer {
         return this.exEnv.mehAdminAddress
     }
 
-    // returns first referral-contract in chain
-    getFirstReferral() {
-        return this.referrals[0]
-    }
-
     getLastReferral() {
         return this.referrals[this.referrals.length - 1]
     }
@@ -380,7 +376,9 @@ class Deployer {
         // address newCharityAddress, 
         // uint newImagePlacementPriceInWei)
     async finalMeh2016settings() {
-        let charityAddress = this.getFirstReferral().address
+        
+        // charity can go to any referral addess (any of them can withdraw)
+        let charityAddress = this.getLastReferral().address
         console.log("Setting charity address:", charityAddress)
         console.log("Setting new delay in seconds:", NEW_DELAY)
         await this.exEnv.meh2016.adminContractSettings(NEW_DELAY, charityAddress, 0)
@@ -417,13 +415,13 @@ class Deployer {
 
     // deploy the whole chain of referrals in tests 
     async deployReferrals() {
-        // level shows how far it is from mehAdmin (who is 0)
-        let level = this.numOfReferrals() + 1
+        
+        let nOfRefs = this.numOfReferrals()
         let currentReferralAddr = this.getMehAdminAddr()
-        if (level > 1) {
+        if (nOfRefs > 0) {
             currentReferralAddr = this.getLastReferral().address
         }
-        for (level; level <= NUM_OF_REFERRALS; level++) {
+        for (nOfRefs; nOfRefs < NUM_OF_REFERRALS; nOfRefs++) {
           let newRef = await this.setUpReferral(currentReferralAddr)
           this.referrals.push(newRef)
           currentReferralAddr = newRef.address
@@ -431,7 +429,8 @@ class Deployer {
             console.log("Live network. Wait for activation time and rerun script")
             break 
           } else { 
-            await this.exEnv.waitForActivationTime(level) 
+            // level shows how far it is from mehAdmin (who is 0)
+            await this.exEnv.waitForActivationTime(nOfRefs + 1)
           }
         }
         this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})

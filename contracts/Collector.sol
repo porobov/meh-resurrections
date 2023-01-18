@@ -25,12 +25,12 @@ contract Collector is UsingGlobals, Ownable {
 
     // withrdaws money from all registered referrals
     function _withdrawFromReferrals() internal {
-        // using reverse order and do only 7 (or is it 6?) referrals
+        // using reverse order and do only 6 referrals
         // a way to upgrade referrals
         console.log("... _withdrawFromReferrals");
-        for (uint i = 6; i > 0; i--) { // TODO does not withdraw from refferal[0]
-            console.log("... withdrawed from %s", referrals[i]);
+        for (uint i = 5; i > 0; i--) {
             Referral(referrals[i]).withdraw();
+            console.log("... withdrawed from %s: %s", i, referrals[i]);
         }
     }
 

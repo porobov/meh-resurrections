@@ -21,7 +21,11 @@ async function increaseTimeBy(seconds) {
 
 //await ethers.getDefaultProvider().getBalance(address) - will always querry chain data
 async function getFormattedBalance(address) {
-  return ethers.utils.formatEther(await network.provider.send("eth_getBalance", [address]))
+  return ethers.utils.formatEther(await getBalance(address))
+}
+
+async function getBalance(address) {
+  return await network.provider.send("eth_getBalance", [address])
 }
 
 // return network name specified in hardhat.config.js
@@ -84,6 +88,7 @@ async function resetHardhatToBlock(blockNumber){
 module.exports = { 
   GasReporter, 
   increaseTimeBy, 
+  getBalance,
   getFormattedBalance,
   getConfigChainID,
   getConfigNumConfirmations,
