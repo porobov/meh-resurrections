@@ -8,6 +8,52 @@ function blockID(x, y) {
   return (y - 1) * 100 + x;
 }
 
+function countBlocks(fx, fy, tx, ty) {
+  let count = 0
+  for (let x = fx; x <=tx; x++) {
+    for (let y = fy; y <=ty; y++) {
+      count++
+    }
+  }
+  return count
+}
+
+async function checkMinting(buyCoords, checkOwnershipCoords) {
+  const BC = buyCoords
+  const price = WRAPPER_BLOCK_PRICE.mul(countBlocks(BC.fx,BC.fy,BC.tx,BC.ty))
+
+  const mehBalBefore = await ethers.provider.getBalance(oldMeh.address)
+  const wrapperBalBefore = await ethers.provider.getBalance(mehWrapper.address)
+  const royaltiesBefore = await mehWrapper.royalties()
+
+  // MONEY FLOW CHECK
+  // wrapper balance is encreased, meh balance is the same
+  const tx = await mehWrapper.connect(buyer).mint(BC.fx,BC.fy,BC.tx,BC.ty,{value: price});
+  const mehBalAfter = await ethers.provider.getBalance(oldMeh.address)
+  const wrapperBalAfter = await ethers.provider.getBalance(mehWrapper.address)
+  expect(wrapperBalAfter.sub(wrapperBalBefore)).to.equal(price)
+  expect(mehBalAfter.sub(mehBalBefore)).to.equal(0)
+  
+  // referrals balances should be zero
+  for (const referral of referrals) {
+    let mehBal = (await oldMeh.getUserInfo(referral.address)).balance
+    let wrapperBal = await ethers.provider.getBalance(referral.address)
+    expect(mehBal).to.equal(0)
+    expect(wrapperBal).to.equal(0)
+    // console.log("Referral: %s, meh-bal: %s, bal: %s", referral.address, mehBal, wrapperBal)
+  }
+
+  // royalties are calculated
+  const royaltiesAfter = await mehWrapper.royalties()
+  expect(royaltiesAfter.sub(royaltiesBefore)).to.equal(price)
+
+  // OWNERSHIP CHECK
+  for (const coord of checkOwnershipCoords) {
+    expect((await oldMeh.getBlockInfo(coord.x,coord.y)).landlord).to.equal(mehWrapper.address)
+    expect(await mehWrapper.ownerOf(blockID(coord.x,coord.y))).to.equal(buyer.address)
+  }
+}
+
 describe("Flashloan", function () {
   
   this.timeout(142000)
@@ -34,35 +80,17 @@ describe("Flashloan", function () {
   })
 
   it("Allows to buy 1 block", async function () {
-    const B = { x: 83, y: 83 }
-    const mehBalBefore = await ethers.provider.getBalance(oldMeh.address)
-    const wrapperBalBefore = await ethers.provider.getBalance(mehWrapper.address)
-    const royaltiesBefore = await mehWrapper.royalties()
-
-    // MONEY FLOW CHECK
-    // wrapper balance is encreased, meh balance is the same
-    const tx = await mehWrapper.connect(buyer).mint(B.x,B.y,B.x,B.y,{value: WRAPPER_BLOCK_PRICE});
-    const mehBalAfter = await ethers.provider.getBalance(oldMeh.address)
-    const wrapperBalAfter = await ethers.provider.getBalance(mehWrapper.address)
-    expect(wrapperBalAfter.sub(wrapperBalBefore)).to.equal(WRAPPER_BLOCK_PRICE)
-    expect(mehBalAfter.sub(mehBalBefore)).to.equal(0)
-    
-    // referrals balances should be zero
-    for (const referral of referrals) {
-      let mehBal = (await oldMeh.getUserInfo(referral.address)).balance
-      let wrapperBal = await ethers.provider.getBalance(referral.address)
-      expect(mehBal).to.equal(0)
-      expect(wrapperBal).to.equal(0)
-      console.log("Referral: %s, meh-bal: %s, bal: %s", referral.address, mehBal, wrapperBal)
-    }
-
-    // royalties are calculated
-    const royaltiesAfter = await mehWrapper.royalties()
-    expect(royaltiesAfter.sub(royaltiesBefore)).to.equal(WRAPPER_BLOCK_PRICE)
-
-    // OWNERSHIP CHECK
-    expect((await oldMeh.getBlockInfo(B.x,B.y)).landlord).to.equal(mehWrapper.address)
-    expect(await mehWrapper.ownerOf(blockID(B.x,B.y))).to.equal(buyer.address)
+    const buyCoords = { fx: 83, fy: 83, tx: 83, ty: 83 }
+    const checkOwnershipCoords = [{ x: 83, y: 83 }]
+    await checkMinting(buyCoords, checkOwnershipCoords)
   });
-  
+
+  it("Allows to buy range", async function () {
+    const buyCoords = { fx: 84, fy: 83, tx: 85, ty: 83 }
+    const checkOwnershipCoords = [{ x: 84, y: 83 }, { x: 85, y: 83 }]
+    await checkMinting(buyCoords, checkOwnershipCoords)
+  });
+
+  it("Allows to buy all", async function () {
+  });
 });
