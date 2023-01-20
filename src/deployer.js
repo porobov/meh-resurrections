@@ -314,10 +314,11 @@ class Deployer {
                 // setting charity address and NEW_DELAY
                 await this.finalMeh2016settings()
 
-                // FLASHLOAN 
-                // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
-                await this.exEnv.weth.deposit({value: 2})
-                await this.exEnv.weth.transfer(this.mehWrapper.address, 2)
+                // FLASHLOAN
+                // SoloMargin charges 2 wei per loan. Here we put 20000 wei
+                // in advance for 10000 loans
+                await this.exEnv.weth.deposit({value: 20000})
+                await this.exEnv.weth.transfer(this.mehWrapper.address, 20000)
             }
         } catch (e) {
             throw e
