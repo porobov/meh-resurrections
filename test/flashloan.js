@@ -1,22 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { getFormattedBalance } = require("../src/tools.js")
+const { blockID, countBlocks } = require("../src/test-helpers.js")
 const { setupTestEnvironment } = require("../src/deployer.js")
-const WRAPPER_BLOCK_PRICE = ethers.utils.parseEther("0.25")
+const conf = require('../conf.js')
 
-function blockID(x, y) {
-  return (y - 1) * 100 + x;
-}
-
-function countBlocks(fx, fy, tx, ty) {
-  let count = 0
-  for (let x = fx; x <=tx; x++) {
-    for (let y = fy; y <=ty; y++) {
-      count++
-    }
-  }
-  return count
-}
+const WRAPPER_BLOCK_PRICE = conf.WRAPPER_BLOCK_PRICE
+const IS_DEPLOYING_MOCKS = conf.IS_DEPLOYING_MOCKS
 
 async function checkMinting(buyCoords, checkOwnershipCoords) {
   const BC = buyCoords
@@ -59,24 +48,11 @@ describe("Flashloan", function () {
   this.timeout(142000)
   before('setup', async () => {
     ;[ownerGlobal, buyer] = await ethers.getSigners()
-    let env = await setupTestEnvironment(false)
+    let env = await setupTestEnvironment(IS_DEPLOYING_MOCKS)
     owner = env.owner
     mehWrapper = env.mehWrapper
     referrals= env.referrals
     oldMeh = env.oldMeh
-  })
-
-  // console.log("charity internal meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
-  // console.log("charity referral balance:", await getFormattedBalance(referrals[0].address))
-
-  it("Setup is correct", async function () {
-    console.log("charityAddress:", await oldMeh.charityAddress())
-  })
-
-  it("Doesn't allow to mint reserved, already minted, etc...", async function () {
-  })
-
-  it("Check coords to tokenID conversion", async function () {
   })
 
   it("Allows to buy 1 block", async function () {
@@ -93,4 +69,8 @@ describe("Flashloan", function () {
 
   it("Allows to buy all", async function () {
   });
+
+  it("Allows to place ads", async function () {
+  });
+  
 });
