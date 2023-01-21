@@ -48,7 +48,7 @@ contract UsingTools {
         pure 
         returns (uint16)
     {
-        return (toX - fromX + 1) * (toY - fromY + 1);
+        return uint16(toX - fromX + 1) * uint16(toY - fromY + 1);
     }
     // todo set img url prefix (allow another hosting for images)
 

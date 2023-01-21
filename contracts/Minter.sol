@@ -105,9 +105,9 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
     }
 
-    // minting blocks reserved for founders and 2018 landlords
-    // 2016 blocks must be transferred via wrap function
-    // anyone can call - will mint to a predefined owner
+    // Minting blocks reserved for founders and 2018 landlords
+    // anyone can call - will mint to a predefined owner.
+    // As for 2016 blocks - they must be transferred via wrap function
     function mintReservedBlock(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         external
         onlyLegalCoordinates(fromX, fromY, toX, toY)
