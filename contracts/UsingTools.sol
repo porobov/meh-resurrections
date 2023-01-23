@@ -11,8 +11,14 @@ contract UsingTools {
 
     // todo check in tests
     function blockXY(uint16 blockId) internal pure returns (uint8, uint8) {
-        uint8 x = uint8(blockId % 100);
-        uint8 y = uint8(blockId / 100 + 1);
+        uint8 remainder = uint8(blockId % 100);
+        uint8 y;
+        if (remainder == 0) {
+            y = uint8(blockId / 100);
+        } else {
+            y = uint8(blockId / 100 + 1);
+        }
+        uint8 x = uint8(blockId - (uint16(y) - 1) * 100); // uint8(blockId % 100);
         return (x, y);
     }
 
