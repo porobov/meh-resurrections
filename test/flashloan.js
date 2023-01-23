@@ -48,7 +48,7 @@ describe("Flashloan", function () {
   this.timeout(142000)
   before('setup', async () => {
     ;[ownerGlobal, buyer] = await ethers.getSigners()
-    let env = await setupTestEnvironment(IS_DEPLOYING_MOCKS)
+    let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS})
     owner = env.owner
     mehWrapper = env.mehWrapper
     referrals= env.referrals

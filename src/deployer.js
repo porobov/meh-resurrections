@@ -26,7 +26,9 @@ const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in ui
 // deployer and setup script used in tests
 // will setup referrals, deploy and setup wrapper
 // ensures all contracts are in clean state either by fork or redeploying
-async function setupTestEnvironment(isDeployingMocks = true) {
+async function setupTestEnvironment(options) {
+    let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
+    let isDeployingMocks = ("isDeployingMocks" in options) ? options.isDeployingMocks : false
 
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
@@ -39,7 +41,9 @@ async function setupTestEnvironment(isDeployingMocks = true) {
         await resetHardhatToBlock(conf.mainnetBlockWhenMEHWasPaused)  // TODO make configurable depending on chain 
         await exEnv.loadExistingEnvironment()
     }
-    const deployer = new Deployer(exEnv, {isSavingOnDisk: false})
+    const deployer = new Deployer(exEnv, {
+        isSavingOnDisk: false, 
+        isDeployingMinterAdapter: isDeployingMinterAdapter})
     return await deployer.deployAndSetup()
 }
 
@@ -251,11 +255,11 @@ class Constants {
 
 class Deployer {
     constructor(existingEnvironment, options) {
+        this.isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
         this.isSavingOnDisk = options.isSavingOnDisk
         this.isLiveNetwork = !isLocalTestnet()
         this.exEnv = existingEnvironment
         this.constants = new Constants(getConfigChainID())
-        
     }
 
     // will initialize and load previous state
@@ -456,8 +460,10 @@ class Deployer {
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     async deployWrapper() {
         console.log("Deploying wrapper...")
+        // very ugly intrusion here. Using the same code to deploy MinterAdapter for tests
+        let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
-            "MehWrapper", 
+            wrapperContractName,
             {"isVerbouse": true, "gasReporter": gasReporter},
             this.exEnv.meh2016.address,
             this.exEnv.meh2018.address,

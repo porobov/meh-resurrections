@@ -10,24 +10,16 @@ describe("Minter", function () {
     this.timeout(142000)
     before('setup', async () => {
       ;[ownerGlobal, buyer] = await ethers.getSigners()
-      let env = await setupTestEnvironment(IS_DEPLOYING_MOCKS)
+      let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
       owner = env.owner
-      mehWrapper = env.mehWrapper
+      minter = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
     })
 
-    // testing contracts 
-    // need a mock? 
-    // Admin - no
-    // Collector - no
-    // Flashloaner - no 
-    // MehERC721 - no 
-    // minter - yes
-    // receiver - no 
-    // referral - no 
-    // usingGlobals - no 
-    // usingTools - yes
+  it("2018", async function () {
+    expect(await minter._landlordFrom2018Ext(52, 54)).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
+  })
 
   it("Setup is correct", async function () {
     console.log("charityAddress:", await oldMeh.charityAddress())
