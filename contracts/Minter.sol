@@ -35,6 +35,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // must check the 2016 contract directly. As it will unpaused. 
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
+        console.log("......x, y", x, y);
         (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
         return landlord;
     }
