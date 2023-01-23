@@ -66,7 +66,6 @@ describe("Minter", function () {
         await checkCoords({fx:1, fy:1, tx:99, ty:1})
     })
 
-
     // countBlocks
     it("Counting blocks correctly", async function () {
         expect(await usingToolsAdapter.countBlocksExt(1,1,1,1)).to.equal(1)
@@ -78,5 +77,30 @@ describe("Minter", function () {
     })
 
     // isLegalCoordinates
+    // ref:
+    // return ((_fromX >= 1) && (_fromY >=1)  && (_toX <= 100) && (_toY <= 100) 
+    // && (_fromX <= _toX) && (_fromY <= _toY));
+    it("Counting blocks correctly", async function () {
+        let legal = [
+            {fx:1, fy:1, tx:1, ty:1},
+            {fx:1, fy:1, tx:2, ty:2},
+            {fx:1, fy:1, tx:99, ty:1},
+            {fx:1, fy:1, tx:100, ty:100}
+        ]
+        for (let c of legal) {
+            expect(await usingToolsAdapter.isLegalCoordinatesExt(c.fx, c.fy, c.tx, c.ty)).to.equal(true)
+        }
 
+        let illegal = [
+            {fx:0, fy:1, tx:1, ty:1},
+            {fx:1, fy:1, tx:2, ty:0},
+            {fx:1, fy:1, tx:101, ty:1},
+            {fx:1, fy:101, tx:100, ty:100},
+            {fx:2, fy:2, tx:1, ty:2},
+            {fx:2, fy:2, tx:2, ty:1},
+        ]
+        for (let c of illegal) {
+            expect(await usingToolsAdapter.isLegalCoordinatesExt(c.fx, c.fy, c.tx, c.ty)).to.equal(false)
+        }
+    })
 })
