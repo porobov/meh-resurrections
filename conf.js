@@ -9,5 +9,7 @@ module.exports = {
     wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
     mainnetBlockWhenMEHWasPaused: 14979315,
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),
-    IS_DEPLOYING_MOCKS: false
+    IS_DEPLOYING_MOCKS: false,
+    FULL_TEST: true,  // if true will run time consuming tests
+    BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",
 };
