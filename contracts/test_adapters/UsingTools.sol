@@ -34,7 +34,7 @@ contract UsingToolsAdapter is UsingTools {
         uint8 toX, 
         uint8 toY
     ) 
-        internal 
+        external 
         pure 
         returns (uint16[] memory r) 
     {

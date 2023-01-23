@@ -49,12 +49,34 @@ describe("Minter", function () {
     }
 
     // blocksList
+    it("Calculating blocksList correctly", async function () {
+        expect(await usingToolsAdapter.blocksListExt(1,1,1,1)).to.eql([1])
+
+        async function checkCoords(c) {
+            let blocklist = []
+            for (let x = c.fx; x <= c.tx; x++) {
+                for (let y = c.fy; y <=c.ty; y++) {
+                    blocklist.push(await usingToolsAdapter.blockIDExt(x,y))
+                }
+            }
+        expect(await usingToolsAdapter.blocksListExt(c.fx, c.fy, c.tx, c.ty)).to.eql(blocklist)
+        }
+        await checkCoords({fx:1, fy:1, tx:2, ty:2})
+        await checkCoords({fx:34, fy:34, tx:35, ty:35})
+        await checkCoords({fx:1, fy:1, tx:99, ty:1})
+    })
+
+
     // countBlocks
     it("Counting blocks correctly", async function () {
         expect(await usingToolsAdapter.countBlocksExt(1,1,1,1)).to.equal(1)
         expect(await usingToolsAdapter.countBlocksExt(1,1,2,2)).to.equal(4)
+        expect(await usingToolsAdapter.countBlocksExt(1,1,99,1)).to.equal(99)
+        expect(await usingToolsAdapter.countBlocksExt(1,1,100,1)).to.equal(100)
+        expect(await usingToolsAdapter.countBlocksExt(1,1,100,2)).to.equal(200)
         expect(await usingToolsAdapter.countBlocksExt(1,1,100,100)).to.equal(10000)
     })
+
     // isLegalCoordinates
 
 })
