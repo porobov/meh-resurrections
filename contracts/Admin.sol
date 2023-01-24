@@ -10,19 +10,19 @@ contract Admin is Ownable {
 
     uint256 public royalties;  // eth earned by wrapper
     mapping(address => uint256) public internalBalOf;  // partners balances 
-    address public peter;
+    address public founder;
     address public adam;
 
     // splitting income here to offload minting function
     function splitIncome() internal {
-        uint256 petersShare = royalties * 85 / 100;
-        internalBalOf[peter] += petersShare;
-        internalBalOf[adam] += (royalties - petersShare);
+        uint256 foundersShare = royalties * 85 / 100;
+        internalBalOf[founder] += foundersShare;
+        internalBalOf[adam] += (royalties - foundersShare);
         royalties = 0;
     }
 
     function withdrawIncome() external {
-        require(msg.sender == peter || msg.sender == adam, "Not a beneficiary");
+        require(msg.sender == founder || msg.sender == adam, "Not a beneficiary");
         splitIncome();
         internalBalOf[msg.sender] = 0;
         payable(msg.sender).transfer(internalBalOf[msg.sender]); // todo is this ok?
@@ -34,8 +34,8 @@ contract Admin is Ownable {
     }
 
     function setPeter(address newPetersAddress) external {
-        require(msg.sender == peter, "Not Peter");
-        peter = newPetersAddress;
+        require(msg.sender == founder, "Not Peter");
+        founder = newPetersAddress;
     }
     
     function adminSetPrice(uint256 newPrice) external onlyOwner {

@@ -13,4 +13,5 @@ module.exports = {
     FULL_TEST: true,  // if true will run time consuming tests
     BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",
     BLOCKS_FROM_2016_PATH: "./old_MEH_blocks/Old_Blocks.json",
+    RESERVED_FOR_FOUNDER: {fx: 40, fy: 60, tx: 59, ty: 64},  // 10% of blocks are reserved for founder
 };

@@ -33,16 +33,26 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         return landlord;
     }
 
-    // must check the 2016 contract directly. As it will unpaused. 
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
         console.log("......x, y", x, y);
         (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
         return landlord;
     }
 
+    function _landlordFounder(uint8 x, uint8 y) internal view returns (address) {
+        if (x >= FROM_X_RESERVED &&
+            x <= TO_X_RESERVED &&
+            y >= FROM_Y_RESERVED &&
+            y <= TO_Y_RESERVED) 
+        {
+            return founder;
+        } else {
+            return address(0);
+        }
+    }
+
     // check that blocks are not 2018 blocks and not founders
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
-
         // check if already minted at 2016 contract
         // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
         // good for security though. we are separating workflows of minting anew and wrapping.
@@ -50,33 +60,25 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         address NULL = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
         address previousLandlord = NULL;  // must be specific, not just 0
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+        // every block in the area shound belong to a single owner or o address
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
             // the below code can return landlord address(0), it's ok
             singleLandlord = _landlordFrom2018(x, y);
-            // todo test area with owners [address(0), any_other...]
-            if (singleLandlord != previousLandlord && previousLandlord != NULL) {
-                revert("Multiple landlords within area");
+            // moving this below _landlordFrom2016 check to cover the case when
+            // a block within founders share is bouht directly from 2016.
+            // moving _landlordFrom2018 to simplify selection of founder's area as it can include 
+            // other reserved blocks - they will just not belong to founder
+            if (singleLandlord == address(0)) {
+                singleLandlord = _landlordFounder(x, y);
             }
+            // todo test area with owners [address(0), any_other...]
+            require((singleLandlord == previousLandlord || previousLandlord == NULL),
+                "Multiple landlords within area");
             previousLandlord = singleLandlord;
         }
-        if (singleLandlord != address(0)) {
-            return singleLandlord;
-        }
-        
-        // moving this below _landlordFrom2016 check to cover the case when
-        // a block within founders share is bouht directly from 2016
-        // check if reserved for founders
-        if (fromX >= FROM_X_RESERVED &&
-            toX <= TO_X_RESERVED &&
-            fromY >= FROM_Y_RESERVED &&
-            toY <= TO_Y_RESERVED) 
-        {
-            return peter;
-        } else {
-            return address(0);
-        }
+        return singleLandlord;
     }
 
     function _areaCrowdsalePrice(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (uint256) {
@@ -113,6 +115,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         external
         onlyLegalCoordinates(fromX, fromY, toX, toY)
     {
+        // TODO warning. Can it mint to 0 address? 
         address landlord = _reservedFor(fromX, fromY, toX, toY);
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
     }
