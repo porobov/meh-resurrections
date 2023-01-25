@@ -123,7 +123,8 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
     }
 
-    // borrows ETH and calls _buyFromMEH with eth amount needed by MEH (1..512 ETH)
+    // borrows ETH from dxdy and calls _buyFromMEH (SoloMargin calls it) 
+    // with eth amount needed by MEH (1..512 ETH)
     function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);
         // if the price is 0, it means that a block within the area is not for sale
@@ -140,6 +141,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         
         // minting on 2016 contract
         console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
+        // this is require here is not much needed, but leaving it for more security
         require((oldMeh.buyBlocks
             {value: price}
             (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");

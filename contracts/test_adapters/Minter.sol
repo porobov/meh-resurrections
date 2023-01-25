@@ -34,7 +34,7 @@ contract MinterAdapter is MehWrapper {
         return _borrowAndBuyFromMEH(buyer, fromX, fromY, toX, toY);
     }
 
-    function _buyFromMEHExt(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external {
+    function _buyFromMEHExt(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
         return _buyFromMEH(price, buyer, fromX, fromY, toX, toY);
     }
 

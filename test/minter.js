@@ -2,7 +2,7 @@ const fs = require('fs')
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { setupTestEnvironment } = require("../src/deployer.js")
-const { rand1to100 } = require("../src/test-helpers.js")
+const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 const { zeroPad } = require('ethers/lib/utils.js');
 
@@ -18,9 +18,20 @@ const bb18 = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
 let usingToolsAdapter
 let founder_address
 
-describe("Minter", function () {
-  
-    this.timeout(142000)
+let availableAreas = [
+  {fx: 1, fy: 24, tx: 1, ty: 24}, // single
+  {fx: 2, fy: 24, tx: 2, ty: 25}  // range
+]
+
+let occupiedAreas = [
+  {fx: 1, fy: 1, tx: 1, ty: 1}, // single
+]
+
+
+// function to share deployment sequence between blocks of tests 
+// Solution from here https://stackoverflow.com/a/26111323 
+function makeSuite(name, tests) {
+  describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer] = await ethers.getSigners()
       let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
@@ -34,8 +45,15 @@ describe("Minter", function () {
       await usingToolsAdapter.deployed();
 
       founder_address = await minter.founder()
+      buyer = owner 
     })
-  
+      this.timeout(142000)
+      tests();
+  });
+}
+
+makeSuite("Reading contract", function () {
+
   /// LANDLORDS
 
   /// WARNING!!! Block (100,100) data is outdated in BLOCKS_FROM_2018_PATH
@@ -190,9 +208,72 @@ describe("Minter", function () {
   //   }
   // }
 
+  it("Area crowdsale price is defined correctly", async function () {
+    let price = await minter.crowdsalePrice();
+    // multiple blocks
+    let cc = {fx: 61, fy: 44, tx: 100, ty: 68}
+    let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
+    let total = price.mul(count)
+    expect(await minter._areaCrowdsalePriceExt(cc.fx, cc.fy, cc.tx, cc.ty)).to.equal(total)
+    // single block and two blocks
+    expect(await minter._areaCrowdsalePriceExt(1,1,1,1)).to.equal(price)
+    expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price.mul(2))
+  })
+
+})
+
+
+makeSuite("buyFromMEH", function () {
+
+  for (let cc of availableAreas) {
+    it(`_buyFromMEH works: (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
+      let oldMehPrice = ethers.utils.parseEther("1")
+      let total = oldMehPrice.mul(count)
+      let sb = await balancesSnapshot(oldMeh, minter, referrals)
+      await minter._buyFromMEHExt(total, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+      let sa = await balancesSnapshot(oldMeh, minter, referrals)
+
+      expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)  // all money is returned
+      expect(sa.meh.sub(sb.meh)).to.equal(0)
+      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+    })
+  }
+
+  it("_buyFromMEH throws on occupied areas", async function () {
+    let cc = occupiedAreas[0]
+    let oldMehPrice = ethers.utils.parseEther("1")
+    await expect(minter._buyFromMEHExt(oldMehPrice, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: oldMehPrice })).to.be.reverted 
+  })
+})
+
+
+// same tests as for buyFromMEH, but with flashloan
+makeSuite("_borrowAndBuyFromMEH", function () {
+  for (let cc of availableAreas) {
+    it(`_borrowAndBuyFromMEH works: (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      let sb = await balancesSnapshot(oldMeh, minter, referrals)
+      await minter._borrowAndBuyFromMEHExt(buyer.address, cc.fx, cc.fy, cc.tx, cc.ty)
+      let sa = await balancesSnapshot(oldMeh, minter, referrals)
+
+      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // all money is returned
+      expect(sa.meh.sub(sb.meh)).to.equal(0)
+      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+    })
+  }
+
+  it("_borrowAndBuyFromMEH throws on occupied areas", async function () {
+    let cc = occupiedAreas[0]
+    await expect(minter._borrowAndBuyFromMEHExt(buyer.address, cc.fx, cc.fy, cc.tx, cc.ty))
+      .to.be.revertedWith("Area price is 0")
+  })
 
   it("Setup is correct", async function () {
-    console.log("charityAddress:", await oldMeh.charityAddress())
+    // console.log("charityAddress:", await oldMeh.charityAddress())
   })
 
 
@@ -203,5 +284,4 @@ describe("Minter", function () {
   })
 
   // try meh2018.ownerOf(i)
-
 })
