@@ -10,7 +10,7 @@ contract Admin is Ownable {
 
     uint256 public royalties;  // eth earned by wrapper
     mapping(address => uint256) public internalBalOf;  // partners balances 
-    address public founder;
+    address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
     address public adam;
 
     // splitting income here to offload minting function

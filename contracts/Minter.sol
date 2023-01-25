@@ -10,10 +10,10 @@ import "./Admin.sol";
 contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // Coordinates reserved for founders
-    uint8 FROM_X_RESERVED = 77;
-    uint8 FROM_Y_RESERVED = 77;
-    uint8 TO_X_RESERVED = 77;
-    uint8 TO_Y_RESERVED = 77;
+    uint8 FROM_X_RESERVED = 61;
+    uint8 FROM_Y_RESERVED = 44;
+    uint8 TO_X_RESERVED = 100;
+    uint8 TO_Y_RESERVED = 68;
 
     constructor(address wethAddress, address soloMarginAddress) Flashloaner(wethAddress, soloMarginAddress) {}
 
@@ -52,6 +52,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     }
 
     // check that blocks are not 2018 blocks and not founders
+    // will throw if any of the blocks are from 2016 or if multiple owners
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
         // check if already minted at 2016 contract
         // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
@@ -63,12 +64,13 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         // every block in the area shound belong to a single owner or o address
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
+            console.log("Checking if reserved", x, y);
             require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
             // the below code can return landlord address(0), it's ok
             singleLandlord = _landlordFrom2018(x, y);
             // moving this below _landlordFrom2016 check to cover the case when
             // a block within founders share is bouht directly from 2016.
-            // moving _landlordFrom2018 to simplify selection of founder's area as it can include 
+            // moving below _landlordFrom2018 to simplify selection of founder's area as it can include 
             // other reserved blocks - they will just not belong to founder
             if (singleLandlord == address(0)) {
                 singleLandlord = _landlordFounder(x, y);
@@ -77,6 +79,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
             require((singleLandlord == previousLandlord || previousLandlord == NULL),
                 "Multiple landlords within area");
             previousLandlord = singleLandlord;
+            
         }
         return singleLandlord;
     }
