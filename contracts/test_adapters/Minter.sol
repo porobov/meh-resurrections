@@ -14,6 +14,10 @@ contract MinterAdapter is MehWrapper {
         return _landlordFrom2018(x, y);
     }
 
+    function _landlordFrom2018ByIndexExt(uint256 id) external view returns (address) {
+        return _landlordFrom2018ByIndex(id);
+    }
+
     function _landlordFrom2016Ext(uint8 x, uint8 y) external view returns (address) {
         return _landlordFrom2016(x, y);
     }

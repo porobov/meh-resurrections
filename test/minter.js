@@ -5,6 +5,7 @@ const { setupTestEnvironment } = require("../src/deployer.js")
 const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 const { zeroPad } = require('ethers/lib/utils.js');
+const exp = require('constants');
 
 const BLOCKS_FROM_2018_PATH = conf.BLOCKS_FROM_2018_PATH
 const BLOCKS_FROM_2016_PATH = conf.BLOCKS_FROM_2016_PATH
@@ -21,6 +22,16 @@ let founder_address
 let availableAreas = [
   {fx: 1, fy: 24, tx: 1, ty: 24}, // single
   {fx: 2, fy: 24, tx: 2, ty: 25}  // range
+]
+let a = RESERVED_FOR_FOUNDER
+let founderAreas = [
+  {fx: a.fx, fy: a.fy, tx: a.fx, ty: a.fy}, // single
+  {fx: a.fx + 1, fy: a.fy, tx: a.fx + 1, ty: a.fy + 1}  // range (2 blocks)
+]
+
+let areas2018 = [
+  {fx: 51, fy: 60, tx: 51, ty: 60, landlord: "0xe81119bcf92Fa4E9234690Df8ad2F35896988A71"}, // single
+  {fx: 48, fy: 57, tx: 52, ty: 59, landlord: "0xe81119bcf92Fa4E9234690Df8ad2F35896988A71"}  // range
 ]
 
 let occupiedAreas = [
@@ -52,6 +63,13 @@ function makeSuite(name, tests) {
   });
 }
 
+
+
+
+
+
+
+
 makeSuite("Reading contract", function () {
 
   /// LANDLORDS
@@ -69,6 +87,7 @@ makeSuite("Reading contract", function () {
     // }
 
     expect(await minter._landlordFrom2018Ext(30, 71)).to.equal(ZERO_ADDRESS)
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
   })
 
   it("Pulls landlords from 2016 correctly", async function () {
@@ -145,14 +164,18 @@ makeSuite("Reading contract", function () {
     // 2016 // check single coordinate
     await expect(minter._reservedForExt(51, 35, 51, 35)).to.be.revertedWith("A block is already minted on 2016 contract");
     // 2016 // check range
-    await expect(minter._reservedForExt(50, 34, 50, 35)).to.be.revertedWith("A block is already minted on 2016 contract");
+    await expect(minter._reservedForExt(50, 34, 50, 35)).to.be.revertedWith("A block is already minted on 2016 contract");    
   })
 
   it("reservedFor. 2018 areas are reserved correctly", async function () {
     // 2018 // check single coordinate
-    expect(await minter._reservedForExt(51, 60, 51, 60)).to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
+    let s = areas2018[0]
+    expect(await minter._reservedForExt(s.fx, s.fy, s.tx, s.ty))
+      .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
     // check 2018 range
-    expect(await minter._reservedForExt(48, 57, 52, 61)).to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
+    let r = areas2018[0]
+    expect(await minter._reservedForExt(r.fx, r.fy, r.tx, r.ty))
+      .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
   })
 
   it("reservedFor. Founders areas are reserved correctly", async function () {
@@ -223,6 +246,9 @@ makeSuite("Reading contract", function () {
 })
 
 
+
+
+
 makeSuite("buyFromMEH", function () {
 
   for (let cc of availableAreas) {
@@ -231,7 +257,8 @@ makeSuite("buyFromMEH", function () {
       let oldMehPrice = ethers.utils.parseEther("1")
       let total = oldMehPrice.mul(count)
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
-      await minter._buyFromMEHExt(total, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+      await minter._buyFromMEHExt(
+        total, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
       expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)  // all money is returned
@@ -245,10 +272,11 @@ makeSuite("buyFromMEH", function () {
   it("_buyFromMEH throws on occupied areas", async function () {
     let cc = occupiedAreas[0]
     let oldMehPrice = ethers.utils.parseEther("1")
-    await expect(minter._buyFromMEHExt(oldMehPrice, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: oldMehPrice })).to.be.reverted 
+    await expect(minter._buyFromMEHExt(
+      oldMehPrice, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: oldMehPrice })
+        ).to.be.reverted 
   })
 })
-
 
 // same tests as for buyFromMEH, but with flashloan
 makeSuite("_borrowAndBuyFromMEH", function () {
@@ -271,17 +299,84 @@ makeSuite("_borrowAndBuyFromMEH", function () {
     await expect(minter._borrowAndBuyFromMEHExt(buyer.address, cc.fx, cc.fy, cc.tx, cc.ty))
       .to.be.revertedWith("Area price is 0")
   })
+})
 
-  it("Setup is correct", async function () {
-    // console.log("charityAddress:", await oldMeh.charityAddress())
+
+
+
+
+
+makeSuite("mint", function () {
+
+  it("Will throw with wrong input", async function () {
+    let c18 = bb18[0]
+    let cc = availableAreas[0]
+    await expect(minter.connect(buyer).mint(c18.x, c18.y, c18.x - 1, c18.y))
+      .to.be.revertedWith("Wrong coordinates")
+    await expect(minter.connect(buyer).mint(c18.x, c18.y, c18.x, c18.y))
+      .to.be.revertedWith("A block is reserved for 2018 landlords or founders")
+    await expect(minter.connect(buyer).mint(cc.fx, cc.fy, cc.fx, cc.fy))
+      .to.be.revertedWith("Not enough eth to mint")
+  })
+  
+  for (let cc of availableAreas) {
+    it(`Will mint blocks, royalties are payed (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      let price = await minter.crowdsalePrice();
+      let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
+      let total = price.mul(count)
+      let sb = await balancesSnapshot(oldMeh, minter, referrals)
+      await minter.connect(buyer)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+      let sa = await balancesSnapshot(oldMeh, minter, referrals)
+
+      expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)
+      expect(sa.meh.sub(sb.meh)).to.equal(0)
+      expect(sa.royalties.sub(sb.royalties)).to.equal(total)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+    })
+  }
+})
+
+
+
+
+
+makeSuite("mintReserved ", function () {
+
+  it("Will throw with wrong input", async function () {
+    let cf = RESERVED_FOR_FOUNDER
+    await expect(minter.connect(buyer).mint(cf.fx, cf.fy, cf.fx - 1, cf.fy))
+      .to.be.revertedWith("Wrong coordinates")
   })
 
+  for (let cc of founderAreas) {
+    it(`Will mint blocks reserved for founder to founder (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      let sb = await balancesSnapshot(oldMeh, minter, referrals)
+      await minter.connect(buyer)
+        .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
+      let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-  it("Doesn't allow to mint reserved, already minted, etc...", async function () {
-  })
+      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)
+      expect(sa.meh.sub(sb.meh)).to.equal(0)
+      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(founder_address)
+    })
+  }
 
-  it("Check coords to tokenID conversion", async function () {
-  })
+  for (let cc of areas2018) {
+    it(`Will mint blocks reserved 2018 to 2018 landlord (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      let sb = await balancesSnapshot(oldMeh, minter, referrals)
+      await minter.connect(buyer)
+        .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
+      let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-  // try meh2018.ownerOf(i)
+      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)
+      expect(sa.meh.sub(sb.meh)).to.equal(0)
+      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(cc.landlord)
+    })
+  }
 })

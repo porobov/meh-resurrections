@@ -33,6 +33,11 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         return landlord;
     }
 
+    function _landlordFrom2018ByIndex(uint256 id) internal view returns (address) {
+        console.log("......id", id);
+        return meh2018.ownerOf(id);
+    }
+
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
         console.log("......x, y", x, y);
         (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
@@ -94,13 +99,14 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         _;
     }
 
-    // ordinary user minting (is called by user)
+    // ordinary minting (is called by user)
     function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
         external
         payable
         onlyLegalCoordinates(fromX, fromY, toX, toY)
     {
-        require(_reservedFor(fromX, fromY, toX, toY) == address(0), "A block is reserved for 2018 landlords or founders");
+        require(_reservedFor(fromX, fromY, toX, toY) == address(0), 
+            "A block is reserved for 2018 landlords or founders");
         
         // checking if enough eth is sent, adding to royalties
         uint256 areaCrowdsalePrice = _areaCrowdsalePrice(fromX, fromY, toX, toY);
@@ -114,7 +120,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     // Minting blocks reserved for founders and 2018 landlords
     // anyone can call - will mint to a predefined owner.
     // As for 2016 blocks - they must be transferred via wrap function
-    function mintReservedBlock(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+    function mintReserved(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         external
         onlyLegalCoordinates(fromX, fromY, toX, toY)
     {
