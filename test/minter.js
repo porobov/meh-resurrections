@@ -50,6 +50,7 @@ function makeSuite(name, tests) {
       minter = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
+      // newMeh = env.newMeh
 
       const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
       usingToolsAdapter = await UsingToolsAdapter.deploy();
@@ -89,6 +90,27 @@ makeSuite("Reading contract", function () {
     expect(await minter._landlordFrom2018Ext(30, 71)).to.equal(ZERO_ADDRESS)
     expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
   })
+
+  it("Pulls landlords by index from 2018 correctly", async function () {
+    // this block is present in both 2016 and 2018
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(1, 1))).to.equal("0x95fdB8BB2167d7DA27965952CD4c15dA6Ac46d60")
+
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(54, 54))).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(52, 54))).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
+    
+    // if (FULL_TEST) {
+    //   let blocks = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
+    //   for (let b of blocks) {
+    //     expect(await minter._landlordFrom2018ByIndexExt(blockID(b.x, b.y))).to.equal(b.landlord)
+    //   }
+    // }
+    // console.log(await newMeh.blockID(30, 71)) 
+
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(30, 71))).to.equal(ZERO_ADDRESS)
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
+  })
+
 
   it("Pulls landlords from 2016 correctly", async function () {
     expect(await minter._landlordFrom2016Ext(19, 19)).to.equal("0xCA9f7D9aD4127e374cdaB4bd0a884790C1B03946")
@@ -173,7 +195,7 @@ makeSuite("Reading contract", function () {
     expect(await minter._reservedForExt(s.fx, s.fy, s.tx, s.ty))
       .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
     // check 2018 range
-    let r = areas2018[0]
+    let r = areas2018[1]
     expect(await minter._reservedForExt(r.fx, r.fy, r.tx, r.ty))
       .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
   })
@@ -242,8 +264,8 @@ makeSuite("Reading contract", function () {
     expect(await minter._areaCrowdsalePriceExt(1,1,1,1)).to.equal(price)
     expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price.mul(2))
   })
-
 })
+
 
 
 

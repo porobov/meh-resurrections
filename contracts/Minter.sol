@@ -34,8 +34,19 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     }
 
     function _landlordFrom2018ByIndex(uint256 id) internal view returns (address) {
+        address landlord = address(0);
         console.log("......id", id);
-        return meh2018.ownerOf(id);
+        // try meh2018.ownerOf(i) returns (address landlord2018) {  // todo why this doesn't work? check starting block
+        // use coordinates (54,54). they are present on 2018 contract and not minted in 2016
+        // getBlockOwner function fails on empty coordinates => using try/catch
+        // note WARNING 2018 contract got both 2016 and 2018 pixels
+        try meh2018.ownerOf(id) returns (address landlord2018) {
+            console.log("......landlord2018", landlord2018);
+            landlord = landlord2018;
+        } catch (bytes memory reason) {
+            console.log("no landlord in meh2018");  // TODO why cannot add reason here?
+        }
+        return landlord;
     }
 
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {

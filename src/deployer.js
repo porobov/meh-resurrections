@@ -341,6 +341,7 @@ class Deployer {
 
         return {
             oldMeh: this.exEnv.meh2016,
+            // newMeh: this.exEnv.meh2018,
             mehWrapper: this.mehWrapper,
             referrals: this.referrals,
             owner: this.exEnv.operatorWallet
