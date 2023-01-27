@@ -75,21 +75,21 @@ makeSuite("Reading contract", function () {
 
   /// LANDLORDS
 
-  /// WARNING!!! Block (100,100) data is outdated in BLOCKS_FROM_2018_PATH
-  it("Pulls landlords from 2018 correctly", async function () {
-    expect(await minter._landlordFrom2018Ext(52, 54)).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
-    expect(await minter._landlordFrom2018Ext(100, 100)).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
+  // /// WARNING!!! Block (100,100) data is outdated in BLOCKS_FROM_2018_PATH
+  // it("Pulls landlords from 2018 correctly", async function () {
+  //   expect(await minter._landlordFrom2018Ext(52, 54)).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
+  //   expect(await minter._landlordFrom2018Ext(100, 100)).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
     
-    // if (FULL_TEST) {
-    //   let blocks = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
-    //   for (let b of blocks) {
-    //     expect(await minter._landlordFrom2018Ext(b.x, b.y)).to.equal(b.landlord)
-    //   }
-    // }
+  //   // if (FULL_TEST) {
+  //   //   let blocks = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
+  //   //   for (let b of blocks) {
+  //   //     expect(await minter._landlordFrom2018Ext(b.x, b.y)).to.equal(b.landlord)
+  //   //   }
+  //   // }
 
-    expect(await minter._landlordFrom2018Ext(30, 71)).to.equal(ZERO_ADDRESS)
-    expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
-  })
+  //   expect(await minter._landlordFrom2018Ext(30, 71)).to.equal(ZERO_ADDRESS)
+  //   expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
+  // })
 
   it("Pulls landlords by index from 2018 correctly", async function () {
     // this block is present in both 2016 and 2018
@@ -109,8 +109,12 @@ makeSuite("Reading contract", function () {
 
     expect(await minter._landlordFrom2018ByIndexExt(blockID(30, 71))).to.equal(ZERO_ADDRESS)
     expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
-  })
 
+    let s = areas2018[0]
+    expect(await minter._landlordFrom2018ByIndexExt(blockID(s.fx, s.fy))).to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
+    expect(await minter._reservedForExt(s.fx, s.fy, s.tx, s.ty))
+      .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
+  })
 
   it("Pulls landlords from 2016 correctly", async function () {
     expect(await minter._landlordFrom2016Ext(19, 19)).to.equal("0xCA9f7D9aD4127e374cdaB4bd0a884790C1B03946")

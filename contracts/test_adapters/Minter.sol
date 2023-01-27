@@ -8,12 +8,6 @@ contract MinterAdapter is MehWrapper {
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) 
         MehWrapper(meh2016address, meh2018address, wethAddress, soloMarginAddress) {}
 
-    // constructor(address wethAddress, address soloMarginAddress) Minter(wethAddress, soloMarginAddress) {}
-
-    function _landlordFrom2018Ext(uint8 x, uint8 y) external view returns (address) {
-        return _landlordFrom2018(x, y);
-    }
-
     function _landlordFrom2018ByIndexExt(uint256 id) external view returns (address) {
         return _landlordFrom2018ByIndex(id);
     }

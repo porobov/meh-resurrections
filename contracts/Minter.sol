@@ -17,28 +17,10 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     constructor(address wethAddress, address soloMarginAddress) Flashloaner(wethAddress, soloMarginAddress) {}
 
-    function _landlordFrom2018(uint8 x, uint8 y) internal view returns (address) {
-        address landlord = address(0);
-        console.log("......x, y", x, y);
-        // try meh2018.ownerOf(i) returns (address landlord2018) {  // todo why this doesn't work? check starting block
-        // use coordinates (54,54). they are present on 2018 contract and not minted in 2016
-        // getBlockOwner function fails on empty coordinates => using try/catch
-        // note WARNING 2018 contract got both 2016 and 2018 pixels
-        try meh2018.getBlockOwner(x, y) returns (address landlord2018) {
-            console.log("......landlord2018", landlord2018);
-            landlord = landlord2018;
-        } catch (bytes memory reason) {
-            console.log("no landlord in meh2018");  // TODO why cannot add reason here?
-        }
-        return landlord;
-    }
-
     function _landlordFrom2018ByIndex(uint256 id) internal view returns (address) {
         address landlord = address(0);
         console.log("......id", id);
-        // try meh2018.ownerOf(i) returns (address landlord2018) {  // todo why this doesn't work? check starting block
-        // use coordinates (54,54). they are present on 2018 contract and not minted in 2016
-        // getBlockOwner function fails on empty coordinates => using try/catch
+        // note ownerOf function fails on empty coordinates => using try/catch
         // note WARNING 2018 contract got both 2016 and 2018 pixels
         try meh2018.ownerOf(id) returns (address landlord2018) {
             console.log("......landlord2018", landlord2018);
@@ -70,9 +52,6 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     // check that blocks are not 2018 blocks and not founders
     // will throw if any of the blocks are from 2016 or if multiple owners
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
-        // check if already minted at 2016 contract
-        // todo ??? probably this is not neccessary. oldMeh.buyBlocks will not allow to buy occupied blocks.
-        // good for security though. we are separating workflows of minting anew and wrapping.
         address singleLandlord = address(0);
         address NULL = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
         address previousLandlord = NULL;  // must be specific, not just 0
@@ -81,21 +60,21 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             console.log("Checking if reserved", x, y);
+            // check if already minted at 2016 contract
+            // good for security though. we are separating workflows of minting anew and wrapping.
             require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
             // the below code can return landlord address(0), it's ok
-            singleLandlord = _landlordFrom2018(x, y);
-            // moving this below _landlordFrom2016 check to cover the case when
+            singleLandlord = _landlordFrom2018ByIndex(blocks[i]);
+            // moving the following below _landlordFrom2016 check to cover the case when
             // a block within founders share is bouht directly from 2016.
             // moving below _landlordFrom2018 to simplify selection of founder's area as it can include 
             // other reserved blocks - they will just not belong to founder
             if (singleLandlord == address(0)) {
                 singleLandlord = _landlordFounder(x, y);
             }
-            // todo test area with owners [address(0), any_other...]
             require((singleLandlord == previousLandlord || previousLandlord == NULL),
                 "Multiple landlords within area");
             previousLandlord = singleLandlord;
-            
         }
         return singleLandlord;
     }
