@@ -48,6 +48,8 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
             (fromX, fromY, toX, toY);
 
         // minting on wrapper
+        // minting to msg.sender for simplicity (anyone can buy it from the 
+        // original contract anyway)
         for (uint i = 0; i < blocks.length; i++) {
             _mint(msg.sender, blocks[i]); 
         }
