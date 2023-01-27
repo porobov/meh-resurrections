@@ -68,28 +68,9 @@ function makeSuite(name, tests) {
 
 
 
-
-
-
 makeSuite("Reading contract", function () {
 
   /// LANDLORDS
-
-  // /// WARNING!!! Block (100,100) data is outdated in BLOCKS_FROM_2018_PATH
-  // it("Pulls landlords from 2018 correctly", async function () {
-  //   expect(await minter._landlordFrom2018Ext(52, 54)).to.equal("0x7911670881A81F8410d06053d7B3c237cE77b9B4")
-  //   expect(await minter._landlordFrom2018Ext(100, 100)).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
-    
-  //   // if (FULL_TEST) {
-  //   //   let blocks = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
-  //   //   for (let b of blocks) {
-  //   //     expect(await minter._landlordFrom2018Ext(b.x, b.y)).to.equal(b.landlord)
-  //   //   }
-  //   // }
-
-  //   expect(await minter._landlordFrom2018Ext(30, 71)).to.equal(ZERO_ADDRESS)
-  //   expect(await minter._landlordFrom2018ByIndexExt(blockID(100, 100))).to.equal("0x31483A93c879c9DCF85899f61b521E1e5b520b69")
-  // })
 
   it("Pulls landlords by index from 2018 correctly", async function () {
     // this block is present in both 2016 and 2018
@@ -112,7 +93,7 @@ makeSuite("Reading contract", function () {
 
     let s = areas2018[0]
     expect(await minter._landlordFrom2018ByIndexExt(blockID(s.fx, s.fy))).to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
-    expect(await minter._reservedForExt(s.fx, s.fy, s.tx, s.ty))
+    expect(await minter.reservedFor(s.fx, s.fy, s.tx, s.ty))
       .to.equal("0xe81119bcf92Fa4E9234690Df8ad2F35896988A71")
   })
 
@@ -273,8 +254,6 @@ makeSuite("Reading contract", function () {
 
 
 
-
-
 makeSuite("buyFromMEH", function () {
 
   for (let cc of availableAreas) {
@@ -304,6 +283,8 @@ makeSuite("buyFromMEH", function () {
   })
 })
 
+
+
 // same tests as for buyFromMEH, but with flashloan
 makeSuite("_borrowAndBuyFromMEH", function () {
   for (let cc of availableAreas) {
@@ -326,8 +307,6 @@ makeSuite("_borrowAndBuyFromMEH", function () {
       .to.be.revertedWith("Area price is 0")
   })
 })
-
-
 
 
 
@@ -360,6 +339,10 @@ makeSuite("mint", function () {
       expect(sa.royalties.sub(sb.royalties)).to.equal(total)
       expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+      for (const referral of sa.referrals) {
+        expect(referral.meh).to.equal(0)
+        expect(referral.wrapper).to.equal(0)
+      }
     })
   }
 })
@@ -403,6 +386,10 @@ makeSuite("mintReserved ", function () {
       expect(sa.royalties.sub(sb.royalties)).to.equal(0)
       expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(cc.landlord)
+      for (const referral of sa.referrals) {
+        expect(referral.meh).to.equal(0)
+        expect(referral.wrapper).to.equal(0)
+      }
     })
   }
 })

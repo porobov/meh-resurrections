@@ -89,6 +89,10 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         _;
     }
 
+    function reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external view returns (address) {
+        return _reservedFor(fromX, fromY, toX, toY);
+    }
+
     // ordinary minting (is called by user)
     function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
         external
