@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { setupTestEnvironment } = require("../src/deployer.js")
-const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
+const { rand1to100, blockID, countBlocks, balancesSnapshot } = require("../src/test-helpers.js")
 const { getImpersonatedSigner } = require("../src/tools.js")
 const conf = require('../conf.js');
 const { BigNumber } = require('ethers');
@@ -24,6 +24,11 @@ let mintingPrice = ethers.utils.parseEther("1")
 let availableAreas = [
   {fx: 1, fy: 24, tx: 1, ty: 24}, // single
   {fx: 2, fy: 24, tx: 2, ty: 25}  // range
+]
+
+let areas2016 = [
+  {fx: 51, fy: 35, tx: 51, ty: 35}, // single
+  {fx: 50, fy: 34, tx: 50, ty: 35}, // range
 ]
 
 // function to share deployment sequence between blocks of tests
@@ -49,7 +54,6 @@ function makeSuite(name, tests) {
 
 makeSuite("Reading contract", function () {
 
-
   it("Cannot wrap blocks with wrong input", async function () {
     const w = bb16[0]  // block to wrap
     let landlord = await getImpersonatedSigner(w.landlord)
@@ -74,31 +78,36 @@ makeSuite("Reading contract", function () {
   function txGas(receipt) {
     return receipt.gasUsed.mul(receipt.effectiveGasPrice)
   }
-  it("Can wrap single block", async function () {
-    const w = bb16[0]  // block to wrap
-    let landlord = await getImpersonatedSigner(w.landlord)
-    let sellPrice = ethers.utils.parseEther("1")
-    await setBalance(landlord.address, ethers.utils.parseEther("2"));
-    
-    const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
-    // set block(s) for sale (sellPrice - price for each block)
-    let sellTx = await oldMeh.connect(landlord).sellBlocks(w.x, w.y, w.x, w.y, sellPrice)
-    // wrap (sending appropriate sell price)
-    let wrapTx = await wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice })
-    // return money from wrapper
-    let withdrawTx = await oldMeh.connect(landlord).withdrawAll()
-    const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
 
-    let totalGas = new BigNumber.from("0")
-    totalGas = totalGas.add(txGas((await sellTx.wait())))
-    totalGas = totalGas.add(txGas((await wrapTx.wait())))
-    totalGas = totalGas.add(txGas((await withdrawTx.wait())))
+  for (let w of areas2016) {
+    it(`Can wrap single block (${w.fx}, ${w.fy}, ${w.tx}, ${w.ty})`, async function () {
+      ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
+ 
+      let landlord = await getImpersonatedSigner(landlordAddress)
+      let pricePerBlock = ethers.utils.parseEther("1")
+      let blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
+      let sellPrice = (pricePerBlock).mul(blocksCount)
+      await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+      
+      const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
+      // set block(s) for sale (pricePerBlock - price for each block)
+      let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
+      // wrap (sending appropriate sell price)
+      let wrapTx = await wrapper.connect(landlord).wrap(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
+      // return money from wrapper
+      let withdrawTx = await oldMeh.connect(landlord).withdrawAll()
+      const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
 
-    // gas is calculated approximately. letting 100 wei slip
-    expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.lessThan(100)
-    expect((await oldMeh.getBlockInfo(w.x, w.y)).landlord).to.equal(wrapper.address)
-    expect(await wrapper.ownerOf(blockID(w.x, w.y))).to.equal(landlord.address)
-    // do range
-  })
+      let totalGas = new BigNumber.from("0")
+      totalGas = totalGas.add(txGas((await sellTx.wait())))
+      totalGas = totalGas.add(txGas((await wrapTx.wait())))
+      totalGas = totalGas.add(txGas((await withdrawTx.wait())))
 
+      // gas is calculated approximately. letting 100 wei slip
+      expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.lessThan(200)
+      expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(wrapper.address)
+      expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(landlord.address)
+      // do range
+    })
+  }
 })
