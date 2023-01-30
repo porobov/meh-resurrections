@@ -8,7 +8,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     // wrapping-unwrapping
     // stores unwrapped blocks
     // todo check ordering
-    uint256 public unclaimed;  // eth withdrawn from oldMEH while unwrapping
+    uint256 public unclaimed = 0;  // eth withdrawn from oldMEH while unwrapping
     struct Receipt {
         address receiverAddress;
         bool isWithdrawn;
@@ -56,7 +56,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     }
 
     // any owner of a wrapped block can unwrap it (put on sale) and reclaim ownership 
-    // at the original contract (have to buy at 2016 and have to withdraw from this wrapper)
+    // at the original contract (have to buy at 2016 and have to withdraw from the wrapper)
     // priceForEachBlockInWei - specify unique price? 
     // unwrap flow: call unwrap on wrapper -> buy on 2016MEH -> withdraw on wrapper
     // todo setSome random sell price in the UX, so that it won't be 
@@ -106,17 +106,22 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
                 payment += receipts[blocks[i]].sellPrice;
             }
         }
- 
+    
         // withdraw from MEH and log
+        
         uint256 balBefore = address(this).balance;
+        console.log("balBefore", balBefore);
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
         uint256 balAfter = address(this).balance;
         uint256 withdrawnFromMeh = balAfter - balBefore;
         unclaimed += withdrawnFromMeh;
 
         // payout 
-        assert (unclaimed >= payment); // sanity check (check funds)
+        // TODO check the below requirement carefully ↓↓↓
         unclaimed -= payment;
+        
+        console.log("payment", msg.sender ,payment, address(this).balance);
+        address(this).balance;
         payable(msg.sender).transfer(payment); // todo is this ok? 
     }
 

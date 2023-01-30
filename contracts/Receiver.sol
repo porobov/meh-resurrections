@@ -32,6 +32,6 @@ contract Receiver is UsingGlobals {
             // console.log("Receiver: ...");
             console.log("Receiver: msg.sender ok");
         }
-        // console.log("received from %s", msg.sender);
+        console.log("received from %s", msg.sender);
     }
 }
