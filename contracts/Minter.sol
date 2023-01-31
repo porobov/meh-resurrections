@@ -53,8 +53,8 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
     // will throw if any of the blocks are from 2016 or if multiple owners
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
         address singleLandlord = address(0);
-        address NULL = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
-        address previousLandlord = NULL;  // must be specific, not just 0
+        address NULL_ADDR = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
+        address previousLandlord = NULL_ADDR;  // must be specific, not just 0
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         // every block in the area shound belong to a single owner or o address
         for (uint i = 0; i < blocks.length; i++) {
@@ -72,7 +72,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
             if (singleLandlord == address(0)) {
                 singleLandlord = _landlordFounder(x, y);
             }
-            require((singleLandlord == previousLandlord || previousLandlord == NULL),
+            require((singleLandlord == previousLandlord || previousLandlord == NULL_ADDR),
                 "Multiple landlords within area");
             previousLandlord = singleLandlord;
         }

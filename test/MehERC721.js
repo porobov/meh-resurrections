@@ -85,15 +85,15 @@ makeSuite("Wrapping and unwrapping", function () {
     const wa = availableAreas[0]
     await expect(
       wrapper.connect(landlord).wrap(wa.fx, wa.fy, wa.tx, wa.ty, { value: mintingPrice }))
-      .to.be.revertedWith("Area is not minted yet")
+      .to.be.revertedWith("MehERC721: Area is not minted yet")
 
     // wrong value provided
     await expect(
       wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice.add(1) }))
-      .to.be.revertedWith("Sending wrong amount of ether")
+      .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
     await expect(
       wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice.sub(1) }))
-      .to.be.revertedWith("Sending wrong amount of ether")
+      .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
   })
 
 
@@ -166,9 +166,8 @@ makeSuite("Wrapping and unwrapping", function () {
       // 3. Set new sellprice on oldMeh.
       // WARNING Sell price:
       // - cannot be 0
-      // - must be different than the one used when unwrapping blocks (not equal pricePerBlock)
       // - must be big enough to prevent others from buying it cheap (if the landlord wants to keep the blocks)
-      let hugePrice = ethers.utils.parseEther("1000000")
+      let hugePrice = ethers.utils.parseEther("1000000000")
       let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, hugePrice)
       
       // 4. Withdraw money from wrapper
@@ -216,9 +215,41 @@ makeSuite("Other", function () {
 
     // wrapper itself cannot buy blocks again
     await expect(wrapper.connect(landlord).wrap(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock }))
-      .to.be.revertedWith("Sending wrong amount of ether")
+      .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
 
     expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(wrapper.address)
     expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(landlord.address)
+    // WARNING!!! Next test is using the remaining state
   })
+
+  // WARNING!!! State remains from previuos test
+  it(`Funds are sent to landlord, that unwrapped block`, async function () {
+    const w = areas2016[0]  // block to wrap
+    let landlordAddress = await wrapper.ownerOf(blockID(w.fx, w.fy))
+    let landlord = await getImpersonatedSigner(landlordAddress)
+    let pricePerBlock = ethers.utils.parseEther("1")
+    await setBalance(landlord.address, pricePerBlock.mul(3));
+    
+    let unwrapTx = await wrapper.connect(landlord).unwrap(w.fx, w.fy, w.fx, w.fy, pricePerBlock)
+    let buyTx = await oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })
+
+    let sb = await balancesSnapshot(oldMeh, wrapper, referrals)
+    let landlordBalBefore = await ethers.provider.getBalance(landlord.address)
+    let jokerBalBefore = await ethers.provider.getBalance(joker.address)
+
+    let withdrawTx = await wrapper.connect(joker).withdraw(w.fx, w.fy, w.fx, w.fy)
+
+    let gas = await getTotalGas([withdrawTx])
+    let landlordBalAfter = await ethers.provider.getBalance(landlord.address)
+    let jokerBalAfter = await ethers.provider.getBalance(joker.address)
+    let sa = await balancesSnapshot(oldMeh, wrapper, referrals)
+
+    expect(sb.meh.sub(sa.meh)).to.equal(pricePerBlock) // withdrawn from meh
+    expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // no changes on wrapper 
+    expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(pricePerBlock) // all money are returned to landlord
+    expect((jokerBalBefore.sub(jokerBalAfter))).to.equal(gas) // joker spent gas
+
+  })
+
+
 })

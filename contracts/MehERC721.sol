@@ -12,8 +12,8 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     uint256 constant public MAX_INT_TYPE = type(uint256).max;
 
     struct Receipt {
-        address receiverAddress;
-        bool isWithdrawn;
+        address recipient;
+        bool isAwaitingWithdrawal;
         uint256 sellPrice;
     }
     mapping(uint16 => Receipt) private receipts;  // single receipt for blockId
@@ -38,11 +38,11 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             (address landlord, uint u, uint256 price) = oldMeh.getBlockInfo(x,y);
-            require(landlord != address(0), "Area is not minted yet");
+            require(landlord != address(0), "MehERC721: Area is not minted yet");
             areaPrice += price;
         }
         // checking msg.value
-        require(areaPrice == msg.value, "Sending wrong amount of ether");
+        require(areaPrice == msg.value, "MehERC721: Sending wrong amount of ether");
 
         // buying from oldMEH
         oldMeh.buyBlocks
@@ -69,10 +69,10 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     function unwrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
-            require(_isApprovedOrOwner(msg.sender, blocks[i]), "Not a landlord");
+            require(_isApprovedOrOwner(msg.sender, blocks[i]), "MehERC721: Not a landlord");
             receipts[blocks[i]].sellPrice = priceForEachBlockInWei;
-            receipts[blocks[i]].isWithdrawn = false;
-            receipts[blocks[i]].receiverAddress = msg.sender;
+            receipts[blocks[i]].isAwaitingWithdrawal = true;
+            receipts[blocks[i]].recipient = msg.sender;
             _burn(blocks[i]);
         }
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
@@ -103,13 +103,24 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         // them to seller.
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         uint256 payment = 0;
+        address NULL_ADDR = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
+        address singleRecipient = NULL_ADDR;
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
-            (address a, uint u, uint256 currentSellPrice) = oldMeh.getBlockInfo(x,y);
-            if (receipts[blocks[i]].sellPrice != currentSellPrice && !receipts[blocks[i]].isWithdrawn) {
-                receipts[blocks[i]].isWithdrawn = true;
+            (address landlord, uint u, uint256 p) = oldMeh.getBlockInfo(x,y);
+            address recipient;
+            // checking if wrapper lost ownership - means that block is bought
+            if (landlord != address(this) && receipts[blocks[i]].isAwaitingWithdrawal) {
+                // receipts[blocks[i]].isAwaitingWithdrawal = false;
                 payment += receipts[blocks[i]].sellPrice;
+                recipient = receipts[blocks[i]].recipient;
+                delete receipts[blocks[i]];
             }
+            if (singleRecipient != NULL_ADDR) {
+                require(singleRecipient == recipient, 
+                    "MehERC721: Multiple recipients within area");
+            }
+            singleRecipient = recipient;
         }
     
         // withdraw from MEH and log
@@ -125,9 +136,13 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         // // payout 
         // // TODO check the below requirement carefully ↓↓↓
         // unclaimed -= payment;
+        require(singleRecipient != NULL_ADDR && singleRecipient != address(0),
+            "MehERC721: Wrong recipient");
+        require(payment > 0, 
+            "MehERC721: Payment must be above 0");  // protects against gas waste
 
         console.log("payment", msg.sender ,payment, address(this).balance);
-        payable(msg.sender).transfer(payment); // todo is this ok? 
+        payable(singleRecipient).transfer(payment); // todo is this ok? 
     }
 
     // receive() external payable {} 
