@@ -38,12 +38,24 @@ let areas2016 = [
   {fx: 50, fy: 34, tx: 50, ty: 35}, // range
 ]
 
+function txGas(receipt) {
+  return receipt.gasUsed.mul(receipt.effectiveGasPrice)
+}
+
+async function getTotalGas(txs) {
+  let totGas = new BigNumber.from("0")
+  for (let tx of txs) {
+    totGas = totGas.add(txGas((await tx.wait())))
+  }
+  return totGas
+}
+
 // function to share deployment sequence between blocks of tests
 // Solution from here https://stackoverflow.com/a/26111323
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, buyer] = await ethers.getSigners()
+      ;[ownerGlobal, buyer, joker] = await ethers.getSigners()
       let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
       owner = env.owner
       wrapper = env.mehWrapper
@@ -53,13 +65,15 @@ function makeSuite(name, tests) {
 
       founder_address = await wrapper.founder()
       buyer = owner
+
+      
     })
       this.timeout(142000)
       tests();
   });
 }
 
-makeSuite("Reading contract", function () {
+makeSuite("Wrapping and unwrapping", function () {
 
   it("Cannot wrap blocks with wrong input", async function () {
     const w = bb16[0]  // block to wrap
@@ -67,6 +81,12 @@ makeSuite("Reading contract", function () {
     let sellPrice = ethers.utils.parseEther("1")
     await setBalance(landlord.address, ethers.utils.parseEther("2"));
     
+    // trying to wrap area which is not minted yet
+    const wa = availableAreas[0]
+    await expect(
+      wrapper.connect(landlord).wrap(wa.fx, wa.fy, wa.tx, wa.ty, { value: mintingPrice }))
+      .to.be.revertedWith("Area is not minted yet")
+
     // wrong value provided
     await expect(
       wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice.add(1) }))
@@ -74,17 +94,9 @@ makeSuite("Reading contract", function () {
     await expect(
       wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice.sub(1) }))
       .to.be.revertedWith("Sending wrong amount of ether")
-    
-    // trying to wrap area which is not minted yet
-    const wa = availableAreas[0]
-    await expect(
-      wrapper.connect(landlord).wrap(wa.fx, wa.fy, wa.tx, wa.ty, { value: mintingPrice }))
-      .to.be.revertedWith("Area is not minted yet")
   })
 
-  function txGas(receipt) {
-    return receipt.gasUsed.mul(receipt.effectiveGasPrice)
-  }
+
 
 
 
@@ -113,10 +125,7 @@ makeSuite("Reading contract", function () {
       let withdrawTx = await oldMeh.connect(landlord).withdrawAll()
       const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
 
-      let totalGas = new BigNumber.from("0")
-      totalGas = totalGas.add(txGas((await sellTx.wait())))
-      totalGas = totalGas.add(txGas((await wrapTx.wait())))
-      totalGas = totalGas.add(txGas((await withdrawTx.wait())))
+      let totalGas = await getTotalGas([sellTx, wrapTx, withdrawTx])
 
       // gas is calculated approximately. letting 100 wei slip
       expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.lessThan(gasCalculationAccuracy)
@@ -169,11 +178,7 @@ makeSuite("Reading contract", function () {
       expect((smid.meh).sub(sa.meh)).to.equal(sellPrice) // eth moved from oldMeh to wrapper
 
       // calculating gas
-      let totalGas = new BigNumber.from("0")
-      totalGas = totalGas.add(txGas((await unwrapTx.wait())))
-      totalGas = totalGas.add(txGas((await buyTx.wait())))
-      totalGas = totalGas.add(txGas((await sellTx.wait())))
-      totalGas = totalGas.add(txGas((await withdrawTx.wait())))
+      let totalGas = await getTotalGas([unwrapTx, buyTx, sellTx, withdrawTx])
 
       expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // all money is returned
       expect(sa.meh.sub(sb.meh)).to.equal(0)
@@ -184,4 +189,36 @@ makeSuite("Reading contract", function () {
         "ERC721: owner query for nonexistent token")
     })
   }
+})
+
+
+
+// wrapper must set new sell price to a wrapped block so that nobody can buy it. 
+makeSuite("Other", function () {
+
+  it(`Cannot buy wrapped block again`, async function () {
+    const w = areas2016[0]  // block to wrap
+
+    ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
+
+    let landlord = await getImpersonatedSigner(landlordAddress)
+    let pricePerBlock = ethers.utils.parseEther("1")
+    await setBalance(landlord.address, pricePerBlock.mul(3));
+    
+    let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.fx, w.fy, pricePerBlock)
+    let wrapTx = await wrapper.connect(landlord).wrap(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })
+    
+    // sell price must be set ot a prohibitary value so noine could buy the wrapped block
+    // from oldMeh
+    let max_uint = (new BigNumber.from("2")).pow(256).sub(1)
+    expect((await oldMeh.getBlockInfo(w.fx, w.fy)).sellPrice).to.equal(max_uint)
+    await expect(oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })).to.be.reverted
+
+    // wrapper itself cannot buy blocks again
+    await expect(wrapper.connect(landlord).wrap(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock }))
+      .to.be.revertedWith("Sending wrong amount of ether")
+
+    expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(wrapper.address)
+    expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(landlord.address)
+  })
 })

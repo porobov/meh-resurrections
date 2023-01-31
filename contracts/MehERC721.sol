@@ -9,6 +9,8 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     // stores unwrapped blocks
     // todo check ordering
     uint256 public unclaimed = 0;  // eth withdrawn from oldMEH while unwrapping
+    uint256 constant public MAX_INT_TYPE = type(uint256).max;
+
     struct Receipt {
         address receiverAddress;
         bool isWithdrawn;
@@ -29,26 +31,29 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         external 
         payable 
     {
-        // checking msg.value
-        uint256 areaPrice = oldMeh.getAreaPrice (fromX, fromY, toX, toY);
-        require(areaPrice == msg.value, "Sending wrong amount of ether");
-
+        uint256 areaPrice = 0;
         // checking for overlap with unminted (can only buy blocks from landlords)
         // require landlord != address(0) ↓↓↓
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
-            (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
+            (address landlord, uint u, uint256 price) = oldMeh.getBlockInfo(x,y);
             require(landlord != address(0), "Area is not minted yet");
+            areaPrice += price;
         }
+        // checking msg.value
+        require(areaPrice == msg.value, "Sending wrong amount of ether");
 
         // buying from oldMEH
         oldMeh.buyBlocks
             {value: areaPrice}
             (fromX, fromY, toX, toY);
+        
+        // set prohibitary sell price so no one could buy it from oldMeh
+        oldMeh.sellBlocks(fromX, fromY, toX, toY, MAX_INT_TYPE);
 
         // minting on wrapper
-        // minting to msg.sender for simplicity (anyone can buy it from the 
+        // minting to msg.sender (not original landlord) for simplicity (anyone can buy it from the 
         // original contract anyway)
         for (uint i = 0; i < blocks.length; i++) {
             _mint(msg.sender, blocks[i]); 
@@ -109,19 +114,19 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     
         // withdraw from MEH and log
         
-        uint256 balBefore = address(this).balance;
-        console.log("balBefore", balBefore);
+        // uint256 balBefore = address(this).balance;
+        console.log("balBefore");
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
-        uint256 balAfter = address(this).balance;
-        uint256 withdrawnFromMeh = balAfter - balBefore;
-        unclaimed += withdrawnFromMeh;
+        // uint256 balAfter = address(this).balance;
 
-        // payout 
-        // TODO check the below requirement carefully ↓↓↓
-        unclaimed -= payment;
-        
+        // uint256 withdrawnFromMeh = balAfter - balBefore;
+        // unclaimed += withdrawnFromMeh;
+
+        // // payout 
+        // // TODO check the below requirement carefully ↓↓↓
+        // unclaimed -= payment;
+
         console.log("payment", msg.sender ,payment, address(this).balance);
-        address(this).balance;
         payable(msg.sender).transfer(payment); // todo is this ok? 
     }
 
