@@ -50,14 +50,12 @@ function makeSuite(name, tests) {
       minter = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
-      // newMeh = env.newMeh
 
       const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
       usingToolsAdapter = await UsingToolsAdapter.deploy();
       await usingToolsAdapter.deployed();
 
       founder_address = await minter.founder()
-      buyer = owner 
     })
       this.timeout(142000)
       tests();
