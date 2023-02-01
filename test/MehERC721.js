@@ -311,3 +311,40 @@ makeSuite("Multiple recipients", function () {
       .to.be.revertedWith("MehERC721: Multiple recipients within area")
   })
 })
+
+makeSuite("Withdraw one by one", function () {
+
+  // this check needs to be done at wrapping (not unwrapping)
+  // because withdrawal checks blocks ownership
+  // it will only issue a payment if block does not belong to wrapper
+  it("Can withdraw block receipts one by one", async function () {
+    const w = bb16[0]  // getting a landlord which is already signed in
+    const cc = availableAreas[1]
+    let landlord = await getImpersonatedSigner(w.landlord)
+
+    let price = await wrapper.crowdsalePrice();
+    let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
+    let total = price.mul(count)
+
+    let unwrapPrice = ethers.utils.parseEther("1")
+    let totUnwrapPrice = unwrapPrice.mul(count)
+
+    await setBalance(landlord.address, ethers.utils.parseEther("10"))
+
+    // buy range
+    await wrapper.connect(landlord)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+
+    // unwrap - buy - wrap 
+    await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
+    await oldMeh.connect(landlord).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: totUnwrapPrice })
+
+    // withdraw in separate transactions
+    const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
+    let tx1 = await wrapper.connect(landlord).withdraw(cc.fx, cc.fy, cc.fx, cc.fy)
+    let tx2 = await wrapper.connect(landlord).withdraw(cc.tx, cc.ty, cc.tx, cc.ty)
+    const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
+    let totalGas = await getTotalGas([tx1,tx2])
+    expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(totUnwrapPrice.sub(totalGas))
+  })
+})
