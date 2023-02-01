@@ -88,6 +88,7 @@ makeSuite("Wrapping and unwrapping", function () {
       .to.be.revertedWith("MehERC721: Area is not minted yet")
 
     // wrong value provided
+    let sellTx = await oldMeh.connect(landlord).sellBlocks(w.x, w.y, w.x, w.y, sellPrice)
     await expect(
       wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice.add(1) }))
       .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
@@ -248,7 +249,8 @@ makeSuite("Other", function () {
     expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // no changes on wrapper 
     expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(pricePerBlock) // all money are returned to landlord
     expect((jokerBalBefore.sub(jokerBalAfter))).to.equal(gas) // joker spent gas
-
+    let deletedReceipt = await wrapper.receipts(blockID(w.fx, w.fy))
+    expect(deletedReceipt.isAwaitingWithdrawal).to.be.equal(false)
   })
 
 

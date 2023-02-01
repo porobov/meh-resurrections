@@ -16,7 +16,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         bool isAwaitingWithdrawal;
         uint256 sellPrice;
     }
-    mapping(uint16 => Receipt) private receipts;  // single receipt for blockId
+    mapping(uint16 => Receipt) public receipts;  // single receipt for blockId
 
     constructor() ERC721("Million Ether Homepage", "MEH") {
     }
@@ -42,6 +42,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
             areaPrice += price;
         }
         // checking msg.value
+        require(areaPrice > 0, "MehERC721: Sanity check");
         require(areaPrice == msg.value, "MehERC721: Sending wrong amount of ether");
 
         // buying from oldMEH
@@ -111,16 +112,16 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
             address recipient;
             // checking if wrapper lost ownership - means that block is bought
             if (landlord != address(this) && receipts[blocks[i]].isAwaitingWithdrawal) {
-                // receipts[blocks[i]].isAwaitingWithdrawal = false;
                 payment += receipts[blocks[i]].sellPrice;
                 recipient = receipts[blocks[i]].recipient;
                 delete receipts[blocks[i]];
-            }
-            if (singleRecipient != NULL_ADDR) {
-                require(singleRecipient == recipient, 
-                    "MehERC721: Multiple recipients within area");
-            }
-            singleRecipient = recipient;
+                // checking for single recipient
+                if (singleRecipient != NULL_ADDR) {
+                    require(singleRecipient == recipient, 
+                        "MehERC721: Multiple recipients within area");
+                }
+                singleRecipient = recipient;
+            }            
         }
     
         // withdraw from MEH and log
