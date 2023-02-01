@@ -149,10 +149,12 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
         // get all the funds back from referrals to repay the loan 
         uint256 withdrawnFromReferrals = _withdrawFromReferrals();
-        // if checking what is withdrawn from referrals, use ">="
-        // Otherwise someone can send funds to a referral and hang up execution
+        // Checking what is withdrawn from referrals. Using ">=" because
+        // otherwise someone could send funds to a referral and hang up execution
         require(withdrawnFromReferrals >= price, 
             "Minter: Received not enough funds from referrals");
+        // any excess goes to royalties - enables rescuing funds
+        royalties += withdrawnFromReferrals - price; 
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
