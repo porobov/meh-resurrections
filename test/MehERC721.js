@@ -55,7 +55,7 @@ async function getTotalGas(txs) {
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, buyer, joker] = await ethers.getSigners()
+      ;[ownerGlobal, buyer, friend, joker] = await ethers.getSigners()
       let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
       owner = env.owner
       wrapper = env.mehWrapper
@@ -156,22 +156,24 @@ makeSuite("Wrapping and unwrapping", function () {
 
       // 1. Unwrap (sending appropriate sell price)
       let unwrapTx = await wrapper.connect(landlord).unwrap(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
- 
-      // 2. Buy blocks on oldMeh by landlord
+      // 2. Sign in to oldMEH (if not yet signed in)
+      // await oldMeh.connect(landlord).signIn(conf.mehAdminAddress)
+
+      // 3. Buy blocks on oldMeh by landlord
       let buyTx = await oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
       expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(landlord.address)
       let smid = await balancesSnapshot(oldMeh, wrapper, referrals)
       // eth moved from landlord to oldMeh contract
       expect((smid.meh).sub(sb.meh)).to.equal(sellPrice)
 
-      // 3. Set new sellprice on oldMeh.
+      // 4. Set new sellprice on oldMeh.
       // WARNING Sell price:
       // - cannot be 0
       // - must be big enough to prevent others from buying it cheap (if the landlord wants to keep the blocks)
       let hugePrice = ethers.utils.parseEther("1000000000")
       let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, hugePrice)
       
-      // 4. Withdraw money from wrapper
+      // 5. Withdraw money from wrapper
       let withdrawTx = await wrapper.connect(landlord).withdraw(w.fx, w.fy, w.tx, w.ty)
       const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
       let sa = await balancesSnapshot(oldMeh, wrapper, referrals)
@@ -252,6 +254,60 @@ makeSuite("Other", function () {
     let deletedReceipt = await wrapper.receipts(blockID(w.fx, w.fy))
     expect(deletedReceipt.isAwaitingWithdrawal).to.be.equal(false)
   })
+})
+  
 
+makeSuite("Multiple recipients", function () {
 
+  // this check needs to be done at wrapping (not unwrapping)
+  // because withdrawal checks blocks ownership
+  // it will only issue a payment if block does not belong to wrapper
+  it("Cannot wrap blocks while a receipt is active", async function () {
+    const w = bb16[0]  // getting a landlord which is already signed in
+    const cc = availableAreas[0]
+    let landlord = await getImpersonatedSigner(w.landlord)
+    let price = await wrapper.crowdsalePrice();
+    let unwrapPrice = ethers.utils.parseEther("1")
+    await setBalance(landlord.address, unwrapPrice.mul(unwrapPrice.mul(2)))
+
+    // buy range
+    await wrapper.connect(landlord)
+        .mint(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
+
+    // unwrap - buy - wrap 
+    let unwrapTxLandlord = await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.fx, cc.fy, unwrapPrice)
+    let buyTxLandlord = await oldMeh.connect(landlord).buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy, { value: unwrapPrice })
+    // let wrapTxLandlord = await wrapper.connect(landlord).wrap(cc.fx, cc.fy, cc.fx, cc.fy, { value: unwrapPrice })
+
+    await expect(wrapper.connect(landlord).wrap(cc.fx, cc.fy, cc.fx, cc.fy, { value: unwrapPrice }))
+      .to.be.revertedWith("MehERC721: Must withdraw receipt first")
+  })
+
+  it("Cannot withdraw when multiple recipients within area", async function () {
+    const w = bb16[0]  // getting a landlord which is already signed in
+    const cc = availableAreas[1]
+    let landlord = await getImpersonatedSigner(w.landlord)
+    let price = await wrapper.crowdsalePrice();
+    let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
+    let total = price.mul(count)
+    let unwrapPrice = ethers.utils.parseEther("1")
+    await setBalance(landlord.address, unwrapPrice.mul(count + 2))
+
+    // buy range
+    await wrapper.connect(landlord)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+    // transfer 1 block to another account
+    let transferTx = await wrapper.connect(landlord).transferFrom(landlord.address, friend.address, blockID(cc.tx, cc.ty))
+
+    // unwrap - buy
+    let unwrapTxLandlord = await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.fx, cc.fy, unwrapPrice)
+    let buyTxLandlord = await oldMeh.connect(landlord).buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy, { value: unwrapPrice })
+    let unwrapTxFriend = await wrapper.connect(friend).unwrap(cc.tx, cc.ty, cc.tx, cc.ty, unwrapPrice)
+    let signInTxFriend = await oldMeh.connect(friend).signIn(conf.mehAdminAddress)
+    let buyTxFriend = await oldMeh.connect(friend).buyBlocks(cc.tx, cc.ty, cc.tx, cc.ty, { value: unwrapPrice })
+
+    // try withdrawing the whole area
+    await expect(wrapper.connect(landlord).withdraw(cc.fx, cc.fy, cc.tx, cc.ty))
+      .to.be.revertedWith("MehERC721: Multiple recipients within area")
+  })
 })

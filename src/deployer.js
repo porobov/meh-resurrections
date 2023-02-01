@@ -75,7 +75,7 @@ class ProjectEnvironment {
         this.operatorWallet = operatorWallet
         this.existingEnvironmentPath = this.getPath(this.chainID)
         this.defaultJSON = {
-            'mehAdminAddress': '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
+            'mehAdminAddress': conf.mehAdminAddress,
             'mocksOwner': '',
             'weth': conf.wethAddress,
             'soloMargin': '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',

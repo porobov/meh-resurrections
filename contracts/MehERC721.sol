@@ -25,11 +25,11 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     // then they'll have to withdraw from the 2016 MEH contract
     // will also be used to mint blocks reserved for 2018 buyers (bought by admin)
     // those blocks will then be transfered to owners through regular NFT transfer
-    // check price through getAreaPrice() function of MEH  
+    // check price through getAreaPrice() function of MEH
     // wrap flow: sell on 2016MEH -> call wrap on wrapper -> withdraw from 2016MEH
-    function wrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
-        external 
-        payable 
+    function wrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
+        external
+        payable
     {
         uint256 areaPrice = 0;
         // checking for overlap with unminted (can only buy blocks from landlords)
@@ -39,6 +39,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             (address landlord, uint u, uint256 price) = oldMeh.getBlockInfo(x,y);
             require(landlord != address(0), "MehERC721: Area is not minted yet");
+            require(receipts[blocks[i]].isAwaitingWithdrawal == false, "MehERC721: Must withdraw receipt first");
             areaPrice += price;
         }
         // checking msg.value
@@ -49,24 +50,24 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         oldMeh.buyBlocks
             {value: areaPrice}
             (fromX, fromY, toX, toY);
-        
+
         // set prohibitary sell price so no one could buy it from oldMeh
         oldMeh.sellBlocks(fromX, fromY, toX, toY, MAX_INT_TYPE);
 
         // minting on wrapper
-        // minting to msg.sender (not original landlord) for simplicity (anyone can buy it from the 
+        // minting to msg.sender (not original landlord) for simplicity (anyone can buy it from the
         // original contract anyway)
         for (uint i = 0; i < blocks.length; i++) {
-            _mint(msg.sender, blocks[i]); 
+            _mint(msg.sender, blocks[i]);
         }
     }
 
-    // any owner of a wrapped block can unwrap it (put on sale) and reclaim ownership 
+    // any owner of a wrapped block can unwrap it (put on sale) and reclaim ownership
     // at the original contract (have to buy at 2016 and have to withdraw from the wrapper)
-    // priceForEachBlockInWei - specify unique price? 
+    // priceForEachBlockInWei - specify unique price?
     // unwrap flow: call unwrap on wrapper -> buy on 2016MEH -> withdraw on wrapper
-    // todo setSome random sell price in the UX, so that it won't be 
-    // repeated on accident 
+    // todo setSome random sell price in the UX, so that it won't be
+    // repeated on accident
     function unwrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
@@ -84,23 +85,23 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     // a: receipt is tied to blockId, so it's ok
     // q: what if someone bought a part of the area being sold?
     // a: no worries receipt is tied to blockId
-    // q: what if Alice sets the same sell price as Bob when he was unwrapping? 
+    // q: what if Alice sets the same sell price as Bob when he was unwrapping?
     // a: To do that Bob needs to finish unwrapping, then put the block on sale,
-    //    then Alice needs to buy from Bob and set the same price as Bob set. 
-    //    Plus Bob needs to miss his opportunity to withdraw from wrapper. 
-    //    Then Bob will not be able to withdraw. 
+    //    then Alice needs to buy from Bob and set the same price as Bob set.
+    //    Plus Bob needs to miss his opportunity to withdraw from wrapper.
+    //    Then Bob will not be able to withdraw.
     // q: what if multiple orders placed for the same block by the same landlord?
     // a: we can check that, and require to withdraw first
     // q: what if next landlord preforms unwrap?
     // a: well, we will not overcomplicate code for that.
-    // Web interface should guide through all wrap-unwrap stages gracefully. 
+    // Web interface should guide through all wrap-unwrap stages gracefully.
 
     // withdraw money for the unwrapped block.
-    // todo mention in the docs to withdraw money immediately. 
-    function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call 
+    // todo mention in the docs to withdraw money immediately.
+    function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call
         // check receipts
         // if sell price is different than that assigned in unwrap function
-        // it means that the block was sold. Then wrapper can withdraw money and send 
+        // it means that the block was sold. Then wrapper can withdraw money and send
         // them to seller.
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         uint256 payment = 0;
@@ -117,15 +118,15 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
                 delete receipts[blocks[i]];
                 // checking for single recipient
                 if (singleRecipient != NULL_ADDR) {
-                    require(singleRecipient == recipient, 
+                    require(singleRecipient == recipient,
                         "MehERC721: Multiple recipients within area");
                 }
                 singleRecipient = recipient;
-            }            
+            }
         }
-    
+
         // withdraw from MEH and log
-        
+
         // uint256 balBefore = address(this).balance;
         console.log("balBefore");
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
@@ -134,17 +135,17 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
         // uint256 withdrawnFromMeh = balAfter - balBefore;
         // unclaimed += withdrawnFromMeh;
 
-        // // payout 
+        // // payout
         // // TODO check the below requirement carefully ↓↓↓
         // unclaimed -= payment;
         require(singleRecipient != NULL_ADDR && singleRecipient != address(0),
             "MehERC721: Wrong recipient");
-        require(payment > 0, 
+        require(payment > 0,
             "MehERC721: Payment must be above 0");  // protects against gas waste
 
         console.log("payment", msg.sender ,payment, address(this).balance);
-        payable(singleRecipient).transfer(payment); // todo is this ok? 
+        payable(singleRecipient).transfer(payment); // todo is this ok?
     }
 
-    // receive() external payable {} 
+    // receive() external payable {}
 }
