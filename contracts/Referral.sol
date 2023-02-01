@@ -51,12 +51,14 @@ contract Referral is Initializable,  OwnableUpgradeable{
         transferOwnership(tempOwner);
     }
 
-    function withdraw() external {
+    function withdraw() external returns (uint256) {
         require(
             msg.sender == address(wrapper),
             "Only wrapper can withdraw");
         oldMeh.withdrawAll();
-        wrapper.referralPayback{value:address(this).balance}();
+        uint256 amount = address(this).balance;
+        wrapper.referralPayback{value:amount}();
+        return amount;
     }
 
     // seeting wrapper after wrapper is deployed

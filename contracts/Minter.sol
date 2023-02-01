@@ -148,7 +148,11 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
         console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
 
         // get all the funds back from referrals to repay the loan 
-        _withdrawFromReferrals();
+        uint256 withdrawnFromReferrals = _withdrawFromReferrals();
+        // if checking what is withdrawn from referrals, use ">="
+        // Otherwise someone can send funds to a referral and hang up execution
+        require(withdrawnFromReferrals >= price, 
+            "Minter: Received not enough funds from referrals");
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);

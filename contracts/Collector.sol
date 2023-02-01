@@ -24,22 +24,25 @@ contract Collector is UsingGlobals, Ownable {
     }
 
     // withrdaws money from all registered referrals
-    function _withdrawFromReferrals() internal {
+    function _withdrawFromReferrals() internal returns (uint256) {
         // using reverse order and do only 6 referrals
         // a way to upgrade referrals
         uint8 numOfRefs = uint8(referrals.length);
         uint8 collectedFrom = 0;
+        uint256 totalFunds = 0;
         
         // withdrawing from 6 last referrals
         console.log("... withdrawFromReferrals start index: %s", numOfRefs);
         while (collectedFrom < 6) {
-            Referral(referrals[numOfRefs-collectedFrom-1]).withdraw();
+            totalFunds += Referral(referrals[numOfRefs-collectedFrom-1]).withdraw();
             collectedFrom++;
             console.log("... withdrawed from %s: %s", collectedFrom, referrals[numOfRefs-collectedFrom]);
         }
+        return totalFunds;
     }
 
     // admin can call this function in case someone buys from 2016MEH directly
+    // or if someone sends funds to a referral directly
     // makes no sense in any other case. Referrals balance are always kept 0. 
     function adminWithdrawFromReferrals() external onlyOwner {
         _withdrawFromReferrals();
