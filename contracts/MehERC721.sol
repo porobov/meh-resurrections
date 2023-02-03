@@ -3,19 +3,23 @@ pragma solidity ^0.8.0;
 import "./Receiver.sol";
 import "./UsingTools.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MehERC721 is Receiver, UsingTools, ERC721 {
+contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     // wrapping-unwrapping
     // stores unwrapped blocks
     // todo check ordering
-    uint256 public unclaimed = 0;  // eth withdrawn from oldMEH while unwrapping
     uint256 constant public MAX_INT_TYPE = type(uint256).max;
 
     struct Receipt {
-        address recipient;
         bool isAwaitingWithdrawal;
         uint256 sellPrice;
+        address recipient;
     }
+    // ↓↓↓ eth withdrawn from oldMEH while unwrapping. Funds separation. 
+    // consider it wrap-unwrap balance of the wrapper contract
+    uint256 public unclaimed = 0;
+    uint256 public numOfReceipts = 0;
     mapping(uint16 => Receipt) public receipts;  // single receipt for blockId
 
     constructor() ERC721("Million Ether Homepage", "MEH") {
@@ -76,6 +80,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
             receipts[blocks[i]].isAwaitingWithdrawal = true;
             receipts[blocks[i]].recipient = msg.sender;
             _burn(blocks[i]);
+            numOfReceipts++;
         }
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
     }
@@ -97,6 +102,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
     // Web interface should guide through all wrap-unwrap stages gracefully.
 
     // withdraw money for the unwrapped block.
+    // must be available to anyone - able to clean up contract from excess eth
     // todo mention in the docs to withdraw money immediately.
     function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call
         // check receipts
@@ -121,31 +127,38 @@ contract MehERC721 is Receiver, UsingTools, ERC721 {
                     require(singleRecipient == recipient,
                         "MehERC721: Multiple recipients within area");
                 }
+                numOfReceipts--;
                 singleRecipient = recipient;
             }
         }
+        // protects against gas waste. Reverts useless transactions. 
+        require(payment > 0,
+            "MehERC721: Payment must be above 0");
 
-        // withdraw from MEH and log
-
-        // uint256 balBefore = address(this).balance;
+        // withdraw from MEH. Amount may be higher than payment
+        uint256 balBefore = address(this).balance;
         console.log("balBefore");
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
-        // uint256 balAfter = address(this).balance;
+        uint256 balAfter = address(this).balance;
 
-        // uint256 withdrawnFromMeh = balAfter - balBefore;
-        // unclaimed += withdrawnFromMeh;
+        // funds separation (does not interfere with contract bal directly)
+        unclaimed += balAfter - balBefore;
+        unclaimed -= payment;  // will throw on underflow
 
-        // // payout
-        // // TODO check the below requirement carefully ↓↓↓
-        // unclaimed -= payment;
+        // payout
         require(singleRecipient != NULL_ADDR && singleRecipient != address(0),
             "MehERC721: Wrong recipient");
-        require(payment > 0,
-            "MehERC721: Payment must be above 0");  // protects against gas waste
-
+        
         console.log("payment", msg.sender ,payment, address(this).balance);
         payable(singleRecipient).transfer(payment); // todo is this ok?
     }
 
-    // receive() external payable {}
+    // admin can rescue funds
+    // in case if no active receipts, but somehow got unclaimed funds
+    // receipts payments can be initiated by anyone
+    function rescueUnclaimed() external onlyOwner {
+        require((numOfReceipts == 0 && unclaimed > 0),
+            "MehERC721: rescue conditions are not met");
+        payable(owner()).transfer(unclaimed);
+    }
 }

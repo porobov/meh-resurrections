@@ -342,9 +342,55 @@ makeSuite("Withdraw one by one", function () {
     // withdraw in separate transactions
     const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
     let tx1 = await wrapper.connect(landlord).withdraw(cc.fx, cc.fy, cc.fx, cc.fy)
+    expect(await wrapper.unclaimed()).to.be.equal(unwrapPrice)
+    expect(await wrapper.numOfReceipts()).to.be.equal(1)
+    await expect(wrapper.connect(owner).rescueUnclaimed())
+      .to.be.revertedWith("MehERC721: rescue conditions are not met")
+
     let tx2 = await wrapper.connect(landlord).withdraw(cc.tx, cc.ty, cc.tx, cc.ty)
+    expect(await wrapper.unclaimed()).to.be.equal(0)
+    expect(await wrapper.numOfReceipts()).to.be.equal(0)
     const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
     let totalGas = await getTotalGas([tx1,tx2])
     expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(totUnwrapPrice.sub(totalGas))
+  })
+})
+
+// similar test is for minter.sol
+makeSuite("Minting from oldMeh directly", function () {
+  // makes funds rescue possible
+  it("funds are separated", async function () {
+    let mintingPrice = ethers.utils.parseEther("1")
+    let unwrapPrice = mintingPrice.mul(2)
+    let crowdsalePrice = await wrapper.crowdsalePrice();
+
+    // mint and unwrap a block (single) then buy it on meh2016
+    let s1 = await balancesSnapshot(oldMeh, wrapper, referrals)
+    let mm = availableAreas[1]
+    let mintingTx = await wrapper.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: crowdsalePrice })
+    let unwrapTx = await wrapper.connect(buyer).unwrap(mm.fx, mm.fy, mm.fx, mm.fy, unwrapPrice)
+    let signInTxbuyer = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
+    await oldMeh.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: unwrapPrice })
+    let s2 = await balancesSnapshot(oldMeh, wrapper, referrals)
+
+    // INTERFERE
+    // minting at oldMeh directly (creating excess referrals balace)
+    // 50% goes to mehAdminAddress, the rest from this sale should go to royalties
+    let cc = availableAreas[0]
+    let signInTxFriend = await oldMeh.connect(joker).signIn(conf.mehAdminAddress)
+    await oldMeh.connect(joker).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
+    let s3 = await balancesSnapshot(oldMeh, wrapper, referrals)
+    // oldMeh now stores funds from unwrap and minting transaction 
+    expect(s3.meh.sub(s1.meh)).to.equal(unwrapPrice.add(mintingPrice))
+
+    // now try to finish unwrap procedure - withdraw funds
+    let withdrawTx = await wrapper.connect(buyer).withdraw(mm.fx, mm.fy, mm.fx, mm.fy)
+    let s4 = await balancesSnapshot(oldMeh, wrapper, referrals)
+    let referralSurplus = mintingPrice.div(2) // 50% is collected from charity
+    // unwrap price is withdrawn from meh (not withdrawing from referrals)
+    expect(s3.meh.sub(s4.meh)).to.equal(unwrapPrice)
+
+    expect(await wrapper.unclaimed()).to.be.equal(0)
+    expect(await wrapper.numOfReceipts()).to.be.equal(0)
   })
 })
