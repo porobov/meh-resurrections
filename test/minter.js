@@ -4,7 +4,6 @@ const { ethers } = require("hardhat");
 const { setupTestEnvironment } = require("../src/deployer.js")
 const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
-const { zeroPad } = require('ethers/lib/utils.js');
 const exp = require('constants');
 
 const BLOCKS_FROM_2018_PATH = conf.BLOCKS_FROM_2018_PATH
@@ -390,4 +389,32 @@ makeSuite("mintReserved ", function () {
       }
     })
   }
+})
+
+makeSuite("Minting from oldMeh directly", function () {
+  // makes funds rescue possible
+  it("referral surplus gpes to royalties", async function () {
+    let cc = availableAreas[0]
+    let mintingPrice = ethers.utils.parseEther("1")
+    let crowdsalePrice = await minter.crowdsalePrice();
+    let s1 = await balancesSnapshot(oldMeh, minter, referrals)  // state 1
+    
+    // minting at oldMeh directly (creating excess referrals balace)
+    // 50% goes to mehAdminAddress, the rest from this sale should go to royalties
+    let signInTxFriend = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
+    await oldMeh.connect(buyer).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
+    let s2 = await balancesSnapshot(oldMeh, minter, referrals)
+    expect(s2.meh.sub(s1.meh)).to.equal(mintingPrice)
+
+    // minting new block (single)
+    let mm = availableAreas[1]
+    let price = await minter.crowdsalePrice();
+    let mintingTx = await minter.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: price })
+    let s3 = await balancesSnapshot(oldMeh, minter, referrals)
+    
+    let referralSurplus = mintingPrice.div(2) // 50% is collected from charity
+    expect(s2.meh.sub(s3.meh)).to.equal(referralSurplus)  // eth went to referral
+    expect(s3.wrapper.sub(s2.wrapper)).to.equal(price.add(referralSurplus))  // eth went to referral
+    expect(s3.royalties.sub(s2.royalties)).to.equal(price.add(referralSurplus))  // eth counted as royalties
+  })
 })

@@ -51,6 +51,7 @@ contract Minter is MehERC721, Flashloaner, Collector, Admin {
 
     // check that blocks are not 2018 blocks and not founders
     // will throw if any of the blocks are from 2016 or if multiple owners
+    // also separates minting and wrapping flows
     function _reservedFor(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal view returns (address) {
         address singleLandlord = address(0);
         address NULL_ADDR = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
