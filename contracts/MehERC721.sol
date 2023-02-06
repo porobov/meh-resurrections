@@ -85,6 +85,18 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
     }
 
+    // in case if sellPrice was set unbearably too high by mistake
+    function resetSellPrice(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
+        uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+        for (uint i = 0; i < blocks.length; i++) {
+            require(receipts[blocks[i]].recipient == msg.sender, 
+                "MehERC721: Not a recipient");
+            receipts[blocks[i]].sellPrice = priceForEachBlockInWei;
+        }
+        // ↓↓↓ will throw if block was already sold
+        oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
+    }
+
     // Q'n'A. Bob unwraps his block
     // q: what if Bob creates multiple orders?
     // a: receipt is tied to blockId, so it's ok
@@ -155,6 +167,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
 
     // admin can rescue funds
     // in case if no active receipts, but somehow got unclaimed funds
+    // (e.g. someone can use wrapper contract address as a referral)
     // receipts payments can be initiated by anyone
     function rescueUnclaimed() external onlyOwner {
         require((numOfReceipts == 0 && unclaimed > 0),

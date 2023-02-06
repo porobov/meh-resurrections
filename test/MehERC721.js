@@ -394,3 +394,43 @@ makeSuite("Minting from oldMeh directly", function () {
     expect(await wrapper.numOfReceipts()).to.be.equal(0)
   })
 })
+
+// similar test is for minter.sol
+makeSuite("Resetting sell price", function () {
+  // makes funds rescue possible
+  it("funds are separated", async function () {
+    const w = bb16[0]  // getting a landlord which is already signed in
+    const cc = availableAreas[1]
+    let landlord = await getImpersonatedSigner(w.landlord)
+    let price = await wrapper.crowdsalePrice();
+    let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
+    let total = price.mul(count)
+    let unwrapPrice = ethers.utils.parseEther("1")
+    await setBalance(landlord.address, ethers.utils.parseEther("10"))
+    // mint 2 blocks
+    await wrapper.connect(landlord)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+    // set both for sale 
+    await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
+    // reset sell price for second block 
+    let newUnwrapPrice = ethers.utils.parseEther("1.22")
+    let newTotUnwrapPrice = unwrapPrice.add(newUnwrapPrice)
+    await wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice)
+    expect((await wrapper.receipts(blockID(cc.fx, cc.fy))).sellPrice).to.be.equal(unwrapPrice)
+    expect((await wrapper.receipts(blockID(cc.tx, cc.ty))).sellPrice).to.be.equal(newUnwrapPrice)
+    // buy both blocks on meh 
+    await oldMeh.connect(landlord).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: newTotUnwrapPrice })
+    // try resetting price again
+    await expect(wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice))
+      .to.be.reverted
+    // withdraw 
+    const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
+    let tx1 = await wrapper.connect(landlord).withdraw(cc.fx, cc.fy, cc.tx, cc.ty)
+    const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
+    await expect(wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice))
+      .to.be.revertedWith("MehERC721: Not a recipient")
+    let totalGas = await getTotalGas([tx1])
+
+    expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(newTotUnwrapPrice.sub(totalGas))
+  })
+})
