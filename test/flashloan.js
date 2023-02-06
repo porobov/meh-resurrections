@@ -7,6 +7,11 @@ const conf = require('../conf.js')
 const WRAPPER_BLOCK_PRICE = conf.WRAPPER_BLOCK_PRICE
 const IS_DEPLOYING_MOCKS = conf.IS_DEPLOYING_MOCKS
 
+let availableAreas = [
+  {fx: 1, fy: 24, tx: 1, ty: 24}, // single
+  {fx: 2, fy: 24, tx: 2, ty: 25}  // range
+]
+
 async function checkMinting(buyCoords, checkOwnershipCoords) {
   const BC = buyCoords
   const price = WRAPPER_BLOCK_PRICE.mul(countBlocks(BC.fx,BC.fy,BC.tx,BC.ty))
@@ -56,14 +61,18 @@ describe("Flashloan", function () {
   })
 
   it("Allows to buy 1 block", async function () {
-    const buyCoords = { fx: 83, fy: 83, tx: 83, ty: 83 }
-    const checkOwnershipCoords = [{ x: 83, y: 83 }]
+    const buyCoords = availableAreas[0]
+    const checkOwnershipCoords = [{ x: buyCoords.fx, y: buyCoords.fy }]
     await checkMinting(buyCoords, checkOwnershipCoords)
   });
 
   it("Allows to buy range", async function () {
-    const buyCoords = { fx: 84, fy: 83, tx: 85, ty: 83 }
-    const checkOwnershipCoords = [{ x: 84, y: 83 }, { x: 85, y: 83 }]
+    const buyCoords = availableAreas[1]
+    const checkOwnershipCoords = 
+    [
+      { x: buyCoords.fx, y: buyCoords.fy }, 
+      { x: buyCoords.tx, y: buyCoords.ty }
+    ]
     await checkMinting(buyCoords, checkOwnershipCoords)
   });
 
