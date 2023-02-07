@@ -11,3 +11,6 @@ old_MEH_blocks/2018_Import_Back.json - blocks that were minted at 2018 contract 
 And all of those blocks need to minted on the wrapper (218 total)
 
 These files are used in tests directly. See ./test/minter.js
+
+
+vacant_areas.json - 10x10 block areas to check if crowdsale works properly
