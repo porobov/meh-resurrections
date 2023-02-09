@@ -508,6 +508,8 @@ async function deployContract(contractName, options, ...args) {
 
 module.exports = {
     setupTestEnvironment,
+    ProjectEnvironment,
+    Deployer,
     releaseWrapper,
     setupMocks
 }

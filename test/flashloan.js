@@ -32,12 +32,20 @@ describe("Allows to buy all", function () {
     areaPrice = price.mul(100)
   })
 
-  for (let cc of av.slice(0,9)) {
+
+
+
+  // warning!!! change or remove .slice() ↓↓↓ to proceed testing
+
+
+// comment when not needed. Even  a single run will consume a lot of alchemy
+/* 
+  for (let cc of av.slice(0,2)) {
     it(`Will mint blocks (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       await mehWrapper.connect(buyer).mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: areaPrice })
     })
   }
-
+*/
   it("Allows to place ads", async function () {
   });
 

@@ -1,12 +1,10 @@
 pragma solidity ^0.8.0;
 
-// import "@openzeppelin/contracts/proxy/Clones.sol";
-// import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Receiver.sol";
 import "./Collector.sol";
 import "hardhat/console.sol";
-import '@openzeppelin/contracts/proxy/Clones.sol';
-import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./interfaces/IOldMeh.sol";
 
@@ -37,8 +35,7 @@ contract ReferralFactory {
 contract Referral is Initializable,  OwnableUpgradeable{
 
     IOldMeh public oldMeh;
-    Collector private wrapper;
-    // address public wrapperAddress;
+    Collector public wrapper;
 
     function initialize (
         address oldMehAddr,
