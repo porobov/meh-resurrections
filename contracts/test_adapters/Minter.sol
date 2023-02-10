@@ -5,6 +5,8 @@ import "../MehWrapper.sol";
 // using adapter above MehWrapper to simplify deployment
 contract MinterAdapter is MehWrapper {
 
+    bool public isAdapter = true;
+
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) 
         MehWrapper(meh2016address, meh2018address, wethAddress, soloMarginAddress) {}
 
@@ -36,4 +38,15 @@ contract MinterAdapter is MehWrapper {
         return _buyFromMEH(price, buyer, fromX, fromY, toX, toY);
     }
 
+    function refWithdrawFromMeh(address payable referral) external payable onlyOwner {
+        Referral(payable(referral)).withdrawFromMeh();
+    }
+
+    function refSendFundsToWrapper(address payable referral) external payable onlyOwner returns (uint256) {
+        return Referral(payable(referral)).sendFundsToWrapper();
+    }
+
+    function refWithdraw(address payable referral) external payable onlyOwner returns (uint256) {
+        return Referral(payable(referral)).withdraw();
+    }
 }

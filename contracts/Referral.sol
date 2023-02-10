@@ -48,14 +48,30 @@ contract Referral is Initializable,  OwnableUpgradeable{
         transferOwnership(tempOwner);
     }
 
-    function withdraw() external returns (uint256) {
-        require(
-            msg.sender == address(wrapper),
-            "Only wrapper can withdraw");
+    function withdraw() external onlyOwner returns (uint256) {
+        _withdrawFromMeh();
+        return _sendFundsToWrapper();
+    }
+
+    function _withdrawFromMeh() internal {
         oldMeh.withdrawAll();
+    }
+
+    function _sendFundsToWrapper() internal returns (uint256) {
         uint256 amount = address(this).balance;
-        wrapper.referralPayback{value:amount}();
+        wrapper.referralPayback{ value: amount }();
         return amount;
+    }
+
+    // for testing only (only test adapter got interface)
+    function withdrawFromMeh() external onlyOwner {
+        console.log(address(this).balance);  // fixing hardhat
+        _withdrawFromMeh();
+    }
+
+    // for testing only (only test adapter got interface)
+    function sendFundsToWrapper() external onlyOwner returns (uint256) {
+        return _sendFundsToWrapper();
     }
 
     // seeting wrapper after wrapper is deployed
@@ -63,21 +79,18 @@ contract Referral is Initializable,  OwnableUpgradeable{
     function setWrapper(address wrapperAddr) external onlyOwner {
         // TODO check pairing
         wrapper = Collector(wrapperAddr);
-        // revoke ownership from current admin
         transferOwnership(wrapperAddr);
     }
 
     receive() external payable {
+        if (msg.sender == address(oldMeh)) {
+            // console.log("Receiver: ...");
+            console.log("Receiver: msg.sender ok");
+        }
         // console.log("Receiver: received from %s", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
         require(
             msg.sender == address(oldMeh),
             "Referral: Only receives from oldMEH");
         // console.log("Receiver: ..."); // add this line to break code 🤷‍♂️ bug
-        
-        if (msg.sender == address(oldMeh)) {
-            // console.log("Receiver: ...");
-            console.log("Receiver: msg.sender ok");
-        }
-        // console.log("received from %s", msg.sender);
     }
 }

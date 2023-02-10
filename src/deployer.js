@@ -256,6 +256,7 @@ class Constants {
 class Deployer {
     constructor(existingEnvironment, options) {
         this.isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
+        this.newDelay = ("overrideDelay" in options) ? options.overrideDelay: NEW_DELAY
         this.isSavingOnDisk = options.isSavingOnDisk
         this.isLiveNetwork = !isLocalTestnet()
         this.exEnv = existingEnvironment
@@ -386,8 +387,8 @@ class Deployer {
         // charity can go to any referral addess (any of them can withdraw)
         let charityAddress = this.getLastReferral().address
         console.log("Setting charity address:", charityAddress)
-        console.log("Setting new delay in seconds:", NEW_DELAY)
-        await this.exEnv.meh2016.adminContractSettings(NEW_DELAY, charityAddress, 0)
+        console.log("Setting new delay in seconds:", this.newDelay)
+        await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
     }
 
     // will deploy factory. Need unpaused MEH
