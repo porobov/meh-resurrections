@@ -10,6 +10,7 @@ module.exports = {
     mehAdminAddress: '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
     mainnetBlockWhenMEHWasPaused: 14979315,
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),
+    NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
     IS_DEPLOYING_MOCKS: false,
     FULL_TEST: true,  // if true will run time consuming tests
     BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",

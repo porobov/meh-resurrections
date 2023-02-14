@@ -13,7 +13,7 @@ const wethAbi = conf.wethAbi
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const gasReporter = new GasReporter()
 // 
-const NUM_OF_REFERRALS = 6  // 6 handshakes // num of referrals to deploy
+const NUM_OF_REFERRALS = conf.NUM_OF_REFERRALS
 // current timestamp = 1673521526 = 2 ** 30.64
 // 315360000 = 2 ** 28.23 (10 years)
 // (1) 1988881526 = 2 ** 30.89 (activation time at 1st level) (timestamp + setting delay)
