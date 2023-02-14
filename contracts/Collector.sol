@@ -3,12 +3,11 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
-import "./UsingGlobals.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Admin.sol";
 import "./Referral.sol";
 
 // Collector contract deals with MEH referrals
-contract Collector is UsingGlobals, Ownable {
+contract Collector is Admin {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
     bool public isCollector = true;  // safe pairing with referrals
@@ -41,10 +40,10 @@ contract Collector is UsingGlobals, Ownable {
     // admin can call this function in case someone buys from 2016MEH directly
     // or if someone sends funds to a referral directly
     // makes no sense in any other case. Referrals balance are always kept 0.
-    // this func is only needed after crowdsale ends.
+    // this func is only relevant after crowdsale ends.
     function adminWithdrawFromReferrals() external onlyOwner {
-        _withdrawFromReferrals();
-        // TODO move funds to royalties
+        uint256 amount = _withdrawFromReferrals();
+        payable(owner()).transfer(amount);
     }
 
     // Referrals send eth back to wrapper through this function

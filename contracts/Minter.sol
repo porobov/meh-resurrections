@@ -7,7 +7,7 @@ import "./Collector.sol";
 import "./MehERC721.sol";
 import "./Admin.sol";
 
-contract Minter is MehERC721, Flashloaner, Collector, Admin {
+contract Minter is MehERC721, Flashloaner, Collector {
 
     // Coordinates reserved for founders
     uint8 FROM_X_RESERVED = 61;

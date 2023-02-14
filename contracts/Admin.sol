@@ -7,8 +7,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Admin is Ownable {
 
     uint256 public crowdsalePrice = 0.25 ether;  // minting price
-
-    uint256 public royalties;  // eth earned by wrapper
+    // royalties - eth earned by wrapper
+    // also used to rescue funds
+    uint256 public royalties;
     mapping(address => uint256) public internalBalOf;  // partners balances 
     address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
     address public adam;
