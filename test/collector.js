@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
 const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
+const { balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 
 
@@ -69,23 +70,30 @@ makeSuite("Collector basic", function () {
     // ↓↓↓ NUM_OF_REFERRALS == referrals array length 
     expect(await wrapper.referrals(conf.NUM_OF_REFERRALS)).to.be.equal(referral.address)
   })
+})
 
-
-/// >>> I'm here <<<< 
-
-
-  it("Admin can withdraw from referrals", async function () {
+makeSuite("Collector withdrawals", function () {
+  it("Admin (and only admin) can withdraw excess funds from referrals", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
+    await referral.connect(owner).setWrapper(wrapper.address)
     await wrapper.connect(owner).addRefferal(referral.address)
+    await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     // send funds by stranger
     let value = ethers.utils.parseEther("1.0")
     await stranger.sendTransaction({
       to: referral.address,
       value: value,
     })
-
+    // stranger
+    await expect(wrapper.connect(stranger).adminWithdrawFromReferrals())
+      .to.be.revertedWith("Ownable: caller is not the owner")
+    // owner
+    const ownerBalBefore = await ethers.provider.getBalance(owner.address)
+    const tx = await wrapper.connect(owner).adminWithdrawFromReferrals()
+    let totalGas = await getTotalGas([tx])
+    const ownerBalAfter = await ethers.provider.getBalance(owner.address)
+    expect(ownerBalAfter.sub(ownerBalBefore)).to.be.equal(value.sub(totalGas))
   })
-
 })
-
+/// >>> I'm here <<<< TODO
 // collector can withdraw from referrals

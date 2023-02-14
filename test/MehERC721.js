@@ -3,7 +3,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { setupTestEnvironment } = require("../src/deployer.js")
-const { rand1to100, blockID, countBlocks, balancesSnapshot } = require("../src/test-helpers.js")
+const { rand1to100, blockID, countBlocks, balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
 const { getImpersonatedSigner } = require("../src/tools.js")
 const conf = require('../conf.js');
 const { BigNumber } = require('ethers');
@@ -37,18 +37,6 @@ let areas2016 = [
   {fx: 51, fy: 35, tx: 51, ty: 35}, // single
   {fx: 50, fy: 34, tx: 50, ty: 35}, // range
 ]
-
-function txGas(receipt) {
-  return receipt.gasUsed.mul(receipt.effectiveGasPrice)
-}
-
-async function getTotalGas(txs) {
-  let totGas = new BigNumber.from("0")
-  for (let tx of txs) {
-    totGas = totGas.add(txGas((await tx.wait())))
-  }
-  return totGas
-}
 
 // function to share deployment sequence between blocks of tests
 // Solution from here https://stackoverflow.com/a/26111323

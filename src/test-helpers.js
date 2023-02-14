@@ -1,3 +1,5 @@
+const { BigNumber } = require('ethers');
+
 function blockID(x, y) {
     return (y - 1) * 100 + x;
   }
@@ -24,9 +26,22 @@ async function balancesSnapshot(oldMeh, mehWrapper, referrals) {
   return snapshot
 }
 
+function txGas(receipt) {
+  return receipt.gasUsed.mul(receipt.effectiveGasPrice)
+}
+
+async function getTotalGas(txs) {
+  let totGas = new BigNumber.from("0")
+  for (let tx of txs) {
+    totGas = totGas.add(txGas((await tx.wait())))
+  }
+  return totGas
+}
+
 module.exports = { 
     countBlocks,
     blockID,
     rand1to100,
     balancesSnapshot,
+    getTotalGas,
 }
