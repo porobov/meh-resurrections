@@ -11,11 +11,7 @@ import "./Referral.sol";
 contract Collector is UsingGlobals, Ownable {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
-
-    // this wrapper contract is a referral too (must sign in)
-    function signIn(address referral) external onlyOwner {
-        oldMeh.signIn(referral);
-    }
+    
     // all referrals must be registered through this function
     function addRefferal(address newReferral) external onlyOwner {
         // leaving some flexibility - pushing as many referrals as needed 
@@ -24,6 +20,7 @@ contract Collector is UsingGlobals, Ownable {
     }
 
     // withrdaws money from all registered referrals
+    // called during minting. Funds are used to payback flashloan
     function _withdrawFromReferrals() internal returns (uint256) {
         // using reverse order and do only 6 referrals
         // a way to upgrade referrals
@@ -46,12 +43,12 @@ contract Collector is UsingGlobals, Ownable {
     // makes no sense in any other case. Referrals balance are always kept 0. 
     function adminWithdrawFromReferrals() external onlyOwner {
         _withdrawFromReferrals();
+        // TODO moce funds to royalties
     }
 
     // Referrals send eth back to wrapper through this function
+    // note: not checking for sender - optimizing for gas
+    // Minter.sol can handle excess funds
     function referralPayback() external payable {
-        // note: not checking for sender - optimizing for gas
     }
-
-    // doesn't need receive function referrals pay via referralPayback()
 }

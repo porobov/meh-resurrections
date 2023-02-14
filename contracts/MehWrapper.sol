@@ -8,6 +8,12 @@ contract MehWrapper is Minter {
         oldMeh = IOldMeh(meh2016address);
         meh2018 = IMeh2018(meh2018address);
     }
+
+    // this wrapper contract is a referral too (must sign in)
+    function signIn(address referral) external onlyOwner {
+        oldMeh.signIn(referral);
+    }
+
     // forward ads placement
     function placeImage(
         uint8 fromX, 
