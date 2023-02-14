@@ -11,12 +11,12 @@ import "./Referral.sol";
 contract Collector is UsingGlobals, Ownable {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
-    
+    bool public isCollector = true;  // safe pairing with referrals
     // all referrals must be registered through this function
-    function addRefferal(address newReferral) external onlyOwner {
-        // leaving some flexibility - pushing as many referrals as needed 
-        // (a way to upgrade referrals)
-        referrals.push(payable(newReferral));
+    function addRefferal(address payable newReferral) external onlyOwner {
+        require(Referral(newReferral).isReferral() == true, 
+            "Collector: contract is not a referral");
+        referrals.push(newReferral);
     }
 
     // withrdaws money from all registered referrals
@@ -40,15 +40,16 @@ contract Collector is UsingGlobals, Ownable {
 
     // admin can call this function in case someone buys from 2016MEH directly
     // or if someone sends funds to a referral directly
-    // makes no sense in any other case. Referrals balance are always kept 0. 
+    // makes no sense in any other case. Referrals balance are always kept 0.
+    // this func is only needed after crowdsale ends.
     function adminWithdrawFromReferrals() external onlyOwner {
         _withdrawFromReferrals();
-        // TODO moce funds to royalties
+        // TODO move funds to royalties
     }
 
     // Referrals send eth back to wrapper through this function
     // note: not checking for sender - optimizing for gas
-    // Minter.sol can handle excess funds
+    // Minter.sol handles excess funds
     function referralPayback() external payable {
     }
 }
