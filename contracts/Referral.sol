@@ -74,7 +74,7 @@ contract Referral is Initializable,  OwnableUpgradeable{
         return _sendFundsToWrapper();
     }
 
-    // seeting wrapper after wrapper is deployed
+    // setting wrapper after wrapper is deployed
     // (referrals are deployed prior to wrapper)
     function setWrapper(address wrapperAddr) external onlyOwner {
         // TODO check pairing
@@ -83,14 +83,5 @@ contract Referral is Initializable,  OwnableUpgradeable{
     }
 
     receive() external payable {
-        if (msg.sender == address(oldMeh)) {
-            // console.log("Receiver: ...");
-            console.log("Receiver: msg.sender ok");
-        }
-        // console.log("Receiver: received from %s", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
-        require(
-            msg.sender == address(oldMeh),
-            "Referral: Only receives from oldMEH");
-        // console.log("Receiver: ..."); // add this line to break code 🤷‍♂️ bug
     }
 }

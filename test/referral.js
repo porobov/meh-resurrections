@@ -2,12 +2,8 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
 const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
-const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
-const { time } = require("@nomicfoundation/hardhat-network-helpers");
-
-const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
-const { BigNumber } = require("ethers");
+
 
 const oldMehAddress = conf.oldMehAddress
 const mehAdminAddress = conf.mehAdminAddress
@@ -44,12 +40,6 @@ function makeSuite(name, tests) {
       wrapper = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
-
-      // const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
-      // usingToolsAdapter = await UsingToolsAdapter.deploy();
-      // await usingToolsAdapter.deployed();
-
-      // founder_address = await minter.founder()
     })
       this.timeout(142000)
       tests();
@@ -60,7 +50,7 @@ function makeSuite(name, tests) {
 // referral factory to test it
 let referralFactory
 
-makeSuite("Referrals", function () {
+makeSuite("Referrals setup", function () {
 
   it("Creates new referral", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
@@ -80,15 +70,32 @@ makeSuite("Referrals", function () {
     expect(await referral.owner()).to.be.equal(wrapper.address)
   })
 
-  it("Cannot receive money from strangers", async function () {
+  // removed this test. See below ↓↓↓
+  // it("Cannot receive money from strangers", async function () {
+  //   let referral = await deployer.setUpReferral(mehAdminAddress)
+  //   await expect(stranger.sendTransaction({
+  //     to: referral.address,
+  //     value: ethers.utils.parseEther("1.0"),
+  //   })).to.be.revertedWith("Referral: Only receives from oldMEH")
+  // })
+
+  // Minter.sol can handle excess funds anyway. Plus there's any referral can 
+  // receive money through somebody's self-destruct. 
+  // Plus Collector doesn't check sender (Minter.sol can receive money through
+  // referral payback function). So there's no necessity in checking sender here
+  it("Can receive money from strangers", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
-    await expect(stranger.sendTransaction({
+    let value = ethers.utils.parseEther("1.0")
+    const refBalBefore = await ethers.provider.getBalance(referral.address)
+    await stranger.sendTransaction({
       to: referral.address,
-      value: ethers.utils.parseEther("1.0"),
-    })).to.be.revertedWith("Referral: Only receives from oldMEH")
+      value: value,
+    })
+    const refBalAfter = await ethers.provider.getBalance(referral.address)
+    expect(refBalAfter.sub(refBalBefore)).to.be.equal(value)
   })
 
-  it("Only wrapper can withdraw from referral", async function () {
+  it("Only wrapper can withdraw from referral (separate functions)", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
@@ -127,9 +134,9 @@ makeSuite("Referrals", function () {
   })
 })
 
-makeSuite("Referrals", function () {
+makeSuite("Referrals withdrawal", function () {
 
-  it("Only wrapper can withdraw from referral", async function () {
+  it("Only wrapper can withdraw from referral (single withdraw function)", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
