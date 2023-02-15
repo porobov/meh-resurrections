@@ -11,6 +11,7 @@ contract Collector is Admin {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
     bool public isCollector = true;  // safe pairing with referrals
+    
     // all referrals must be registered through this function
     function addRefferal(address payable newReferral) external onlyOwner {
         require(Referral(newReferral).isReferral() == true, 
@@ -28,11 +29,12 @@ contract Collector is Admin {
         uint256 totalFunds = 0;
         
         // withdrawing from 6 last referrals
-        console.log("... withdrawFromReferrals start index: %s", numOfRefs);
+        console.log("Withdrawing from referrals start index: %s", numOfRefs);
         while (collectedFrom < 6) {
             totalFunds += Referral(referrals[numOfRefs-collectedFrom-1]).withdraw();
             collectedFrom++;
-            console.log("... withdrawed from %s: %s", collectedFrom, referrals[numOfRefs-collectedFrom]);
+            console.log("withdrawed from %s: %s", collectedFrom, referrals[numOfRefs-collectedFrom]);
+            console.log("total: ", totalFunds);
         }
         return totalFunds;
     }

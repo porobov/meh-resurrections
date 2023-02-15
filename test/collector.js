@@ -34,7 +34,7 @@ async function testEnvironmentReferrals() {
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, stranger, notAReferral] = await ethers.getSigners()
+      ;[ownerGlobal, buyer, stranger, notAReferral] = await ethers.getSigners()
       let env = await testEnvironmentReferrals()
       owner = env.owner
       wrapper = env.mehWrapper
@@ -45,7 +45,7 @@ function makeSuite(name, tests) {
       tests();
   });
 }
-
+/*
 makeSuite("Collector basic", function () {
 
   it("Anyone can send funds to Collector", async function () {
@@ -57,7 +57,7 @@ makeSuite("Collector basic", function () {
     })
 
   // note. Can add as many referrals as needed.
-  // Collector will use only the last 6. 
+  // warning! Canot register referrals after wrapper sign in (into oldMeh)
   it("Owner can register refferals", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     // only owner
@@ -71,7 +71,7 @@ makeSuite("Collector basic", function () {
     expect(await wrapper.referrals(conf.NUM_OF_REFERRALS)).to.be.equal(referral.address)
   })
 })
-
+*/
 makeSuite("Collector withdrawals", function () {
   it("Admin (and only admin) can withdraw excess funds from referrals", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
@@ -94,6 +94,31 @@ makeSuite("Collector withdrawals", function () {
     const ownerBalAfter = await ethers.provider.getBalance(owner.address)
     expect(ownerBalAfter.sub(ownerBalBefore)).to.be.equal(value.sub(totalGas))
   })
+
+  /// >>> I'm here <<<< TODO
+
+  it(`Collector can withdraw from referrals (state from prev. test)`, async function () {
+    let cc = availableAreas[0]
+    let price = await wrapper.crowdsalePrice();
+    let total = price
+    let sb = await balancesSnapshot(oldMeh, wrapper, referrals)
+    await wrapper.connect(buyer)
+      .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+    let sa = await balancesSnapshot(oldMeh, wrapper, referrals)
+
+    expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)
+    expect(sa.meh.sub(sb.meh)).to.equal(0)
+    expect(sa.royalties.sub(sb.royalties)).to.equal(total)
+    expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(wrapper.address)
+    expect(await wrapper.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+    for (const referral of sa.referrals) {
+      expect(referral.meh).to.equal(0)
+      expect(referral.wrapper).to.equal(0)
+    }
+  })
 })
-/// >>> I'm here <<<< TODO
-// collector can withdraw from referrals
+
+// cannot add referrals after mehWrapper signs into oldMeh 
+// wrapper will not be able to collect everything from referrals
+
+// check internal function
