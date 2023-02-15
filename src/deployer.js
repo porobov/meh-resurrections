@@ -443,7 +443,7 @@ class Deployer {
         this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
     
-    async pairRefAndWrapper(ref) {
+    async pairSingleRefAndWrapper(ref) {
         let setWrapperRec = await (await ref.setWrapper(this.mehWrapper.address)).wait(this.exEnv.numConf)
         let addRefferalRec = await (await this.mehWrapper.addRefferal(ref.address)).wait(this.exEnv.numConf)
         return [setWrapperRec, addRefferalRec]
@@ -454,9 +454,7 @@ class Deployer {
         console.log("Registering referrals...")
         // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
-            let receipts = await this.pairRefAndWrapper(referral)
-            // await referral.setWrapper(this.mehWrapper.address)
-            // const receipt = await (await this.mehWrapper.addRefferal(referral.address)).wait(this.exEnv.numConf)
+            let receipts = await this.pairSingleRefAndWrapper(referral)
             // referralsGas += receipt.gasUsed
             console.log("Registered ref:", referral.address)
         }
