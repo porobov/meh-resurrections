@@ -56,7 +56,7 @@ contract Referral is Initializable,  OwnableUpgradeable{
     }
 
     function _withdrawFromMeh() internal {
-        console.log(address(this).balance);  // fixing hardhat
+        console.log("fixing hardhat", address(this).balance);
         oldMeh.withdrawAll();
     }
 

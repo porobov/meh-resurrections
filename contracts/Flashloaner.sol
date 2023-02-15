@@ -1,6 +1,4 @@
-// The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
 import "./libs/dydx.sol";
 import "./interfaces/IDydx.sol";
 import "./interfaces/IWeth.sol";

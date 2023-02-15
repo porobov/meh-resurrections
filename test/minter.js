@@ -109,7 +109,7 @@ makeSuite("Reading contract", function () {
   })
 
   /// WARNING!!!
-  /// Two 2016 blocks were sold on 2018 contract
+  /// Two 2016 blocks were sold on 2018 contract. Intersection
   /// see "if" statement below
   // it("Check that 2016 blocks are intact in 2018", async function () {
   //   if (FULL_TEST) {
@@ -391,12 +391,12 @@ makeSuite("mintReserved ", function () {
   }
 })
 
+// see similar test in test/MehERC721.js 
 makeSuite("Minting from oldMeh directly", function () {
   // makes funds rescue possible
   it("referral surplus gpes to royalties", async function () {
     let cc = availableAreas[0]
     let mintingPrice = ethers.utils.parseEther("1")
-    let crowdsalePrice = await minter.crowdsalePrice();
     let s1 = await balancesSnapshot(oldMeh, minter, referrals)  // state 1
     
     // minting at oldMeh directly (creating excess referrals balace)

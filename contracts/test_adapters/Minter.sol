@@ -3,12 +3,15 @@ import "../MehWrapper.sol";
 
 // adapter to make internal functions external
 // using adapter above MehWrapper to simplify deployment
+// using single adapter for all contracts: Minter, Referrals
 contract MinterAdapter is MehWrapper {
 
     bool public isAdapter = true;
 
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) 
         MehWrapper(meh2016address, meh2018address, wethAddress, soloMarginAddress) {}
+
+    // Minter 
 
     function _landlordFrom2018ByIndexExt(uint256 id) external view returns (address) {
         return _landlordFrom2018ByIndex(id);
@@ -37,6 +40,8 @@ contract MinterAdapter is MehWrapper {
     function _buyFromMEHExt(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external payable {
         return _buyFromMEH(price, buyer, fromX, fromY, toX, toY);
     }
+
+    // Referrals
 
     function refWithdrawFromMeh(address payable referral) external payable onlyOwner {
         Referral(payable(referral)).withdrawFromMeh();

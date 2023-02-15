@@ -1,7 +1,5 @@
-// The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
 import "./Minter.sol";
-// import "./WrapUnwrapper.sol";
 
 contract MehWrapper is Minter {
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) Minter(wethAddress, soloMarginAddress) {    
@@ -11,6 +9,9 @@ contract MehWrapper is Minter {
 
     // this wrapper contract is a referral too (must sign in)
     function signIn(address referral) external onlyOwner {
+        // TODO check there's enouhg referrals!!!
+        // TODO do we need to check oldMeh, solomarging and meh2018???
+        // just sign in with the last registered referral
         oldMeh.signIn(referral);
     }
 
