@@ -12,6 +12,22 @@ contract MehWrapper is Minter {
     function signIn() external onlyOwner {
         uint8 numOfRefs = uint8(referrals.length);
         require(numOfRefs >= numOfHandshakes, "MehWrapper: not enough referrals");
+        // check chain of referrals
+        // (checking only numOfHandshakes - 1 referrals)
+        for(uint8 i = numOfRefs - 1;  i >= numOfRefs - numOfHandshakes + 1; i--) {
+            (
+                address prevRef,
+                uint8 handshakes,
+                uint balance,
+                uint32 activationTime,
+                bool banned,
+                uint userID,
+                bool refunded,
+                uint investments
+            ) = oldMeh.getUserInfo(referrals[i]);
+            require(prevRef == referrals[i - 1], 
+                "MehWrapper: referrals chain is broken");
+        }
         // signing in with the last registered referral
         oldMeh.signIn(referrals[numOfRefs - 1]);
         isSignedIn = true;  // cannot add referrals after this
