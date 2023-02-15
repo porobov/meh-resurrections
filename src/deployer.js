@@ -314,7 +314,7 @@ class Deployer {
             if (this.areRefsAndWrapperPaired) {
                 // wrapper signs in to old meh
                 await this.unpauseMeh2016()
-                await this.mehWrapper.signIn(this.getLastReferral().address)
+                await this.mehWrapper.signIn()
                 
                 // setting charity address and NEW_DELAY
                 await this.finalMeh2016settings()
