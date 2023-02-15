@@ -292,7 +292,7 @@ class Deployer {
         cnsts.areRefsAndWrapperPaired ? this.areRefsAndWrapperPaired = cnsts.areRefsAndWrapperPaired : {} 
     }
 
-    // deloy
+    // deploy
     async deployAndSetup() {
 
         await this.initialize()
@@ -443,14 +443,21 @@ class Deployer {
         this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
       }
     
+    async pairRefAndWrapper(ref) {
+        let setWrapperRec = await (await ref.setWrapper(this.mehWrapper.address)).wait(this.exEnv.numConf)
+        let addRefferalRec = await (await this.mehWrapper.addRefferal(ref.address)).wait(this.exEnv.numConf)
+        return [setWrapperRec, addRefferalRec]
+    }
+
     // Pairs referrals and wrapper
     async pairRefsAndWrapper() {
         console.log("Registering referrals...")
-        let referralsGas = BigNumber.from(0)
+        // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
-            await referral.setWrapper(this.mehWrapper.address)
-            const receipt = await (await this.mehWrapper.addRefferal(referral.address)).wait(this.exEnv.numConf)
-            referralsGas += receipt.gasUsed
+            let receipts = await this.pairRefAndWrapper(referral)
+            // await referral.setWrapper(this.mehWrapper.address)
+            // const receipt = await (await this.mehWrapper.addRefferal(referral.address)).wait(this.exEnv.numConf)
+            // referralsGas += receipt.gasUsed
             console.log("Registered ref:", referral.address)
         }
         this.constants.add({areRefsAndWrapperPaired: true})
