@@ -36,7 +36,6 @@ contract Referral is Initializable,  OwnableUpgradeable{
 
     IOldMeh public oldMeh;
     Collector public wrapper;
-    bool public isReferral;  // pairing with Collector
 
     function initialize (
         address oldMehAddr,
@@ -47,7 +46,6 @@ contract Referral is Initializable,  OwnableUpgradeable{
         oldMeh = IOldMeh(oldMehAddr);
         oldMeh.signIn(previousReferal);
         transferOwnership(tempOwner);
-        isReferral = true;
     }
 
     function withdraw() external onlyOwner returns (uint256) {
