@@ -1,21 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
-const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
-const { balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
+const { resetHardhatToBlock } = require("../src/tools.js")
+const { getTotalGas } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
-const { ContractFunctionVisibility } = require("hardhat/internal/hardhat-network/stack-traces/model.js");
 
-
-const oldMehAddress = conf.oldMehAddress
 const mehAdminAddress = conf.mehAdminAddress
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 let deployer
-
-let availableAreas = [
-  {fx: 1, fy: 24, tx: 1, ty: 24}, // single
-  {fx: 2, fy: 24, tx: 2, ty: 25}  // range
-]
 
 async function testEnvironmentCollector() {
   ;[owner] = await ethers.getSigners()
@@ -32,12 +23,10 @@ async function testEnvironmentCollector() {
   // same as deploy and setup function, but not finalized 
   await deployer.initialize()
   await deployer.deployReferralFactory()
-
   // await deployer.deployReferrals()
   await deployer.deployWrapper()
   await deployer.unpauseMeh2016()
   // await deployer.pairRefsAndWrapper()
-  // 
   // await deployer.mehWrapper.signIn()
   // await deployer.finalMeh2016settings()
   // await deployer.exEnv.weth.deposit({value: 20000})
