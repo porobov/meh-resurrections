@@ -77,9 +77,15 @@ makeSuite("Collector basic", function () {
       const collectorBalAfter = await ethers.provider.getBalance(wrapper.address)
       expect(collectorBalAfter.sub(collectorBalBefore)).to.be.equal(value)
     })
+  
+  // can only add a real referral
+  it("Can only add a paired referral", async function () {
+    let referral = await deployer.setUpReferral(mehAdminAddress)
+    await expect(wrapper.connect(owner).addRefferal(referral.address))
+      .to.be.revertedWith("Collector: Referral is not owned by wrapper")
+  })
 
   // note. Can add as many referrals as needed.
-  // warning! Canot register referrals after wrapper sign in (into oldMeh)
   it("Owner (and only owner) can register refferals", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.pairSingleRefAndWrapper(referral)
@@ -100,30 +106,27 @@ makeSuite("Chain of referrals", function () {
   // continuity of chain is checked at wrapper sign in (see MehWrapper.sol)
   it("Can register chain of refferals", async function () {
     await deployer.deployReferrals()
-    await deployer.pairRefsAndWrapper()
     expect(deployer.referrals.length).to.be.equal(conf.NUM_OF_REFERRALS)
     let deplRefsAddrs = deployer.constants.constants.referralsAddresses
-    for (let i in deplRefsAddrs) {
-      await wrapper.connect(owner).addRefferal(deplRefsAddrs[i])
+    // add referrals
+    for (let i in deployer.referrals) {
+      await deployer.pairSingleRefAndWrapper(deployer.referrals[i])
     }
+    // check
     for (let i in deplRefsAddrs) {
-      expect(await wrapper.referrals(i)).to.be.equal(deplRefsAddrs[i])
+      let contractRef = await wrapper.referrals(i)
+      expect(contractRef).to.be.equal(deplRefsAddrs[i])
     }
   })
 
-
-
-
-  
-  /// >>>> I'M HERE <<<<
-  // can only add a real referral 
-  // cannot add referrals after mehWrapper signs into oldMeh 
-  // wrapper will not be able to collect everything from referrals
-  it("Can register chain of refferals", async function () {
-
+  it("Cannot add referrals after wrapper signs into oldMeh (using prev. test state)", async function () {
+    let referral = await deployer.setUpReferral(mehAdminAddress)
+    await deployer.unpauseMeh2016()
+    await deployer.mehWrapper.signIn()
+    await expect(wrapper.connect(owner).addRefferal(referral.address))
+      .to.be.revertedWith("Collector: Cannot add referrals after sign in")
   })
 })
-
 
 makeSuite("Collector withdrawals", function () {
 

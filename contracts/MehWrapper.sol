@@ -8,6 +8,7 @@ contract MehWrapper is Minter {
         // TODO do we need to check oldMeh, solomarging and meh2018???
     }
 
+    // TODO check if more referrals can be added than needed
     // this wrapper contract is a referral too (must sign in)
     function signIn() external onlyOwner {
         uint8 numOfRefs = uint8(referrals.length);

@@ -17,7 +17,7 @@ contract Collector is Admin {
     // all referrals must be registered through this function 
     function addRefferal(address payable newReferral) external onlyOwner {
         require(isSignedIn == false, 
-            "Collector: cannot add referrals after sign in");
+            "Collector: Cannot add referrals after sign in");
         require(address(Referral(newReferral).wrapper()) == address(this), 
             "Collector: Referral is not owned by wrapper");
         referrals.push(newReferral);
