@@ -10,9 +10,9 @@ import "./Referral.sol";
 contract Collector is Admin {
 
     address payable[] public referrals;  // list of referrals to withdraw eth from
-    bool public isCollector = true;  // safe pairing with referrals
+    bool public constant isCollector = true;  // safe pairing with referrals
     bool public isSignedIn = false;  // is wrapper signed in to OldMeh
-    uint8 public numOfHandshakes = 6;  // using last 6 referrals. See also MehWrapper.sol
+    uint8 public constant numOfHandshakes = 6;  // using last 6 referrals. See also MehWrapper.sol
 
     // all referrals must be registered through this function 
     function addRefferal(address payable newReferral) external onlyOwner {

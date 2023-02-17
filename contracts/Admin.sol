@@ -5,14 +5,19 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Admin is Ownable {
-
     uint256 public crowdsalePrice = 0.25 ether;  // minting price
     // royalties - eth earned by wrapper
     // also used to rescue funds
     uint256 public royalties;
-    mapping(address => uint256) public internalBalOf;  // partners balances 
     address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
     address public adam;
+    mapping(address => uint256) public internalBalOf;  // partners balances 
+
+    // Coordinates reserved for founders
+    uint8 constant FROM_X_RESERVED = 61;
+    uint8 constant FROM_Y_RESERVED = 44;
+    uint8 constant TO_X_RESERVED = 100;
+    uint8 constant TO_Y_RESERVED = 68;
 
     // splitting income here to offload minting function
     function splitIncome() internal {

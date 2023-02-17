@@ -1,19 +1,9 @@
-// The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
-// import "./UsingGlobals.sol";
-// import "./UsingTools.sol";
 import "./Flashloaner.sol";
 import "./Collector.sol";
 import "./MehERC721.sol";
-import "./Admin.sol";
 
 contract Minter is MehERC721, Flashloaner, Collector {
-
-    // Coordinates reserved for founders
-    uint8 FROM_X_RESERVED = 61;
-    uint8 FROM_Y_RESERVED = 44;
-    uint8 TO_X_RESERVED = 100;
-    uint8 TO_Y_RESERVED = 68;
 
     constructor(address wethAddress, address soloMarginAddress) Flashloaner(wethAddress, soloMarginAddress) {}
 
