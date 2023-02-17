@@ -6,11 +6,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Admin is Ownable {
     uint256 public crowdsalePrice = 0.25 ether;  // minting price
-    // royalties - eth earned by wrapper
-    // also used to rescue funds
+    // royalties - eth earned by wrapper (also used to rescue funds)
     uint256 public royalties;
     address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
-    address public adam;
+    address public partners;
     mapping(address => uint256) public internalBalOf;  // partners balances 
 
     // Coordinates reserved for founders
@@ -23,25 +22,26 @@ contract Admin is Ownable {
     function splitIncome() internal {
         uint256 foundersShare = royalties * 85 / 100;
         internalBalOf[founder] += foundersShare;
-        internalBalOf[adam] += (royalties - foundersShare);
+        internalBalOf[partners] += (royalties - foundersShare);
         royalties = 0;
     }
 
     function withdrawIncome() external {
-        require(msg.sender == founder || msg.sender == adam, "Not a beneficiary");
+        require(msg.sender == founder || msg.sender == partners, 
+            "Admin: Not an authorized beneficiary");
         splitIncome();
         internalBalOf[msg.sender] = 0;
         payable(msg.sender).transfer(internalBalOf[msg.sender]); // todo is this ok?
     }
 
-    function setAdam(address newAdamsAddress) external {
-        require(msg.sender == adam, "Not Adam");
-        adam = newAdamsAddress;
+    function setPartners(address newPartnerssAddress) external {
+        require(msg.sender == partners, "Admin: Not partner");
+        partners = newPartnerssAddress;
     }
-
-    function setPeter(address newPetersAddress) external {
-        require(msg.sender == founder, "Not Peter");
-        founder = newPetersAddress;
+    
+    function setFounder(address newFoundersAddress) external {
+        require(msg.sender == founder, "Admin: Not founder");
+        founder = newFoundersAddress;
     }
     
     function adminSetPrice(uint256 newPrice) external onlyOwner {
