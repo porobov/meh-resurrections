@@ -48,12 +48,13 @@ contract MehWrapper is Minter {
         string calldata adText)
     external
     {
-        // only owner of pixels can place ads
+        // only owner of blocks can place ads
+        // (must be minted or wrapped)
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
-            require(_isApprovedOrOwner(msg.sender, blocks[i]), "Not a landlord");
+            require(_isApprovedOrOwner(msg.sender, blocks[i]), 
+                "MehWrapper: Not a landlord");
         }
-
         oldMeh.placeImage(fromX, fromY, toX, toY, imageSourceUrl, adUrl, adText);
     }
 }
