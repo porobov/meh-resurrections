@@ -7,6 +7,7 @@ module.exports = {
     oldMehAddress: "0x15dbdB25f870f21eaf9105e68e249E0426DaE916",
     newMehAddress: '0xCEf41878Db032586C835eE0890484399402A64f6',
     wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+    soloMarginAddress: '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
     mehAdminAddress: '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
     mainnetBlockWhenMEHWasPaused: 14979315,
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),

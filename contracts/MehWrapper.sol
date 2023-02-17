@@ -5,10 +5,13 @@ contract MehWrapper is Minter {
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) Minter(wethAddress, soloMarginAddress) {
         oldMeh = IOldMeh(meh2016address);
         meh2018 = IMeh2018(meh2018address);
-        // TODO do we need to check oldMeh, solomarging and meh2018???
+        // check pairing
+        require(oldMeh.charityAddress() != address(0x0), "MehWrapper: wrong Meh2016 contract");
+        require(meh2018.isMEH() == true, "MehWrapper: wrong Meh2018 contract");
+        require(IWETH(wethAddress).totalSupply() > 100000, "MehWrapper: wrong Weth contract");
+        require(ISoloMargin(soloMarginAddress).getNumMarkets() > 0, "MehWrapper: wrong Solomargin contract");
     }
 
-    // TODO check if more referrals can be added than needed
     // this wrapper contract is a referral too (must sign in)
     function signIn() external onlyOwner {
         uint8 numOfRefs = uint8(referrals.length);

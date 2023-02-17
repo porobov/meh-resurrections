@@ -78,7 +78,7 @@ class ProjectEnvironment {
             'mehAdminAddress': conf.mehAdminAddress,
             'mocksOwner': '',
             'weth': conf.wethAddress,
-            'soloMargin': '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
+            'soloMargin': conf.soloMarginAddress,
             'meh2016': conf.oldMehAddress,
             'meh2018': conf.newMehAddress,
         }

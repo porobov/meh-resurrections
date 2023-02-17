@@ -135,3 +135,36 @@ makeSuite("More referrals than needed", function () {
     expect(await wrapper.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
   })
 })
+
+it("More referrals can be added than needed", async function () {
+  const wrapper = await ethers.getContractFactory("MehWrapper");
+  // wrong meh2016
+  await expect(wrapper.deploy(
+    conf.newMehAddress,
+    conf.newMehAddress,
+    conf.wethAddress,
+    conf.soloMarginAddress,
+  )).to.be.reverted
+  // wrong meh2018
+  await expect(wrapper.deploy(
+    conf.oldMehAddress,
+    conf.oldMehAddress,
+    conf.wethAddress,
+    conf.soloMarginAddress,
+  )).to.be.reverted
+  // wrong weth
+  await expect(wrapper.deploy(
+    conf.oldMehAddress,
+    conf.newMehAddress,
+    conf.oldMehAddress,
+    conf.soloMarginAddress,
+  )).to.be.reverted
+  // wrong solo
+  await expect(wrapper.deploy(
+    conf.oldMehAddress,
+    conf.newMehAddress,
+    conf.wethAddress,
+    conf.oldMehAddress,
+  )).to.be.reverted
+
+})
