@@ -1,9 +1,14 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
-const { resetHardhatToBlock } = require("../src/tools.js")
-const { getTotalGas } = require("../src/test-helpers.js")
+const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
+const { getTotalGas, blockID } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
+
+let availableAreas = [
+  {fx: 1, fy: 24, tx: 1, ty: 24}, // single
+  {fx: 2, fy: 24, tx: 2, ty: 25}  // range
+]
 
 const mehAdminAddress = conf.mehAdminAddress
 let deployer
@@ -17,7 +22,6 @@ async function testEnvironmentCollector() {
 
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
-      isDeployingMinterAdapter: true,
       overrideDelay: 1 })  // removing delay
 
   // same as deploy and setup function, but not finalized 
@@ -45,7 +49,7 @@ async function testEnvironmentCollector() {
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, stranger] = await ethers.getSigners()
+      ;[ownerGlobal, buyer, stranger] = await ethers.getSigners()
       let env = await testEnvironmentCollector()
       owner = env.owner
       wrapper = env.mehWrapper
@@ -56,8 +60,6 @@ function makeSuite(name, tests) {
       tests();
   });
 }
-
-
 
 makeSuite("Referrals and Sign in", function () {
 
@@ -91,7 +93,33 @@ makeSuite("Referrals and Sign in", function () {
         "MehWrapper: referrals chain is broken"
     )
   })
+})
 
-  // check if more referrals can be added than needed
- 
+makeSuite("More referrals than needed", function () {
+  it("More referrals can be added than needed", async function () {
+    // deploying standard chain of referrals
+    await deployer.deployReferrals()
+    await deployer.pairRefsAndWrapper()
+    await deployer.finalMeh2016settings()  // setting new delay (override)
+
+    // add another referral
+    let lastReferral = deployer.getLastReferral()
+    let additionalRef = await deployer.setUpReferral(lastReferral.address)
+    await deployer.pairSingleRefAndWrapper(additionalRef)
+    await increaseTimeBy(3600 * 1)  // let 10 hours pass
+    await deployer.unpauseMeh2016()
+
+    // sign in and finalize wrapper setup
+    await deployer.mehWrapper.connect(owner).signIn()
+    await deployer.finalMeh2016settings()  // setting charit address
+    await deployer.exEnv.weth.deposit({value: 20000})
+    await deployer.exEnv.weth.transfer(deployer.mehWrapper.address, 20000)
+
+    // try to buy area
+    let cc = availableAreas[0]
+    let price = await wrapper.crowdsalePrice();  // single block 
+    await wrapper.connect(buyer)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+    expect(await wrapper.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
+  })
 })
