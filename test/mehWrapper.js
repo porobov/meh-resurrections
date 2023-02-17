@@ -2,7 +2,7 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
 const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
-const { getTotalGas, blockID } = require("../src/test-helpers.js")
+const { blockID } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 
 let availableAreas = [
@@ -95,6 +95,18 @@ makeSuite("Referrals and Sign in", function () {
   })
 })
 
+makeSuite("Normal operation", function () {
+  it("Wrapper is signing in to oldMeh", async function () {
+    // standard wrapper setup
+    await deployer.deployReferrals()
+    await deployer.pairRefsAndWrapper()
+    await deployer.unpauseMeh2016()
+    await deployer.mehWrapper.connect(owner).signIn()
+    expect(await wrapper.isSignedIn()).to.be.equal(true)
+    expect((await oldMeh.getUserInfo(wrapper.address)).referal).to.be.equal(deployer.getLastReferral().address)
+  })
+})
+
 makeSuite("More referrals than needed", function () {
   it("More referrals can be added than needed", async function () {
     // deploying standard chain of referrals
@@ -111,7 +123,7 @@ makeSuite("More referrals than needed", function () {
 
     // sign in and finalize wrapper setup
     await deployer.mehWrapper.connect(owner).signIn()
-    await deployer.finalMeh2016settings()  // setting charit address
+    await deployer.finalMeh2016settings()  // setting charity address
     await deployer.exEnv.weth.deposit({value: 20000})
     await deployer.exEnv.weth.transfer(deployer.mehWrapper.address, 20000)
 
