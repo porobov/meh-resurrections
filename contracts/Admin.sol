@@ -9,7 +9,7 @@ contract Admin is Ownable {
     // royalties - eth earned by wrapper (also used to rescue funds)
     uint256 public royalties;
     address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
-    address public partners;
+    address public partners = 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990;
     mapping(address => uint256) public internalBalOf;  // partners balances 
 
     // Coordinates reserved for founders
@@ -29,6 +29,8 @@ contract Admin is Ownable {
     function withdrawShare() external {
         require(msg.sender == founder || msg.sender == partners, 
             "Admin: Not an authorized beneficiary");
+        require(royalties > 0, 
+            "Admin: No royalties yet, work harder!");
         splitIncome();
         internalBalOf[msg.sender] = 0;
         payable(msg.sender).transfer(internalBalOf[msg.sender]);
