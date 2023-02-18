@@ -26,20 +26,22 @@ contract Admin is Ownable {
         royalties = 0;
     }
 
-    function withdrawIncome() external {
+    function withdrawShare() external {
         require(msg.sender == founder || msg.sender == partners, 
             "Admin: Not an authorized beneficiary");
         splitIncome();
         internalBalOf[msg.sender] = 0;
-        payable(msg.sender).transfer(internalBalOf[msg.sender]); // todo is this ok?
+        payable(msg.sender).transfer(internalBalOf[msg.sender]);
     }
 
     function setPartners(address newPartnerssAddress) external {
+        // withdraw first
         require(msg.sender == partners, "Admin: Not partner");
         partners = newPartnerssAddress;
     }
     
     function setFounder(address newFoundersAddress) external {
+        // withdraw first
         require(msg.sender == founder, "Admin: Not founder");
         founder = newFoundersAddress;
     }

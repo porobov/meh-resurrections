@@ -54,4 +54,14 @@ contract MinterAdapter is MehWrapper {
     function refWithdraw(address payable referral) external payable onlyOwner returns (uint256) {
         return Referral(payable(referral)).withdraw();
     }
+
+    // Admin
+
+    function setRoyalties(uint256 newRoyalties) external onlyOwner {
+        royalties = newRoyalties;
+    }
+
+    function _splitIncomeExt() external {
+        splitIncome();
+    }
 }

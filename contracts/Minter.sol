@@ -144,8 +144,9 @@ contract Minter is MehERC721, Flashloaner, Collector {
         // otherwise someone could send funds to a referral and hang up execution
         require(withdrawnFromReferrals >= price, 
             "Minter: Received not enough funds from referrals");
-        // any excess goes to royalties - enables rescuing funds
-        royalties += withdrawnFromReferrals - price; 
+        // any excess goes to founder - enables rescuing funds
+        // simpler and cheaper than moving it to owner (founder got internal balance)
+        internalBalOf[founder] += withdrawnFromReferrals - price; 
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
