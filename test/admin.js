@@ -16,7 +16,7 @@ let partner
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, stranger, friend] = await ethers.getSigners()
+      ;[ownerGlobal, stranger, friend, newFounder, newPartner] = await ethers.getSigners()
       let env = await setupTestEnvironment({
         isDeployingMocks: conf.IS_DEPLOYING_MOCKS, 
         isDeployingMinterAdapter: true
@@ -71,15 +71,6 @@ makeSuite("Basic", function () {
       "Admin: Not an authorized beneficiary"
     )
   })
-  
-  // it("Cannot withdraw if no royalties", async function () {
-  //   for (const [name, addrs] of Object.entries(beneficiaries)) {
-  //     let beneficiary = await getImpersonatedSigner(addrs)
-  //     await expect(wrapper.connect(beneficiary).withdrawShare()).to.be.revertedWith(
-  //       "Admin: No royalties yet, work harder!"
-  //     )
-  //   }
-  // })
 })
 
 makeSuite("Withdrawals", function () {
@@ -118,8 +109,41 @@ makeSuite("Withdrawals", function () {
 })
 
 makeSuite("Settings", function () {
-  it("Admin can set srowdsale price", async function () {
 
+  it("Admin (and only admin) can set srowdsale price", async function () {
+    let newPrice = ethers.utils.parseEther("1.0")
+    await expect(wrapper.connect(stranger).adminSetPrice(newPrice))
+      .to.be.revertedWith("Ownable: caller is not the owner")
+    await wrapper.connect(owner).adminSetPrice(newPrice)
+    expect(await wrapper.crowdsalePrice()).to.be.equal(newPrice)
   })
 
+  it("Founder (and only founder) can set new founder address", async function () {
+    let value = ethers.utils.parseEther("1.0")
+    await wrapper.setRoyalties(value)
+    await friend.sendTransaction({
+      to: wrapper.address,
+      value: value,
+    })
+    // split income through test-adapter
+    await wrapper._splitIncomeExt()
+    let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
+    let partnersShare = value.sub(foundersShare)
+
+    // set new founder address
+    await expect(wrapper.connect(stranger).setFounder(newFounder.address))
+      .to.be.revertedWith("Admin: Not founder")
+    await wrapper.connect(founder).setFounder(newFounder.address)
+    expect(await wrapper.founder()).to.be.equal(newFounder.address)
+    expect(await wrapper.internalBalOf(founder.address)).to.be.equal(0)
+    expect(await wrapper.internalBalOf(newFounder.address)).to.be.equal(foundersShare)
+
+    // set new partner address
+    await expect(wrapper.connect(stranger).setPartners(newPartner.address))
+      .to.be.revertedWith("Admin: Not partner")
+    await wrapper.connect(partner).setPartners(newPartner.address)
+    expect(await wrapper.partners()).to.be.equal(newPartner.address)
+    expect(await wrapper.internalBalOf(partner.address)).to.be.equal(0)
+    expect(await wrapper.internalBalOf(newPartner.address)).to.be.equal(partnersShare)
+  })
 })
