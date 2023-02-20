@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const axios = require('axios');
 const { ethers } = require("hardhat");
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { setupTestEnvironment } = require("../src/deployer.js")
@@ -44,8 +45,48 @@ function makeSuite(name, tests) {
 
 makeSuite("Basic", function () {
 
-  it("Founder and partner are set up correctly", async function () {
-    expect(42).to.be.equal(2)
+  // Founder and partner are hardcoded into contract. 
+  // This will check those addresses are paired on-chain. 
+  it("Founder and partner are set up correctly (paired on-chain)", async function () {
+    async function getTransactions(address) {
+      const starFromBlock = 10904896
+      const etherscanApi = process.env.ETHERSCAN_API_KEY
+      const url = 
+      `https://api.etherscan.io/api` +
+      `?module=account` +
+      `&action=txlist` +
+      `&address=${address}` +
+      `&startblock=${starFromBlock}` +
+      `&endblock=latest` +
+      // `&page=1` +
+      // `&offset=10` +
+      `&sort=asc` +
+      `&apikey=${etherscanApi}`
+      const { data } = await axios.get(url)
+      return data.result
+    }
+
+    function searchSender(txs, senderAddr) {
+      let isFound = false
+      for (let tx of txs) {
+        if
+        (
+          tx.from.toLowerCase() == senderAddr.toLowerCase()
+          && tx.value == ethers.utils.parseEther("0.00123")
+        ) {
+          isFound = true
+          console.log(tx)
+        }
+      }
+      return isFound
+    }
+    
+    let founderTxs = await getTransactions(founder.address)
+    let partnerTxs = await getTransactions(partner.address)
+    let gotFromPartner = searchSender(founderTxs, partner.address)
+    let gotFromFounder = searchSender(partnerTxs, founder.address)
+    expect(gotFromPartner).to.be.equal(true)
+    expect(gotFromFounder).to.be.equal(true)
   })
 
   it("Is splitting income correctly", async function () {
