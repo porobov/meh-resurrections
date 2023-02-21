@@ -93,10 +93,7 @@ makeSuite("Basic", function () {
     // send funds to wrapper and set royalties through test-adapter
     let value = ethers.utils.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await friend.sendTransaction({
-      to: wrapper.address,
-      value: value,
-    })
+    await setBalance(wrapper.address, value)
     // split income through test-adapter
     await wrapper._splitIncomeExt()
     // check
@@ -120,10 +117,8 @@ makeSuite("Withdrawals", function () {
     // send funds to wrapper and set royalties through test-adapter
     let value = ethers.utils.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await friend.sendTransaction({
-      to: wrapper.address,
-      value: value,
-    })
+    await setBalance(wrapper.address, value)
+
     let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
     let partnersShare = value.sub(foundersShare)
 
@@ -162,10 +157,8 @@ makeSuite("Settings", function () {
   it("Founder (and only founder) can set new founder address", async function () {
     let value = ethers.utils.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await friend.sendTransaction({
-      to: wrapper.address,
-      value: value,
-    })
+    await setBalance(wrapper.address, value)
+
     // split income through test-adapter
     await wrapper._splitIncomeExt()
     let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
