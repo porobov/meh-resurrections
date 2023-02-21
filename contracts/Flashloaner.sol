@@ -1,7 +1,6 @@
 pragma solidity ^0.8.0;
 import "./libs/dydx.sol";
 import "./interfaces/IDydx.sol";
-import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,7 +11,6 @@ contract Flashloaner is ICallee, Receiver {
     // The dydx Solo Margin contract, as can be found here:
     // https://github.com/dydxprotocol/solo/blob/master/migrations/deployed.json
     ISoloMargin public soloMargin;
-    IWETH public WETH;
 
     constructor(address wethAddress, address soloMarginAddress) {
         WETH = IWETH(wethAddress);
@@ -139,8 +137,6 @@ contract Flashloaner is ICallee, Receiver {
         WETH.deposit{value:loanAmount}();
         // ... solomargin withdraws loan amount on it's own
     }
-
-    // also see receive function below
 
     // is called by SoloMargin (see callFunction function above)
     // overriden further (todo where? in MehWrapper?)
