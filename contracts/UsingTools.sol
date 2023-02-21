@@ -9,7 +9,6 @@ contract UsingTools {
         return (uint16(y) - 1) * 100 + uint16(x);
     }
 
-    // todo check in tests
     function blockXY(uint16 blockId) internal pure returns (uint8, uint8) {
         uint8 remainder = uint8(blockId % 100);
         uint8 y;
@@ -56,7 +55,6 @@ contract UsingTools {
     {
         return uint16(toX - fromX + 1) * uint16(toY - fromY + 1);
     }
-    // todo set img url prefix (allow another hosting for images)
 
     /// @notice insures that area coordinates are within 100x100 field and 
     ///  from-coordinates >= to-coordinates

@@ -6,11 +6,9 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
-    // wrapping-unwrapping
-    // stores unwrapped blocks
-    // todo check ordering
     uint256 constant public MAX_INT_TYPE = type(uint256).max;
 
+    // stores unwrapped blocks
     struct Receipt {
         bool isAwaitingWithdrawal;
         uint256 sellPrice;
@@ -70,8 +68,6 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     // at the original contract (have to buy at 2016 and have to withdraw from the wrapper)
     // priceForEachBlockInWei - specify unique price?
     // unwrap flow: call unwrap on wrapper -> buy on 2016MEH -> withdraw on wrapper
-    // todo setSome random sell price in the UX, so that it won't be
-    // repeated on accident
     function unwrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
@@ -115,7 +111,6 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
 
     // withdraw money for the unwrapped block.
     // must be available to anyone - able to clean up contract from excess eth
-    // todo mention in the docs to withdraw money immediately.
     function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call
         // check receipts
         // if sell price is different than that assigned in unwrap function
@@ -161,7 +156,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             "MehERC721: Wrong recipient");
         
         console.log("payment", msg.sender ,payment, address(this).balance);
-        payable(singleRecipient).transfer(payment); // todo is this ok?
+        payable(singleRecipient).transfer(payment);
     }
 
     // admin can rescue funds

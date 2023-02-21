@@ -16,7 +16,7 @@ contract Minter is MehERC721, Flashloaner, Collector {
             console.log("......landlord2018", landlord2018);
             landlord = landlord2018;
         } catch (bytes memory reason) {
-            console.log("no landlord in meh2018");  // TODO why cannot add reason here?
+            console.log("no landlord in meh2018");
         }
         return landlord;
     }
@@ -109,8 +109,8 @@ contract Minter is MehERC721, Flashloaner, Collector {
         external
         onlyLegalCoordinates(fromX, fromY, toX, toY)
     {
-        // TODO warning. Can it mint to 0 address? 
         address landlord = _reservedFor(fromX, fromY, toX, toY);
+        require(landlord != address(0x0));  // sanity check
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
     }
 

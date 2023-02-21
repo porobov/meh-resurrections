@@ -93,7 +93,6 @@ contract Flashloaner is ICallee, Receiver {
                 denomination: Types.AssetDenomination.Wei,
                 ref: Types.AssetReference.Delta,
                 value: loanAmount + 2 // Repayment amount with 2 wei fee 
-                // todo. test pay on every tx?! (important!!!)
                 // require 2 wei * 10000 on contract creation
             }),
             primaryMarketId: 0, // WETH
@@ -139,7 +138,7 @@ contract Flashloaner is ICallee, Receiver {
     }
 
     // is called by SoloMargin (see callFunction function above)
-    // overriden further (todo where? in MehWrapper?)
+    // overriden in Minter.sol
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) virtual internal {
     }
 }
