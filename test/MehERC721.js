@@ -3,12 +3,10 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { setupTestEnvironment } = require("../src/deployer.js")
-const { rand1to100, blockID, countBlocks, balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
+const { blockID, countBlocks, balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
 const { getImpersonatedSigner } = require("../src/tools.js")
 const conf = require('../conf.js');
 const { BigNumber } = require('ethers');
-const { zeroPad } = require('ethers/lib/utils.js');
-const { abort } = require('process');
 
 
 /// EXAMPLE FOR WRAPPER UX ↓↓↓
@@ -49,12 +47,7 @@ function makeSuite(name, tests) {
       wrapper = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
-      // newMeh = env.newMeh
-
       founder_address = await wrapper.founder()
-      buyer = owner
-
-      
     })
       this.timeout(142000)
       tests();
