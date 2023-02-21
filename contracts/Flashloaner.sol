@@ -110,11 +110,11 @@ contract Flashloaner is ICallee, Receiver {
     }
     
     // This is the function called by dydx after giving us the loan
-    // todo check sender - callFunction(address sender... console.log it. Can it be called by arbitary contract
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
         // only by dxdy
         require(msg.sender == address(soloMargin), "Caller is not soloMargin");
-
+        // dxdy was called by this wrapper
+        require(sender == address(this), "Flashloaner: wrong soloMargin caller");
         // Decode the passed variables from the data object
         (
             uint256 loanAmount,
