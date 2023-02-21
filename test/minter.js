@@ -394,7 +394,7 @@ makeSuite("mintReserved ", function () {
 // see similar test in test/MehERC721.js 
 makeSuite("Minting from oldMeh directly", function () {
   // makes funds rescue possible
-  it("referral surplus gpes to royalties", async function () {
+  it("referral surplus goes to royalties", async function () {
     let cc = availableAreas[0]
     let mintingPrice = ethers.utils.parseEther("1")
     let s1 = await balancesSnapshot(oldMeh, minter, referrals)  // state 1
@@ -404,6 +404,7 @@ makeSuite("Minting from oldMeh directly", function () {
     let signInTxFriend = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
     await oldMeh.connect(buyer).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
     let s2 = await balancesSnapshot(oldMeh, minter, referrals)
+    let founderBalS2 = await minter.internalBalOf(await minter.founder())
     expect(s2.meh.sub(s1.meh)).to.equal(mintingPrice)
 
     // minting new block (single)
@@ -411,10 +412,11 @@ makeSuite("Minting from oldMeh directly", function () {
     let price = await minter.crowdsalePrice();
     let mintingTx = await minter.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: price })
     let s3 = await balancesSnapshot(oldMeh, minter, referrals)
+    let founderBalS3 = await minter.internalBalOf(await minter.founder())
     
     let referralSurplus = mintingPrice.div(2) // 50% is collected from charity
     expect(s2.meh.sub(s3.meh)).to.equal(referralSurplus)  // eth went to referral
     expect(s3.wrapper.sub(s2.wrapper)).to.equal(price.add(referralSurplus))  // eth went to referral
-    expect(s3.royalties.sub(s2.royalties)).to.equal(price.add(referralSurplus))  // eth counted as royalties
+    expect(founderBalS3.sub(founderBalS2)).to.equal(referralSurplus)  // eth counted as royalties
   })
 })
