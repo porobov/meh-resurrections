@@ -83,7 +83,7 @@ makeSuite("Collector basic", function () {
       .to.be.revertedWith("Ownable: caller is not the owner")
     // only real referral
     await expect(wrapper.connect(owner).addRefferal(notAReferral.address))
-      .to.be.reverted // reverts with function call to a non-contract account
+      .to.be.revertedWithoutReason() // reverts with function call to a non-contract account
     await wrapper.connect(owner).addRefferal(referral.address)
     let referralIndex = 0
     expect(await wrapper.referrals(referralIndex)).to.be.equal(referral.address)

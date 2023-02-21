@@ -276,7 +276,7 @@ makeSuite("buyFromMEH", function () {
     let oldMehPrice = ethers.utils.parseEther("1")
     await expect(minter._buyFromMEHExt(
       oldMehPrice, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: oldMehPrice })
-        ).to.be.reverted 
+        ).to.be.revertedWithoutReason() 
   })
 })
 

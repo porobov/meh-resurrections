@@ -161,33 +161,43 @@ it("More referrals can be added than needed", async function () {
     conf.newMehAddress,
     conf.wethAddress,
     conf.soloMarginAddress,
-  )).to.be.reverted
+  )).to.be.revertedWithoutReason()
   // wrong meh2018
   await expect(wrapper.deploy(
     conf.oldMehAddress,
     conf.oldMehAddress,
     conf.wethAddress,
     conf.soloMarginAddress,
-  )).to.be.reverted
+  )).to.be.revertedWithoutReason()
   // wrong weth
   await expect(wrapper.deploy(
     conf.oldMehAddress,
     conf.newMehAddress,
     conf.oldMehAddress,
     conf.soloMarginAddress,
-  )).to.be.reverted
+  )).to.be.revertedWithoutReason()
   // wrong solo
   await expect(wrapper.deploy(
     conf.oldMehAddress,
     conf.newMehAddress,
     conf.wethAddress,
     conf.oldMehAddress,
-  )).to.be.reverted
+  )).to.be.revertedWithoutReason()
 
 })
 
 // can place image to minted block
 makeSuite("Placing image", setupTestEnvironment, function () {
+
+  it("Anyone can place ads to minted areas if not forbidden", async function () {
+    expect(false).to.be.equal(true)
+  })
+
+  it("Place image is payable", async function () {
+    expect(false).to.be.equal(true)
+  })
+
+  // when landlord places image, access is restricted automatically 
 
   it("Can place image to minted block", async function () {
     // buy area
@@ -248,7 +258,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
   })
 
   for (let cc of founderAreas) {
-    it(`Will mint place images to blocks reserved for founder (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+    it(`Will place images to blocks reserved for founder (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       await wrapper.connect(buyer)
         .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
       let founder = await getImpersonatedSigner(await wrapper.founder())
