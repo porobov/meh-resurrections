@@ -25,9 +25,6 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
 
     // 2016 block owners can "sell" their blocks and buy from themselves through wrapper
     // then they'll have to withdraw from the 2016 MEH contract
-    // will also be used to mint blocks reserved for 2018 buyers (bought by admin)
-    // those blocks will then be transfered to owners through regular NFT transfer
-    // check price through getAreaPrice() function of MEH
     // wrap flow: sell on 2016MEH -> call wrap on wrapper -> withdraw from 2016MEH
     function wrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY)
         external
@@ -53,7 +50,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             {value: areaPrice}
             (fromX, fromY, toX, toY);
 
-        // set prohibitary sell price so no one could buy it from oldMeh
+        // set prohibitary (but affordable) sell price so no one could buy it from oldMeh
         oldMeh.sellBlocks(fromX, fromY, toX, toY, MAX_INT_TYPE);
 
         // minting on wrapper
@@ -66,7 +63,6 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
 
     // any owner of a wrapped block can unwrap it (put on sale) and reclaim ownership
     // at the original contract (have to buy at 2016 and have to withdraw from the wrapper)
-    // priceForEachBlockInWei - specify unique price?
     // unwrap flow: call unwrap on wrapper -> buy on 2016MEH -> withdraw on wrapper
     function unwrap(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
@@ -92,22 +88,6 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         // ↓↓↓ will throw if block was already sold
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
     }
-
-    // Q'n'A. Bob unwraps his block
-    // q: what if Bob creates multiple orders?
-    // a: receipt is tied to blockId, so it's ok
-    // q: what if someone bought a part of the area being sold?
-    // a: no worries receipt is tied to blockId
-    // q: what if Alice sets the same sell price as Bob when he was unwrapping?
-    // a: To do that Bob needs to finish unwrapping, then put the block on sale,
-    //    then Alice needs to buy from Bob and set the same price as Bob set.
-    //    Plus Bob needs to miss his opportunity to withdraw from wrapper.
-    //    Then Bob will not be able to withdraw.
-    // q: what if multiple orders placed for the same block by the same landlord?
-    // a: we can check that, and require to withdraw first
-    // q: what if next landlord preforms unwrap?
-    // a: well, we will not overcomplicate code for that.
-    // Web interface should guide through all wrap-unwrap stages gracefully.
 
     // withdraw money for the unwrapped block.
     // must be available to anyone - able to clean up contract from excess eth

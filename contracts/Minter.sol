@@ -52,11 +52,11 @@ contract Minter is MehERC721, Flashloaner, Collector {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             console.log("Checking if reserved", x, y);
             // check if already minted at 2016 contract
-            // good for security though. we are separating workflows of minting anew and wrapping.
+            // good for security. we are separating workflows of minting anew and wrapping.
             require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
             // the below code can return landlord address(0), it's ok
             singleLandlord = _landlordFrom2018ByIndex(blocks[i]);
-            // moving the following below _landlordFrom2016 check to cover the case when
+            // moving founders check below _landlordFrom2016 check to cover the case when
             // a block within founders share is bouht directly from 2016.
             // moving below _landlordFrom2018 to simplify selection of founder's area as it can include 
             // other reserved blocks - they will just not belong to founder

@@ -46,7 +46,7 @@ contract Collector is Admin {
     // admin can call this function in case someone buys from 2016MEH directly
     // or if someone sends funds to a referral directly
     // makes no sense in any other case. Referrals balance are always kept 0.
-    // this func is only relevant after crowdsale ends.
+    // this func is only relevant before crowdsale ends
     function adminWithdrawFromReferrals() external onlyOwner {
         uint256 amount = _withdrawFromReferrals();
         payable(owner()).transfer(amount);
