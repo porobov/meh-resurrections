@@ -110,7 +110,7 @@ makeSuite("Wrapping and unwrapping", function () {
       let totalGas = await getTotalGas([sellTx, wrapTx, withdrawTx])
 
       // gas is calculated approximately. letting 100 wei slip
-      expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.lessThan(gasCalculationAccuracy)
+      expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.within(-gasCalculationAccuracy, gasCalculationAccuracy)
       expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(wrapper.address)
       expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(landlord.address)
       // do range
@@ -165,7 +165,7 @@ makeSuite("Wrapping and unwrapping", function () {
 
       expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // all money is returned
       expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(oldMehExBalance + landlordBalBefore - landlordBalAfter - totalGas).to.be.lessThan(gasCalculationAccuracy)
+      expect(oldMehExBalance + landlordBalBefore - landlordBalAfter - totalGas).to.be.within(-gasCalculationAccuracy, gasCalculationAccuracy)
 
       // expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(ZERO_ADDRESS)
       await expect(wrapper.ownerOf(blockID(w.fx, w.fy))).to.revertedWith(
@@ -195,7 +195,7 @@ makeSuite("Other", function () {
     // from oldMeh
     let max_uint = (new BigNumber.from("2")).pow(256).sub(1)
     expect((await oldMeh.getBlockInfo(w.fx, w.fy)).sellPrice).to.equal(max_uint)
-    await expect(oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })).to.be.reverted
+    await expect(oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })).to.be.revertedWithoutReason()
 
     // wrapper itself cannot buy blocks again
     await expect(wrapper.connect(landlord).wrap(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock }))
@@ -403,7 +403,7 @@ makeSuite("Resetting sell price", function () {
     await oldMeh.connect(landlord).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: newTotUnwrapPrice })
     // try resetting price again
     await expect(wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice))
-      .to.be.reverted
+      .to.be.revertedWithoutReason()
     // withdraw 
     const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
     let tx1 = await wrapper.connect(landlord).withdraw(cc.fx, cc.fy, cc.tx, cc.ty)
