@@ -57,4 +57,22 @@ contract MehWrapper is Minter {
         }
         oldMeh.placeImage(fromX, fromY, toX, toY, imageSourceUrl, adUrl, adText);
     }
+
+
+    // function restrictAccess(
+    //     uint8 fromX,
+    //     uint8 fromY,
+    //     uint8 toX,
+    //     uint8 toY,
+    //     bool restrict)
+    // external
+    // {
+    //     // only owner of blocks can deside to restrict access to the area they own
+    //     uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
+    //     for (uint i = 0; i < blocks.length; i++) {
+    //         require(_isApprovedOrOwner(msg.sender, blocks[i]), 
+    //             "MehWrapper: Not a landlord");
+    //         isRestricted[i] = restrict;
+    //     }
+    // }
 }

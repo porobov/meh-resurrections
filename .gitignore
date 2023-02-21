@@ -12,3 +12,4 @@ artifacts
 env_readme.txt
 test/mocking/31337_addresses.json
 constants/31337_constants.json
+.DS_Store

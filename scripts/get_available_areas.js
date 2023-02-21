@@ -86,6 +86,7 @@ async function main() {
             let cm = {fx: fromX, fy: fromY, tx: fromX + lenX, ty: fromY + lenY}
             if (
               isVacant(cm, cc) &&
+              isVacant(cm, intersection) &&
               isVacant(cm, bb16) &&
               isVacant(cm, bb18))
             {

@@ -25,7 +25,6 @@ async function testEnvironmentReferrals() {
       isSavingOnDisk: false,
       isDeployingMinterAdapter: true,
       overrideDelay: 1 })  // removing delay
-      // isDeployingMinterAdapter: true }
   return await deployer.deployAndSetup()
 }
 
