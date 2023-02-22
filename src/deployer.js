@@ -38,7 +38,7 @@ async function setupTestEnvironment(options) {
         await exEnv.deployMocks(false)  // not saving mocks on disk
     } else {
         // resetting hardfork (before loading existing env and impersonating admin!!!)
-        await resetHardhatToBlock(conf.mainnetBlockWhenMEHWasPaused)  // TODO make configurable depending on chain 
+        await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain 
         await exEnv.loadExistingEnvironment()
     }
     const deployer = new Deployer(exEnv, {

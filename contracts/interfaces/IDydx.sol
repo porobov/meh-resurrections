@@ -11,4 +11,5 @@ interface ISoloMargin {
 // The interface for a contract to be callable after receiving a flash loan
 interface ICallee {
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external;
+    function onFlashLoan(bytes memory data) external;
 }

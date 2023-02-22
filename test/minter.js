@@ -2,6 +2,8 @@ const fs = require('fs')
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { setupTestEnvironment } = require("../src/deployer.js")
+const { mine } = require("@nomicfoundation/hardhat-network-helpers");
+const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
 const { rand1to100, blockID, balancesSnapshot } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 const exp = require('constants');
@@ -54,6 +56,8 @@ function makeSuite(name, tests) {
       usingToolsAdapter = await UsingToolsAdapter.deploy();
       await usingToolsAdapter.deployed();
 
+      await increaseTimeBy(21513600)  // set to the latest block as of 21.02.23
+      await mine(6534257)  // and mine respective number of blocks
       founder_address = await minter.founder()
     })
       this.timeout(142000)

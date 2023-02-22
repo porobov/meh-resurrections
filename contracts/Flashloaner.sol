@@ -1,6 +1,7 @@
 pragma solidity ^0.8.0;
 import "./libs/dydx.sol";
 import "./interfaces/IDydx.sol";
+import "./interfaces/IEuler.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "./interfaces/IWeth.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -21,7 +22,7 @@ contract Flashloaner is ICallee, Receiver {
     
     // ** FLASHLOAN ** //
     
-    function _borrow(uint256 loanAmount, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
+    function __borrow(uint256 loanAmount, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         
         Actions.ActionArgs[] memory operations = new Actions.ActionArgs[](3);
 
@@ -86,6 +87,40 @@ contract Flashloaner is ICallee, Receiver {
         soloMargin.operate(accountInfos, operations);
     }
     
+    function _borrow(uint256 loanAmount, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
+        address underlying = address(WETH);
+        IEulerMarkets markets = IEulerMarkets(0x3520d5a913427E6F0D6A83E07ccD4A4da316e4d3);
+        IEulerDToken dToken = IEulerDToken(markets.underlyingToDToken(underlying));
+        console.log("dToken:", address(dToken));
+        console.log("dToken.symbol():", dToken.symbol());
+        dToken.flashLoan(loanAmount, abi.encode(loanAmount,buyer,fromX,fromY,toX,toY));
+    }
+    
+    function onFlashLoan(bytes memory data) external override {
+        require(msg.sender == address(soloMargin), "Caller is not soloMargin");
+        // console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
+        (
+            uint256 loanAmount,
+            address buyer,
+            uint8 fromX,
+            uint8 fromY,
+            uint8 toX,
+            uint8 toY
+        ) = abi.decode(data, (uint256, address, uint8, uint8, uint8, uint8));
+
+        console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
+        require(WETH.balanceOf(address(this)) >= loanAmount, 
+            "CANNOT REPAY LOAN");
+        // convert WETH to eth
+        WETH.withdraw(loanAmount);
+        // buy from MEH and get all the money back
+        _buyFromMEH(loanAmount, buyer, fromX, fromY, toX, toY);
+        // convert ETH to back to weth
+        WETH.deposit{value:loanAmount}();
+        // repay
+        WETH.transfer(msg.sender, loanAmount);
+    }
+
     // This function is called by dydx
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
         // only by dxdy
