@@ -29,7 +29,7 @@ contract Flashloaner is IFlashLoan, Receiver {
     }
     
     function onFlashLoan(bytes memory data) external override {
-        require(msg.sender == address(loanPlatform), "Caller is not loanPlatform");
+        require(msg.sender == address(loanPlatform), "Flashloaner: Caller is not loanPlatform");
         (
             uint256 loanAmount,
             address buyer,
@@ -39,7 +39,6 @@ contract Flashloaner is IFlashLoan, Receiver {
             uint8 toY
         ) = abi.decode(data, (uint256, address, uint8, uint8, uint8, uint8));
 
-        console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
         require(WETH.balanceOf(address(this)) >= loanAmount, 
             "CANNOT REPAY LOAN");
         // convert WETH to eth

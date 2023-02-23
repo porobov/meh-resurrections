@@ -1,52 +1,39 @@
 const { expect } = require("chai");
-const fs = require('fs')
 const { ethers } = require("hardhat");
-const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
-const { blockID, countBlocks } = require("../src/test-helpers.js")
-const { setupTestEnvironment } = require("../src/deployer.js")
-const conf = require('../conf.js')
+const conf = require('../conf.js');
 
-const WRAPPER_BLOCK_PRICE = conf.WRAPPER_BLOCK_PRICE
-const IS_DEPLOYING_MOCKS = conf.IS_DEPLOYING_MOCKS
-const AVAILABLE_AREAS_PATH = conf.AVAILABLE_AREAS_PATH
+let flashloaner
+let mockCoord = 1
+let mockBuyer = "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990"
 
-let availableAreas = [
-  {fx: 1, fy: 24, tx: 1, ty: 24}, // single
-  {fx: 2, fy: 24, tx: 2, ty: 25}  // range
-]
-
-const av = JSON.parse(fs.readFileSync(AVAILABLE_AREAS_PATH))
-let areaPrice = 0
-describe("Allows to buy all", function () {
+describe("Flashloan", function () {
   
   this.timeout(142000)
   before('setup', async () => {
-    ;[ownerGlobal, buyer] = await ethers.getSigners()
-    let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS})
-    owner = env.owner
-    mehWrapper = env.mehWrapper
-    referrals= env.referrals
-    oldMeh = env.oldMeh
-    let price = await mehWrapper.crowdsalePrice();
-    await setBalance(buyer.address, price.mul(10000));
-    areaPrice = price.mul(100)
+    ;[ownerGlobal, stranger] = await ethers.getSigners()
+    const Flashloaner = await ethers.getContractFactory("FlashloanerAdapter");
+    flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
+    await flashloaner.deployed();
   })
 
+  it("Borrows 1, 512 and 16000 WETH", async function () {
+    let loanAmount = ethers.utils.parseEther("1")
+    await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
+    loanAmount = ethers.utils.parseEther("512")
+    await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
+    loanAmount = ethers.utils.parseEther("16000")
+    await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
+  })
 
+  it("Cannot Borrow 17000 WETH", async function () {
+    let loanAmount = ethers.utils.parseEther("17000")
+    await expect(flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord))
+      .to.be.revertedWith('')
+  })
 
-
-  // warning!!! change or remove .slice() ↓↓↓ to proceed testing
-
-
-// comment when not needed. Even  a single run will consume a lot of alchemy
-/* 
-  for (let cc of av.slice(0,2)) {
-    it(`Will mint blocks (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
-      await mehWrapper.connect(buyer).mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: areaPrice })
-    })
-  }
-*/
-  it("Allows to place ads", async function () {
-  });
-
-});
+  it("Only loan platform can call onFlashLoan function", async function () {
+    let data = '0x03'
+    await expect(flashloaner.connect(stranger).onFlashLoan(data))
+        .to.be.revertedWith('Flashloaner: Caller is not loanPlatform')
+  })
+})
