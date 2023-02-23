@@ -1,4 +1,4 @@
-// now this file is used only for mocks
+// The ABI encoder is necessary, but older Solidity versions should work
 pragma solidity ^0.8.0;
 
 import "../libs/dydx.sol";

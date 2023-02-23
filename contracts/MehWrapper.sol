@@ -9,7 +9,7 @@ contract MehWrapper is Minter {
         require(oldMeh.charityAddress() != address(0x0), "MehWrapper: wrong Meh2016 contract");
         require(meh2018.isMEH() == true, "MehWrapper: wrong Meh2018 contract");
         require(IWETH(wethAddress).totalSupply() > 100000, "MehWrapper: wrong Weth contract");
-        // require(ISoloMargin(soloMarginAddress).getNumMarkets() > 0, "MehWrapper: wrong Solomargin contract");
+        require(IEuler(soloMarginAddress).moduleIdToProxy(MODULEID__MARKETS) == 0x3520d5a913427E6F0D6A83E07ccD4A4da316e4d3, "MehWrapper: wrong Solomargin contract");
     }
 
     // this wrapper contract is a referral too (must sign in)

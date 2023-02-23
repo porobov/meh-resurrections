@@ -118,9 +118,8 @@ contract Minter is MehERC721, Flashloaner, Collector {
     // with eth amount needed by MEH (1..512 ETH)
     function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         // checking big loan
-        // 930 works, 931 - doesn't
-        // as of 21.02.23 solomargin got 1837 eth
-        uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);  // * 929 works 
+        // * 7500 works as of 22.02.2023 for euler
+        uint256 price = oldMeh.getAreaPrice(fromX, fromY, toX, toY);  
         // if the price is 0, it means that a block within the area is not for sale
         // as both mint functions point to vacant areas, the price should always be > 0
         // except if someone buys a block within founder's share area
@@ -133,12 +132,11 @@ contract Minter is MehERC721, Flashloaner, Collector {
     // only solomargin is checked at callfunction (see Flashloaner.sol)
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal override (Flashloaner) {
         // now after big loan is received bring back the original price
-        uint256 realPrice = price;
         // minting on 2016 contract
         console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         // this is require here is not much needed, but leaving it for more security
         require((oldMeh.buyBlocks
-            {value: realPrice}
+            {value: price}
             (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");
         console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
 
@@ -146,11 +144,11 @@ contract Minter is MehERC721, Flashloaner, Collector {
         uint256 withdrawnFromReferrals = _withdrawFromReferrals();
         // Checking what is withdrawn from referrals. Using ">=" because
         // otherwise someone could send funds to a referral and hang up execution
-        require(withdrawnFromReferrals >= realPrice, 
+        require(withdrawnFromReferrals >= price, 
             "Minter: Received not enough funds from referrals");
         // any excess goes to founder - enables rescuing funds
         // simpler and cheaper than moving it to owner (founder got internal balance)
-        internalBalOf[founder] += withdrawnFromReferrals - realPrice; 
+        internalBalOf[founder] += withdrawnFromReferrals - price; 
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
