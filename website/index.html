@@ -10,7 +10,13 @@
   <img id="myImage" src="" alt="Image from JSON" />
 
   <script>
-    fetch("https://muddy-truth-5b42.porobov-p3798.workers.dev/?myKey=dosf1MillionEther")
+
+    // myKey is hardcoded in this file. Managed in the corresponding git branch. See Readme)
+    const WORKER_URL = "https://muddy-truth-5b42.porobov-p3798.workers.dev/"
+    const MY_KEY = "mainnet-preview" 
+    const fetchURL = WORKER_URL + "?myKey=" + MY_KEY
+
+    fetch(fetchURL)
       .then(response => response.json())
       .then(data => {
         console.log(data.adsSnapshot.bigPicBinary)

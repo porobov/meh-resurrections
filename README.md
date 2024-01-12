@@ -2,6 +2,11 @@
 flash-loans
 https://money-legos.studydefi.com/#/dydx?id=flashloans-on-dydx
 
+# Website key-value storage notes
+UX fetches data from Cloudflare key-value storage using a key. 
+There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 github branches. Here are the branches and the way developement workflow is set.
+goerli-preview -> mainnet-preview -> main
+
 # Advanced Sample Hardhat Project
 
 This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
