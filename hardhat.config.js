@@ -74,7 +74,7 @@ module.exports = {
     readMain: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_MAINNET_URL,
+      url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
       accounts: {
             mnemonic: "test test test test test test test test test test test junk"
           },
@@ -84,16 +84,16 @@ module.exports = {
     goerli: {
       chainId: 5,   // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_GOERLI_URL,
+      url: process.env.ALCHEMY_GOERLI_URL !== undefined ? process.env.ALCHEMY_GOERLI_URL : "",
       accounts: {
-        mnemonic: process.env.MNEMONIC,
+        mnemonic: process.env.MNEMONIC !== undefined ? process.env.MNEMONIC : "",
       },
     }
 
     // main: {
       // chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
       // numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-    //   url: process.env.ALCHEMY_MAINNET_URL,
+    //   url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
     //   accounts: {
     //     mnemonic: test test test test test test test test test test test junk
     //   },
