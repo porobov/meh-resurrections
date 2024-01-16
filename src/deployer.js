@@ -134,7 +134,7 @@ class ProjectEnvironment {
 
     saveExistingEnvironment(json) {
         fs.writeFileSync(this.existingEnvironmentPath, JSON.stringify(json, null, 2))
-        console.log('Wrote mock addresses for chainID:', this.chainID)
+        console.log('Wrote mocks addresses for chainID:', this.chainID, this.existingEnvironmentPath)
         }
 
     async loadExistingEnvironment() {
@@ -145,7 +145,7 @@ class ProjectEnvironment {
             this.isUsingMocks = true
         }
 
-        // LOAD MOCKS OR REAL ADDRESSES
+        // LOAD MOCKS 
         let addressesJSON
         let message
         // check if mocks are saved on disk - also means we
@@ -158,8 +158,9 @@ class ProjectEnvironment {
                 console.log("Mocks don't exist")
             }
         }
-        
-        // load defaults if not using mocks
+
+        // LOAD REAL ADDRESSES IF NOT USING MOCKS
+        // mainnet only (real MEH)
         if (this.isUsingMocks != true) {
             addressesJSON = this.defaultJSON
             message = chalk.red('loaded real contract addresses')
@@ -174,6 +175,7 @@ class ProjectEnvironment {
             // current owner must be the same as the one who deployed mocks
             if (addressesJSON.mocksOwner == this.operatorWallet.address) {
                 mehAdmin = this.operatorWallet
+                console.log(chalk.green('Loaded mehAdmin', mehAdmin.address))
             } else {
                 console.log(chalk.red('Current wallet differs from the one used to deploy mocks'))
             }
@@ -181,11 +183,10 @@ class ProjectEnvironment {
         } else {
             if (getConfigChainID() == '1') {
                 // check that operator wallet is real Meh admin
-                throw('read mehAdmin key from disk (not implemented yet)') 
+                throw('read mehAdmin key from disk (not implemented yet)')  // TODO
             } else {
                 console.log("Impersonating admin...")
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
-                // await getImpersonatedSigner(addressesJSON.mehAdminAddress)
             }
         }
 
@@ -322,6 +323,7 @@ class Deployer {
                 // FLASHLOAN
                 // SoloMargin charges 2 wei per loan. Here we put 20000 wei
                 // in advance for 10000 loans
+                console.log("Depositing WETH to wrapper")
                 await this.exEnv.weth.deposit({value: 20000})
                 await this.exEnv.weth.transfer(this.mehWrapper.address, 20000)
             }
@@ -466,7 +468,7 @@ class Deployer {
     // DEPLOY WRAPPER
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     async deployWrapper() {
-        console.log("Deploying wrapper...")
+        console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")")
         // very ugly intrusion here. Using the same code to deploy MinterAdapter for tests
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
