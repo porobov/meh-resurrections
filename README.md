@@ -1,17 +1,26 @@
 # MEH-ressurections
-flash-loans
-https://money-legos.studydefi.com/#/dydx?id=flashloans-on-dydx
 
-# Testing 
-nvm use v16...
+## Node
+Use node version 16!
+`nvm use v16`
 
+## Deploying 
+When releasingWrapper to local testnet, remove addresses in constants and mocks.
+```
+npx hardhat run scripts/deployMocks.js
+npx hardhat run scripts/releaseWrapper.js
+```
 
-# Website key-value storage notes
+## Testing
+Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
+`npx hardhat test test/usingTools.js --network localhost`
+
+## Website key-value storage notes
 UX fetches data from Cloudflare key-value storage using a key. 
 There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 github branches. Here are the branches and the way developement workflow is set.
 goerli-preview -> mainnet-preview -> main
 
-# Advanced Sample Hardhat Project
+## Hardhat commands
 
 ```shell
 npx hardhat accounts

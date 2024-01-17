@@ -518,6 +518,7 @@ module.exports = {
     setupTestEnvironment,
     ProjectEnvironment,
     Deployer,
+    Constants,
     releaseWrapper,
     setupMocks
 }
