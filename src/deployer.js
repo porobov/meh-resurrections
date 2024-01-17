@@ -101,6 +101,8 @@ class ProjectEnvironment {
         // mocks
         this.weth = await deployContract("WETH9", {"isVerbouse": true})
         this.soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true}, this.weth.address)
+        // note that we are using Mocked version of MEH here!!! 
+        // see the way it differs from the original
         this.meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
         this.meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
         this.soloMarginAddress = this.soloMargin.address
@@ -130,6 +132,7 @@ class ProjectEnvironment {
                 'meh2018': this.meh2018.address,
             })
         }
+        console.log(chalk.red('WARNING!!! Meh is also a mock here. It may differ from the original'))
     }
 
     saveExistingEnvironment(json) {
