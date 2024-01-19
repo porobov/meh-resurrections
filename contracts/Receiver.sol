@@ -13,7 +13,8 @@ contract Receiver is UsingGlobals {
             msg.sender == address(oldMeh) ||
             // hardhat bug, uncomment the line below to fix flashloaner.js tests.
             // address(WETH) returns same address, but in lower case - reason?
-            // msg.sender == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 ||  
+            // Leaving it here for good. No harm.
+            msg.sender == 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 ||  
             msg.sender == address(WETH)
             ), "Receiver: Only receives from oldMEH or WETH");
     }

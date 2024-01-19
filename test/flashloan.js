@@ -16,6 +16,7 @@ describe("Flashloan", function () {
     await flashloaner.deployed();
   })
 
+  // WARNING!!! Hardhat bug. See Receiver.sol for info. 
   it("Borrows 1, 512 and 16000 WETH", async function () {
     let loanAmount = ethers.utils.parseEther("1")
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
@@ -25,10 +26,11 @@ describe("Flashloan", function () {
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
   })
 
-  it("Cannot Borrow 17000 WETH", async function () {
-    let loanAmount = ethers.utils.parseEther("17000")
+  // Making sure we are really testing something
+  it("Cannot Borrow 1000000 WETH", async function () {
+    let loanAmount = ethers.utils.parseEther("1000000")
     await expect(flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord))
-      .to.be.revertedWith('')
+      .to.be.revertedWith('BAL#528')
   })
 
   it("Only loan platform can call onFlashLoan function", async function () {

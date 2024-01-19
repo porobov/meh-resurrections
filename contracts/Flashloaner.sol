@@ -9,8 +9,6 @@ import "./Receiver.sol";
 contract Flashloaner is IFlashLoanRecipient, Receiver {
     IVault private vault; 
 
-    // soloMargin address is balancer vault address TODO remove soloMargin from everywhere
-    // untill soloMargin is removed, gonna use constant
     constructor(address wethAddress, address soloMarginAddress) {
         WETH = IWETH(wethAddress);
         vault = IVault(soloMarginAddress);
@@ -20,7 +18,7 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         tokens[0] = WETH;
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = loanAmount;
-        bytes memory userData = abi.encode(loanAmount, buyer, fromX, fromY, toX, toY);
+        bytes memory userData = abi.encode(buyer, fromX, fromY, toX, toY);
 
         vault.flashLoan(this, tokens, amounts, userData);
     }
@@ -32,14 +30,14 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         bytes memory userData
     ) external override {
         require(msg.sender == address(vault), "Flashloaner: Caller is not loanPlatform");
+        uint256 loanAmount = amounts[0];
         (
-            uint256 loanAmount,
             address buyer,
             uint8 fromX,
             uint8 fromY,
             uint8 toX,
             uint8 toY
-        ) = abi.decode(userData, (uint256, address, uint8, uint8, uint8, uint8));
+        ) = abi.decode(userData, (address, uint8, uint8, uint8, uint8));
 
         require(WETH.balanceOf(address(this)) >= loanAmount, 
             "CANNOT REPAY LOAN");
