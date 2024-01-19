@@ -31,9 +31,7 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
-        require(msg.sender == address(vault));
- 
-       // require(msg.sender == address(loanPlatform), "Flashloaner: Caller is not loanPlatform");
+        require(msg.sender == address(vault), "Flashloaner: Caller is not loanPlatform");
         (
             uint256 loanAmount,
             address buyer,

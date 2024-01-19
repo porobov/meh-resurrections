@@ -33,7 +33,7 @@ describe("Flashloan", function () {
 
   it("Only loan platform can call onFlashLoan function", async function () {
     let data = '0x03'
-    await expect(flashloaner.connect(stranger).onFlashLoan(data))
+    await expect(flashloaner.connect(stranger).receiveFlashLoan(data))
         .to.be.revertedWith('Flashloaner: Caller is not loanPlatform')
   })
 })

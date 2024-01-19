@@ -7,9 +7,13 @@ module.exports = {
     oldMehAddress: "0x15dbdB25f870f21eaf9105e68e249E0426DaE916",
     newMehAddress: '0xCEf41878Db032586C835eE0890484399402A64f6',
     wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-    soloMarginAddress: '0x27182842E098f60e3D576794A5bFFb0777E025d3', //'0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
+    // the following is the Balancer vault address
+    soloMarginAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8', //'0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
     mehAdminAddress: '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
-    forkBlock: 16683483, // mainnet Block When MEH Was Paused - 14979315,
+    // mainnet Block When MEH Was Paused - 14979315,
+    // balancer vault is deployed at block 12272146
+    // see also hardhat config
+    forkBlock: 16683483, 
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),
     NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
     IS_DEPLOYING_MOCKS: false,

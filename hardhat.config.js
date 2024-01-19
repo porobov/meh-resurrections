@@ -75,6 +75,7 @@ module.exports = {
       forking: {
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         // blockNumber: 13132200 /// 13352488 //  // not paused contract
+        // see also conf.js for forkBlock parameter
         blockNumber: 14979315 // fixed recent block number (contracts paused)
       },
       timeout: 12000000,
