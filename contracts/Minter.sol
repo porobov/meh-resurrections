@@ -114,7 +114,7 @@ contract Minter is MehERC721, Flashloaner, Collector {
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
     }
 
-    // borrows ETH from dxdy and calls _buyFromMEH (SoloMargin calls it) 
+    // borrows ETH from loan platform and calls _buyFromMEH (SoloMargin calls it) 
     // with eth amount needed by MEH (1..512 ETH)
     function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         // checking big loan
