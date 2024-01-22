@@ -1,4 +1,6 @@
 const { expect } = require("chai");
+const { getImpersonatedSigner } = require("../src/tools.js")
+const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { ethers } = require("hardhat");
 const conf = require('../conf.js');
 
@@ -6,6 +8,8 @@ let flashloaner
 let mockCoord = 1
 let mockBuyer = "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990"
 let wethAddress = conf.wethAddress
+let data = '0x03'
+let MAX_FEE_PERCENT = 1
 
 describe("Flashloan", function () {
   
@@ -35,8 +39,18 @@ describe("Flashloan", function () {
   })
 
   it("Only loan platform can call onFlashLoan function", async function () {
-    let data = '0x03'
     await expect(flashloaner.connect(stranger).receiveFlashLoan([wethAddress], [1], [0], data))
         .to.be.revertedWith('Flashloaner: Caller is not loanPlatform')
   })
+
+  // The following test does not work due to same hardhat stuuf 
+  // 
+  // it("Fees cannot be too high", async function () {
+  //   // getting impersonated flashloan platform and sending funds to it to cover transaction fees
+  //   const impersonatedLoanplatform = await getImpersonatedSigner(conf.soloMarginAddress)
+  //   let transactionCost = ethers.utils.parseEther("1")
+  //   await setBalance(conf.soloMarginAddress, transactionCost)
+  //   await expect(flashloaner.connect(impersonatedLoanplatform).receiveFlashLoan([wethAddress], [1], [0], data))
+  //       .to.be.revertedWith('Flashloaner: fees are too high')
+  // })
 })

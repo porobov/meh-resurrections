@@ -7,7 +7,10 @@ import "hardhat/console.sol";
 import "./Receiver.sol";
 
 contract Flashloaner is IFlashLoanRecipient, Receiver {
-    IVault private vault; 
+    IVault private vault;
+    // in case Balancer introduces fees for flashloans, currently fees are 0
+    // we will have to manually update minting price if this happens
+    uint8 MAX_FEE_PERCENT = 1;
 
     constructor(address wethAddress, address soloMarginAddress) {
         WETH = IWETH(wethAddress);
@@ -38,6 +41,8 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
             uint8 toX,
             uint8 toY
         ) = abi.decode(userData, (address, uint8, uint8, uint8, uint8));
+        uint256 fees = feeAmounts[0];
+        require(fees / loanAmount * 100 <= MAX_FEE_PERCENT, "Flashloaner: fees are too high");
 
         require(WETH.balanceOf(address(this)) >= loanAmount, 
             "CANNOT REPAY LOAN");
@@ -48,7 +53,7 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         // convert ETH to back to weth
         WETH.deposit{value:loanAmount}();
         // repay
-        WETH.transfer(msg.sender, loanAmount);
+        WETH.transfer(msg.sender, loanAmount + fees);
     }
 
 
