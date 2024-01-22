@@ -5,6 +5,7 @@ const conf = require('../conf.js');
 let flashloaner
 let mockCoord = 1
 let mockBuyer = "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990"
+let wethAddress = conf.wethAddress
 
 describe("Flashloan", function () {
   
@@ -35,7 +36,7 @@ describe("Flashloan", function () {
 
   it("Only loan platform can call onFlashLoan function", async function () {
     let data = '0x03'
-    await expect(flashloaner.connect(stranger).receiveFlashLoan(data))
+    await expect(flashloaner.connect(stranger).receiveFlashLoan([wethAddress], [1], [0], data))
         .to.be.revertedWith('Flashloaner: Caller is not loanPlatform')
   })
 })
