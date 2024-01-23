@@ -64,25 +64,19 @@ async function releaseWrapper() {
 }
 
 
-
-// deploy params DeployParams
+// Environment present before meh wrapper infrastructure.
+// WETH, loanplatfrom, MEH2016 and MEH2018. 
+// Any of these may be mocks or real addresses.
 class ProjectEnvironment {
     constructor(operatorWallet) {
         this.chainID = getConfigChainID()
         this.numConf = getConfigNumConfirmations(this.chainID)
+        this.realAddressesJSON = this.getRealAddressesJSON(this.chainID)
+        this.mocksPath = this.getMocksPath(this.chainID)
         this.isLocalTestnet = isLocalTestnet()
-        this.isUsingMocks = false
         this.operatorWallet = operatorWallet
-        this.existingEnvironmentPath = this.getPath(this.chainID)
-        this.defaultJSON = {
-            'mehAdminAddress': conf.mehAdminAddress,
-            'mocksOwner': '',
-            'weth': conf.wethAddress,
-            'soloMargin': conf.soloMarginAddress,
-            'meh2016': conf.oldMehAddress,
-            'meh2018': conf.newMehAddress,
-        }
         this.referralActivationTime = 3600
+        this.isMockingMEH = false
 
         this.soloMarginAddress
         this.mehAdminAddress
@@ -91,96 +85,126 @@ class ProjectEnvironment {
         this.weth
     }
 
+    // FUTURE. move it to conf and tools. Have to rebuild multiple files 
+    getRealAddressesJSON(chainID) {
+        // will owerwrite mock address. Keep only exiting fields, no empty fields.
+        const realAddresses = {
+            "1":
+            {
+                'mehAdminAddress': conf.mehAdminAddress,
+                'weth': conf.wethAddress,
+                'soloMargin': conf.soloMarginAddress,
+                'meh2016': conf.oldMehAddress,
+                'meh2018': conf.newMehAddress,
+            },
+            "5":
+            {
+                'weth': conf.wethAddressGoerli,
+                'soloMargin': conf.soloMarginAddressGoerli,
+            }
+        }
+        return realAddresses?.[chainID] || {}
+    }
+
     // deploy mocks to a testnet (local or remote)
+    // mocks were needed to extensively test smart contracts when reaching Alchemy limits
+    // mocks are also needed to test on a testNet
+    // WARNING!!! Will deploy necessary mocks only. Will check existing 
+    // WETH and flash loan contracts on a network
     async deployMocks(isSavingToDisk = false) {
         ;[owner] = await ethers.getSigners()
         console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
             "\nDeploying from address:", owner.address)
-        // mocks
-        this.weth = await deployContract("WETH9", {"isVerbouse": true})
-        this.soloMargin = await deployContract("SoloMarginMock", {"isVerbouse": true}, this.weth.address)
+
+        // Loan platform and WETH mocks
+        // Will not deploy if got mocks on chain (e.g. goerli)
+          
+        if (!this.realAddressesJSON.weth && !this.realAddressesJSON.soloMargin) {
+            this.weth = await deployContract("WETH9", { "isVerbouse": true })
+            this.soloMargin = await deployContract("SoloMarginMock", { "isVerbouse": true }, this.weth.address)
+            this.soloMarginAddress = this.soloMargin.address
+            // sending ETH to weth mock
+            // Flashloaner contract will use this eth to buy from OldMEH
+            // It converts weth from solomargin to eth (and then back)
+            // the cost of a block in meh2016 mock is 2 gwei
+            await this.weth.deposit({
+                value: ethers.utils.parseUnits("10", "gwei")
+            })
+            // minting weth to soloMargin
+            // Solomargin needs a pool of weth to issue loans
+            const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
+            await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
+            console.log(chalk.red('Deployed weth and loan platform'))
+        }
+
+        // MEHs mocks (will not deploy for mainnet)
         // note that we are using Mocked version of MEH here!!! 
         // see the way it differs from the original
-        this.meh2016 = await deployContract("MillionEtherMock", {"isVerbouse": true})
-        this.meh2018 = await deployContract("Meh2018Mock", {"isVerbouse": true})
-        this.soloMarginAddress = this.soloMargin.address
-        this.mehAdminAddress = owner.address
-        this.isUsingMocks = true
+        if (!this.realAddressesJSON.meh2016 && !this.realAddressesJSON.meh2018) {
+            this.meh2016 = await deployContract("MillionEtherMock", { "isVerbouse": true })
+            this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": true })
+            this.mehAdminAddress = owner.address
+            this.isMockingMEH = true
+            console.log(chalk.red('WARNING!!! Meh is also a mock here. It may differ from the original'))
+        }
 
-        // sending ETH to weth mock
-        // Flashloaner contract will use this eth to buy from OldMEH
-        // It converts weth from solomargin to eth (and then back)
-        // the cost of a block in meh2016 mock is 2 gwei
-        await this.weth.deposit({
-            value: ethers.utils.parseUnits("10", "gwei")
-        })
-
-        // minting weth to soloMargin
-        // Solomargin needs a pool of weth to issue loans
-        const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
-        await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
-
+        // only save existing properties
         if (isSavingToDisk) {
             this.saveExistingEnvironment({
-                'mehAdminAddress': owner.address,
-                'mocksOwner': owner.address,
-                'weth': this.weth.address,
-                'soloMargin': this.soloMargin.address,
-                'meh2016': this.meh2016.address,
-                'meh2018': this.meh2018.address,
+                ...(this?.mehAdminAddress && {'mehAdminAddress': this.mehAdminAddress}),
+                ...(this?.weth && {'weth': this?.weth.address}), 
+                ...(this?.soloMargin && {'soloMargin': this.soloMargin.address}), 
+                ...(this?.meh2016 && {'meh2016': this.meh2016.address}), 
+                ...(this?.meh2018 && {'meh2018': this.meh2018.address}), 
             })
         }
-        console.log(chalk.red('WARNING!!! Meh is also a mock here. It may differ from the original'))
     }
 
     saveExistingEnvironment(json) {
-        fs.writeFileSync(this.existingEnvironmentPath, JSON.stringify(json, null, 2))
-        console.log('Wrote mocks addresses for chainID:', this.chainID, this.existingEnvironmentPath)
+        fs.writeFileSync(this.mocksPath, JSON.stringify(json, null, 2))
+        console.log('Wrote mocks addresses for chainID:', this.chainID, this.mocksPath)
         }
 
+    // see comments on the ProjectEnvironment class
     async loadExistingEnvironment() {
-        // check if contracts already exist - means we are using mocks
+        // CHECK IF CONTRACTS ALREADY EXIST - MEANS WE ARE USING MOCKS
+        // TODO not sure if this is needed anywhere
         let mocksAreLoaded = false 
         if (this.meh2018 && this.meh2016 && this.weth && this.soloMarginAddress && this.mehAdminAddress) {
             mocksAreLoaded = true
-            this.isUsingMocks = true
+            console.log(chalk.red("MOCKS ALREADY EXIST"))
+            return
         }
 
-        // LOAD MOCKS 
-        let addressesJSON
-        let message
-        // check if mocks are saved on disk - also means we
+        // LOAD MOCKS FROM DISK
+        let mockAddressesJSON
         if (!mocksAreLoaded) {
             try {
-                addressesJSON = JSON.parse(fs.readFileSync(this.existingEnvironmentPath))
-                message = chalk.green('loaded mock addresses for chainID: ' + this.chainID)
-                this.isUsingMocks = true
+                mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
+                console.log(chalk.green('loaded mock addresses for chainID: ' + this.chainID))
             } catch (err) {
                 console.log("Mocks don't exist")
             }
         }
 
-        // LOAD REAL ADDRESSES IF NOT USING MOCKS
-        // mainnet only (real MEH)
-        if (this.isUsingMocks != true) {
-            addressesJSON = this.defaultJSON
-            message = chalk.red('loaded real contract addresses')
-        }
-
-        console.log(message)
+        // OVERWRITE REAL ADDRESSES WITH MOCKS(IF PRESENT)
+        // deployMocks will not create mocks if there are real addresses present
+        // mainnet and testnets (goerli)
+        let addressesJSON = {...this.realAddressesJSON, ...mockAddressesJSON}
         console.log(addressesJSON)
         
         // LOAD MEH ADMIN
+        // only needed for MEH and referrals
         let mehAdmin
-        if (this.isUsingMocks == true) {
+        if (this.isMockingMEH == true) {
             // current owner must be the same as the one who deployed mocks
-            if (addressesJSON.mocksOwner == this.operatorWallet.address) {
+            if (addressesJSON?.mehAdminAddress == this.operatorWallet.address) {
                 mehAdmin = this.operatorWallet
-                console.log(chalk.green('Loaded mehAdmin', mehAdmin.address))
+                console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address))
             } else {
-                console.log(chalk.red('Current wallet differs from the one used to deploy mocks'))
+                throw('Current wallet differs from the one used to deploy mocks')
             }
 
         } else {
@@ -216,7 +240,7 @@ class ProjectEnvironment {
         }
     }
 
-    getPath(chainID) {
+    getMocksPath(chainID) {
         let filename = chainID.toString() + '_addresses.json'
         return path.join(__dirname, '../test/mocking', filename)
     }
@@ -225,6 +249,7 @@ class ProjectEnvironment {
 
 
 
+// intended to store output of wrapper deployment (refs, wrapper address and other params)
 class Constants {
     constructor(chainID) {
         try {
@@ -250,6 +275,7 @@ class Constants {
         fs.writeFileSync(this.getPath(chainID), JSON.stringify(this.constants, null, 2))
     }
 
+    // see class comments
     getPath(chainID) {
         let filename = chainID.toString() + '_constants.json'
         return path.join(__dirname, '../constants', filename)
@@ -269,10 +295,13 @@ class Deployer {
 
     // will initialize and load previous state
     async initialize(){
+        // TODO there's no such param in the ProjectEnv class 
         if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
         await this.loadConstants()
     }
 
+    // this relies to wrapper deployment only (existing environment + build summary)
+    // this is different than existing environment (see project environment description)
     async loadConstants() {
         let cnsts = this.constants.get()
 
@@ -340,6 +369,7 @@ class Deployer {
                 'meh2016': this.exEnv.meh2016.address,
                 'meh2018': this.exEnv.meh2018.address,
             })
+            // TODO why this.isLiveNetwork here? and why isLiveNetwork at all?
             this.isSavingOnDisk || this.isLiveNetwork ? 
                 this.constants.save(getConfigChainID()) : {}
         }
@@ -355,6 +385,7 @@ class Deployer {
         }
 
     // this address is used as 0 referral (not a contract)
+    // TODO remove and ask exEnv directly
     getMehAdminAddr() {
         return this.exEnv.mehAdminAddress
     }
