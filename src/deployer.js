@@ -3,7 +3,7 @@ const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
 const { BigNumber } = require("ethers")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isThisLiveNetwork } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isForkedMainnet } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { concat } = require('ethers/lib/utils.js')
 
@@ -29,6 +29,7 @@ const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in ui
 async function setupTestEnvironment(options) {
     let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
     let isDeployingMocks = ("isDeployingMocks" in options) ? options.isDeployingMocks : false
+    if (isDeployingMocks && isForkedMainnet()) { throw("Cannot use both fork and mocks!")}
 
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
@@ -103,7 +104,12 @@ class ProjectEnvironment {
                 'soloMargin': conf.soloMarginAddressGoerli,
             }
         }
-        return realAddresses?.[chainID] || {}
+        // check if we are on a fork
+        if (isForkedMainnet()) {
+            return realAddresses["1"]
+        } else {
+            return realAddresses?.[chainID] || {}
+        }
     }
 
     // deploy mocks to a testnet (local or remote)

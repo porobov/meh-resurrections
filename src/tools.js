@@ -33,6 +33,10 @@ function getConfigNetworkName() {
     return network.name
 }
 
+function isForkedMainnet() {
+  return getConfigNetworkName() == 'hardhat' ? true : false
+}
+
 // return ChainID specified in hardhat.config.js
 function getConfigChainID() {
   return network.config.chainId
@@ -90,6 +94,7 @@ module.exports = {
   increaseTimeBy, 
   getBalance,
   getFormattedBalance,
+  isForkedMainnet,
   getConfigChainID,
   getConfigNumConfirmations,
   getImpersonatedSigner,
