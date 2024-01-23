@@ -14,7 +14,7 @@ const { BigNumber } = require('ethers');
 
 const BLOCKS_FROM_2018_PATH = conf.BLOCKS_FROM_2018_PATH
 const BLOCKS_FROM_2016_PATH = conf.BLOCKS_FROM_2016_PATH
-const IS_DEPLOYING_MOCKS = conf.IS_DEPLOYING_MOCKS
+const IS_DEPLOYING_MOCKS_FOR_TESTS = conf.IS_DEPLOYING_MOCKS_FOR_TESTS
 const RESERVED_FOR_FOUNDER = conf.RESERVED_FOR_FOUNDER
 const FULL_TEST = conf.FULL_TEST
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -42,7 +42,7 @@ function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer, friend, joker] = await ethers.getSigners()
-      let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
+      let env = await setupTestEnvironment({isDeployingMocksForTets: IS_DEPLOYING_MOCKS_FOR_TESTS, isDeployingMinterAdapter: true})
       owner = env.owner
       wrapper = env.mehWrapper
       referrals= env.referrals

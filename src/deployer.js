@@ -28,14 +28,14 @@ const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in ui
 // ensures all contracts are in clean state either by fork or redeploying
 async function setupTestEnvironment(options) {
     let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
-    let isDeployingMocks = ("isDeployingMocks" in options) ? options.isDeployingMocks : false
-    if (isDeployingMocks && isForkedMainnet()) { throw("Cannot use both fork and mocks!")}
+    let isDeployingMocksForTets = ("isDeployingMocksForTets" in options) ? options.isDeployingMocksForTets : false
+    if (isDeployingMocksForTets && isForkedMainnet()) { throw("Cannot use both fork and mocks!")}
 
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
 
     // reset fork or redeploy mocks
-    if (isDeployingMocks) {
+    if (isDeployingMocksForTets) {
         await exEnv.deployMocks(false)  // not saving mocks on disk
     } else {
         // resetting hardfork (before loading existing env and impersonating admin!!!)
@@ -118,6 +118,7 @@ class ProjectEnvironment {
     // WARNING!!! Will deploy necessary mocks only. Will check existing 
     // WETH and flash loan contracts on a network
     async deployMocks(isSavingToDisk = false) {
+        if (isForkedMainnet() || getConfigChainID() == 1) { throw ("Cannot use both fork and mocks!") }
         ;[owner] = await ethers.getSigners()
         console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
