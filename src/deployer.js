@@ -30,7 +30,6 @@ const IS_VERBOUSE = !(!conf.IS_VERBOUSE_TEST && isLocalTestnet());
 async function setupTestEnvironment(options) {
     let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
     let isDeployingMocksForTets = ("isDeployingMocksForTets" in options) ? options.isDeployingMocksForTets : false
-    if (isDeployingMocksForTets && isForkedMainnet()) { throw("Cannot use both fork and mocks!")}
 
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
@@ -107,10 +106,10 @@ class ProjectEnvironment {
         }
         // check if we are on a fork
         if (isForkedMainnet()) {
-            console.log(chalk.red("Forked mainnet"))
+            console.log(chalk.green("Forked mainnet"))
             return realAddresses["1"]
         } else {
-            console.log(chalk.red("Local network (No mainnet fork)"))
+            console.log(chalk.green("Local network (No mainnet fork)"))
             return realAddresses?.[chainID] || {}
         }
     }
@@ -121,7 +120,7 @@ class ProjectEnvironment {
     // WARNING!!! Will deploy necessary mocks only. Will check existing 
     // WETH and flash loan contracts on a network
     async deployMocks(isSavingToDisk = false) {
-        if (isForkedMainnet() || getConfigChainID() == 1) { throw ("Cannot use both fork and mocks!") }
+        if ( getConfigChainID() == 1) { throw ("Cannot use mocks on mainnet!") }
         ;[owner] = await ethers.getSigners()
         IS_VERBOUSE ? console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
@@ -146,7 +145,7 @@ class ProjectEnvironment {
             // Solomargin needs a pool of weth to issue loans
             const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
             await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
-            console.log(chalk.red('Deployed WETH and Loan Platform'))
+            console.log(chalk.green('Deployed WETH and Loan Platform'))
         }
 
         // MEHs mocks (will not deploy for mainnet)
@@ -157,7 +156,7 @@ class ProjectEnvironment {
             this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": IS_VERBOUSE })
             this.mehAdminAddress = owner.address
             this.isMockingMEH = true
-            console.log(chalk.red('Deployed MEHs (OldMeh may differ from the original).'))
+            console.log(chalk.green('Deployed MEHs (OldMeh may differ from the original).'))
         }
 
         // only save existing properties
@@ -270,7 +269,7 @@ class Constants {
         } catch (err) {
             this.constants = {}
             // no refFactory, no refs, no wrapper
-            IS_VERBOUSE ? console.log(chalk.red("Not a single wrapper infrastructure smart contract on chain id"), chainID) : {}
+            IS_VERBOUSE ? console.log(chalk.green("Not a single wrapper infrastructure smart contract on chain id"), chainID) : {}
         }
     }
 
