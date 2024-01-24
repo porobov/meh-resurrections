@@ -22,6 +22,7 @@ const NUM_OF_REFERRALS = conf.NUM_OF_REFERRALS
 // activation_time = uint32(block.timestamp + _setting_delay * (2**(_currentLevel-1)))
 // TODO // 2 ** 30.64 + 7 * 2 ** t = 2 ** 32 // find t 
 const NEW_DELAY = 315360000 // 10 years or 2 ** 28.23  // setting_delay is in uint32
+const IS_VERBOUSE = !(!conf.IS_VERBOUSE_TEST && isLocalTestnet());
 
 // deployer and setup script used in tests
 // will setup referrals, deploy and setup wrapper
@@ -106,8 +107,10 @@ class ProjectEnvironment {
         }
         // check if we are on a fork
         if (isForkedMainnet()) {
+            console.log(chalk.red("Forked mainnet"))
             return realAddresses["1"]
         } else {
+            console.log(chalk.red("Local network (No mainnet fork)"))
             return realAddresses?.[chainID] || {}
         }
     }
@@ -120,22 +123,22 @@ class ProjectEnvironment {
     async deployMocks(isSavingToDisk = false) {
         if (isForkedMainnet() || getConfigChainID() == 1) { throw ("Cannot use both fork and mocks!") }
         ;[owner] = await ethers.getSigners()
-        console.log(
+        IS_VERBOUSE ? console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
-            "\nDeploying from address:", owner.address)
+            "\nDeploying from address:", owner.address) : {}
 
         // Loan platform and WETH mocks
         // Will not deploy if got mocks on chain (e.g. goerli)
           
         if (!this.realAddressesJSON.weth && !this.realAddressesJSON.soloMargin) {
-            this.weth = await deployContract("WETH9", { "isVerbouse": true })
-            this.soloMargin = await deployContract("SoloMarginMock", { "isVerbouse": true }, this.weth.address)
+            this.weth = await deployContract("WETH9", { "isVerbouse": IS_VERBOUSE })
+            this.soloMargin = await deployContract("BalancerVaultMock", { "isVerbouse": IS_VERBOUSE }, this.weth.address)
             this.soloMarginAddress = this.soloMargin.address
             // sending ETH to weth mock
             // Flashloaner contract will use this eth to buy from OldMEH
             // It converts weth from solomargin to eth (and then back)
-            // the cost of a block in meh2016 mock is 2 gwei
+            // the cost of a block in meh2016 mock is 1 gwei
             await this.weth.deposit({
                 value: ethers.utils.parseUnits("10", "gwei")
             })
@@ -143,18 +146,18 @@ class ProjectEnvironment {
             // Solomargin needs a pool of weth to issue loans
             const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
             await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
-            console.log(chalk.red('Deployed weth and loan platform'))
+            console.log(chalk.red('Deployed WETH and Loan Platform'))
         }
 
         // MEHs mocks (will not deploy for mainnet)
         // note that we are using Mocked version of MEH here!!! 
         // see the way it differs from the original
         if (!this.realAddressesJSON.meh2016 && !this.realAddressesJSON.meh2018) {
-            this.meh2016 = await deployContract("MillionEtherMock", { "isVerbouse": true })
-            this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": true })
+            this.meh2016 = await deployContract("MillionEtherMock", { "isVerbouse": IS_VERBOUSE })
+            this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": IS_VERBOUSE })
             this.mehAdminAddress = owner.address
             this.isMockingMEH = true
-            console.log(chalk.red('WARNING!!! Meh is also a mock here. It may differ from the original'))
+            console.log(chalk.red('Deployed MEHs (OldMeh may differ from the original).'))
         }
 
         // only save existing properties
@@ -190,9 +193,12 @@ class ProjectEnvironment {
         if (!mocksAreLoaded) {
             try {
                 mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
-                console.log(chalk.green('loaded mock addresses for chainID: ' + this.chainID))
+                console.log(chalk.green('Loaded mock addresses for chainID: ' + this.chainID))
             } catch (err) {
-                console.log("Mocks don't exist")
+                console.log(chalk.green("No mocks found. Using real addresses."))
+            }
+            if (!mockAddressesJSON && !isForkedMainnet() && isLocalTestnet()) {
+                throw("No mocks and no forked mainnet for local tests")
             }
         }
 
@@ -263,7 +269,8 @@ class Constants {
             this.constants = JSON.parse(fs.readFileSync(this.getPath(chainID)))
         } catch (err) {
             this.constants = {}
-            console.log("No constants for chain id", chainID)
+            // no refFactory, no refs, no wrapper
+            IS_VERBOUSE ? console.log(chalk.red("Not a single wrapper infrastructure smart contract on chain id"), chainID) : {}
         }
     }
 
@@ -362,7 +369,7 @@ class Deployer {
                 // FLASHLOAN
                 // SoloMargin charges 2 wei per loan. Here we put 20000 wei
                 // in advance for 10000 loans
-                console.log("Depositing WETH to wrapper")
+                IS_VERBOUSE ? console.log("Depositing WETH to wrapper") : {}
                 await this.exEnv.weth.deposit({value: 20000})
                 await this.exEnv.weth.transfer(this.mehWrapper.address, 20000)
             }
@@ -380,7 +387,7 @@ class Deployer {
             this.isSavingOnDisk || this.isLiveNetwork ? 
                 this.constants.save(getConfigChainID()) : {}
         }
-        gasReporter.reportToConsole()
+        IS_VERBOUSE ? gasReporter.reportToConsole() : {}
 
         return {
             oldMeh: this.exEnv.meh2016,
@@ -410,12 +417,12 @@ class Deployer {
     async unpauseMeh2016() {
         let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
         await tx.wait(getConfigNumConfirmations())
-        console.log("MEH unpaused...")
+        IS_VERBOUSE ? console.log("MEH unpaused...") : {}
     }
 
     async pauseMeh2016() {
         await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
-        console.log("MEH paused...")
+        IS_VERBOUSE ? console.log("MEH paused...") : {}
     }
 
     // set first contract-referral as charity address
@@ -429,8 +436,8 @@ class Deployer {
         
         // charity can go to any referral addess (any of them can withdraw)
         let charityAddress = this.getLastReferral().address
-        console.log("Setting charity address:", charityAddress)
-        console.log("Setting new delay in seconds:", this.newDelay)
+        IS_VERBOUSE ? console.log("Setting charity address:", charityAddress) : {}
+        IS_VERBOUSE ? console.log("Setting new delay in seconds:", this.newDelay) : {}
         await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
     }
 
@@ -438,7 +445,7 @@ class Deployer {
     async deployReferralFactory() {
         await this.unpauseMeh2016()
         // TODO check if MEH is paused ()
-        console.log("Deploying referral factory")
+        IS_VERBOUSE ? console.log("Deploying referral factory") : {}
         const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
         this.referralFactory = await referralFactoryFactory.deploy(
             this.exEnv.meh2016.address, 
@@ -458,7 +465,7 @@ class Deployer {
         const refGasUsed = reciept.gasUsed;
         const referral = await ethers.getContractAt("Referral", newRefAddress)
         // this.gasReporter.addGasRecord("Referrals", refGasUsed)
-        console.log("Deployed referral:", referral.address )
+        IS_VERBOUSE ? console.log("Deployed referral:", referral.address) : {}
         await this.pauseMeh2016()
         return referral
     }
@@ -494,12 +501,12 @@ class Deployer {
 
     // Pairs referrals and wrapper
     async pairRefsAndWrapper() {
-        console.log("Registering referrals...")
+        IS_VERBOUSE ? console.log("Registering referrals...") : {}
         // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
             let receipts = await this.pairSingleRefAndWrapper(referral)
             // referralsGas += receipt.gasUsed
-            console.log("Registered ref:", referral.address)
+            IS_VERBOUSE ? console.log("Registered ref:", referral.address) : {}
         }
         this.constants.add({areRefsAndWrapperPaired: true})
         this.areRefsAndWrapperPaired = true
@@ -509,19 +516,19 @@ class Deployer {
     // DEPLOY WRAPPER
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     async deployWrapper() {
-        console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")")
+        IS_VERBOUSE ? console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")") : {}
         // very ugly intrusion here. Using the same code to deploy MinterAdapter for tests
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
             wrapperContractName,
-            {"isVerbouse": true, "gasReporter": gasReporter},
+            {"isVerbouse": IS_VERBOUSE, "gasReporter": gasReporter},
             this.exEnv.meh2016.address,
             this.exEnv.meh2018.address,
             this.exEnv.weth.address,
             this.exEnv.soloMarginAddress,
         )
         await this.mehWrapper.deployed() // wait numConf TODO?
-        console.log("MehWrapper deplyed to:", this.mehWrapper.address)
+        IS_VERBOUSE ? console.log("MehWrapper deplyed to:", this.mehWrapper.address) : {}
         this.constants.add({wrapperAddresses: this.mehWrapper.address})
     }
 
