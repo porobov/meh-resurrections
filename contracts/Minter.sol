@@ -9,20 +9,20 @@ contract Minter is MehERC721, Flashloaner, Collector {
 
     function _landlordFrom2018ByIndex(uint256 id) internal view returns (address) {
         address landlord = address(0);
-        console.log("......id", id);
+        // console.log("......id", id);
         // note ownerOf function fails on empty coordinates => using try/catch
         // note WARNING 2018 contract got both 2016 and 2018 pixels
         try meh2018.ownerOf(id) returns (address landlord2018) {
-            console.log("......landlord2018", landlord2018);
+            // console.log("......landlord2018", landlord2018);
             landlord = landlord2018;
         } catch (bytes memory reason) {
-            console.log("no landlord in meh2018");
+            // console.log("no landlord in meh2018");
         }
         return landlord;
     }
 
     function _landlordFrom2016(uint8 x, uint8 y) internal view returns (address) {
-        console.log("......x, y", x, y);
+        // console.log("......x, y", x, y);
         (address landlord, uint u, uint256 s) = oldMeh.getBlockInfo(x,y);
         return landlord;
     }
@@ -50,7 +50,7 @@ contract Minter is MehERC721, Flashloaner, Collector {
         // every block in the area shound belong to a single owner or o address
         for (uint i = 0; i < blocks.length; i++) {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
-            console.log("Checking if reserved", x, y);
+            // console.log("Checking if reserved", x, y);
             // check if already minted at 2016 contract
             // good for security. we are separating workflows of minting anew and wrapping.
             require(_landlordFrom2016(x, y) == address(0), "A block is already minted on 2016 contract");
@@ -99,7 +99,7 @@ contract Minter is MehERC721, Flashloaner, Collector {
         royalties += areaCrowdsalePrice;
 
         _borrowAndBuyFromMEH(msg.sender, fromX, fromY, toX, toY);
-        console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
+        // console.log("Wrapper weth balance Of:", WETH.balanceOf(address(this)));
     }
 
     // Minting blocks reserved for founders and 2018 landlords
@@ -133,12 +133,12 @@ contract Minter is MehERC721, Flashloaner, Collector {
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal override (Flashloaner) {
         // now after big loan is received bring back the original price
         // minting on 2016 contract
-        console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
+        // console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         // this is require here is not much needed, but leaving it for more security
         require((oldMeh.buyBlocks
             {value: price}
             (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");
-        console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
+        // console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
 
         // get all the funds back from referrals to repay the loan 
         uint256 withdrawnFromReferrals = _withdrawFromReferrals();
