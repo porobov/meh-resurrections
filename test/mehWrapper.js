@@ -27,7 +27,7 @@ let imageSourceUrl = "imageSourceUrl"
 let adUrl = "adUrl"
 let adText = "adText"
 
-const mehAdminAddress = conf.mehAdminAddress
+const MEH_ADMIN_ADDRESS = conf.mehAdminAddress
 let deployer
 
 async function testEnvironmentCollector() {
@@ -77,7 +77,6 @@ function makeSuite(name, envSetupFunction, tests) {
       tests();
   });
 }
-
 makeSuite("Referrals and Sign in", testEnvironmentCollector, function () {
 
   it("Only owner can sign in", async function () {
@@ -103,7 +102,7 @@ makeSuite("Referrals and Sign in", testEnvironmentCollector, function () {
   // continuity of chain is checked at wrapper sign in (see MehWrapper.sol)
   it("Cannot sign in if chain of refferals is broken (using prev. test state)", async function () {
     // last referral is a referral of mehAdminAddress - not of referral # 5
-    let brokenReferral = await deployer.setUpReferral(mehAdminAddress)
+    let brokenReferral = await deployer.setUpReferral(MEH_ADMIN_ADDRESS)
     await deployer.pairSingleRefAndWrapper(brokenReferral)
     await deployer.unpauseMeh2016()
     await expect(deployer.mehWrapper.connect(owner).signIn()).to.be.revertedWith(
@@ -153,7 +152,7 @@ makeSuite("More referrals than needed", testEnvironmentCollector, function () {
   })
 })
 
-it("More referrals can be added than needed", async function () {
+it("Wrapper can be paired with correct contracts only", async function () {
   const wrapper = await ethers.getContractFactory("MehWrapper");
   // wrong meh2016
   await expect(wrapper.deploy(
@@ -189,16 +188,6 @@ it("More referrals can be added than needed", async function () {
 // can place image to minted block
 makeSuite("Placing image", setupTestEnvironment, function () {
 
-  it("Anyone can place ads to minted areas if not forbidden", async function () {
-    expect(false).to.be.equal(true)
-  })
-
-  it("Place image is payable", async function () {
-    expect(false).to.be.equal(true)
-  })
-
-  // when landlord places image, access is restricted automatically 
-
   it("Can place image to minted block", async function () {
     // buy area
     let cc = availableAreas[0]
@@ -211,7 +200,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
         .withArgs(anyValue, cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText);
   })
 
-  it("Can place image to minted area (prev. test state)", async function () {
+  it("Cannot place image to an occupied or not minted area (prev. test state)", async function () {
     // area is not wrapped 
     let cc = occupiedAreas[0]
     await expect(wrapper.connect(buyer)
@@ -259,13 +248,59 @@ makeSuite("Placing image", setupTestEnvironment, function () {
 
   for (let cc of founderAreas) {
     it(`Will place images to blocks reserved for founder (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
+      // anyone can mint reserved areas for founders
       await wrapper.connect(buyer)
         .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
+      // setup founder
       let founder = await getImpersonatedSigner(await wrapper.founder())
+      let decentlyEarnedEth = ethers.utils.parseEther("1.0")
+      await setBalance(founder.address, decentlyEarnedEth)
+
       await expect(wrapper.connect(founder)
         .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
           .to.emit(oldMeh, "NewImage")
           .withArgs(anyValue, cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText);
+      // TODO try placing ads by byuer
+      await expect(wrapper.connect(buyer)
+        .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
+          .to.be.revertedWith("MehWrapper: Not a landlord")
     })
   }
 })
+
+// hommage to MEH 2016
+makeSuite("Image placement price", setupTestEnvironment, function () {
+  it("Place image is payable (as in the original MEH)", async function () {
+
+    // buy area
+    let cc = availableAreas[0]
+    let price = await wrapper.crowdsalePrice();  // single block 
+    await wrapper.connect(buyer)
+        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+
+    // setup mehadmin and new image placement price
+    let mehAdmin = await getImpersonatedSigner(MEH_ADMIN_ADDRESS)
+    let newImagePlacementPriceInWei = ethers.utils.parseEther("1.0")
+    // adminContractSettings (newDelayInSeconds, newCharityAddress, newImagePlacementPriceInWei)
+    await oldMeh.connect(mehAdmin).adminContractSettings(1, referrals[referrals.length - 1].address, newImagePlacementPriceInWei)
+
+    // try to place image now with no money
+    await expect(wrapper.connect(buyer)
+      .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
+        .to.be.revertedWithoutReason()
+    
+    let decentlyEarnedEth = ethers.utils.parseEther("1.0")
+    await setBalance(mehAdmin.address, decentlyEarnedEth)
+
+    await expect(wrapper.connect(buyer)
+      .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText, { value: newImagePlacementPriceInWei }))
+        .to.emit(oldMeh, "NewImage")
+        .withArgs(anyValue, cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText);
+  })
+})
+
+  // removing this test as this is different from original MEH functionality
+  // it("Anyone can place ads to minted areas if not forbidden", async function () {
+  //   expect(false).to.be.equal(true)
+  // })
+  // when landlord places image, access is restricted automatically 
