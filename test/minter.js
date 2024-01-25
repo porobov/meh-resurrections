@@ -317,11 +317,11 @@ makeSuite("mint", function () {
   it("Will throw with wrong input", async function () {
     let c18 = bb18[0]
     let cc = availableAreas[0]
-    await expect(minter.connect(buyer).mint(c18.x, c18.y, c18.x - 1, c18.y))
+    await expect(minter.connect(buyer).buyBlocks(c18.x, c18.y, c18.x - 1, c18.y))
       .to.be.revertedWith("Wrong coordinates")
-    await expect(minter.connect(buyer).mint(c18.x, c18.y, c18.x, c18.y))
+    await expect(minter.connect(buyer).buyBlocks(c18.x, c18.y, c18.x, c18.y))
       .to.be.revertedWith("A block is reserved for 2018 landlords or founders")
-    await expect(minter.connect(buyer).mint(cc.fx, cc.fy, cc.fx, cc.fy))
+    await expect(minter.connect(buyer).buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy))
       .to.be.revertedWith("Not enough eth to mint")
   })
   
@@ -332,7 +332,7 @@ makeSuite("mint", function () {
       let total = price.mul(count)
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
       await minter.connect(buyer)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
       expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)
@@ -356,7 +356,7 @@ makeSuite("mintReserved ", function () {
 
   it("Will throw with wrong input", async function () {
     let cf = RESERVED_FOR_FOUNDER
-    await expect(minter.connect(buyer).mint(cf.fx, cf.fy, cf.fx - 1, cf.fy))
+    await expect(minter.connect(buyer).buyBlocks(cf.fx, cf.fy, cf.fx - 1, cf.fy))
       .to.be.revertedWith("Wrong coordinates")
   })
 
@@ -414,7 +414,7 @@ makeSuite("Minting from oldMeh directly", function () {
     // minting new block (single)
     let mm = availableAreas[1]
     let price = await minter.crowdsalePrice();
-    let mintingTx = await minter.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: price })
+    let mintingTx = await minter.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: price })
     let s3 = await balancesSnapshot(oldMeh, minter, referrals)
     let founderBalS3 = await minter.internalBalOf(await minter.founder())
     

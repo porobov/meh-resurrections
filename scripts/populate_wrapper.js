@@ -42,7 +42,7 @@ async function populate() {
         console.log("Buying area:", fx, fy, tx, ty)
         try {
             const mintReciept = await(await wrapper.connect(landlord)
-                .mint(fx, fy, tx, ty, { value: total })).wait(numConf)
+                .buyBlocks(fx, fy, tx, ty, { value: total })).wait(numConf)
             console.log(mintReciept)
         } catch (e) {
             console.log(e)

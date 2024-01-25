@@ -85,7 +85,8 @@ contract Minter is MehERC721, Flashloaner, Collector {
     }
 
     // ordinary minting (is called by user)
-    function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
+    // buyBlocks - function name in the original MEH
+    function buyBlocks(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
         external
         payable
         onlyLegalCoordinates(fromX, fromY, toX, toY)

@@ -253,7 +253,7 @@ makeSuite("Multiple recipients", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
+        .buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
 
     // unwrap - buy - wrap 
     let unwrapTxLandlord = await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.fx, cc.fy, unwrapPrice)
@@ -276,7 +276,7 @@ makeSuite("Multiple recipients", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
     // transfer 1 block to another account
     let transferTx = await wrapper.connect(landlord).transferFrom(landlord.address, friend.address, blockID(cc.tx, cc.ty))
 
@@ -314,7 +314,7 @@ makeSuite("Withdraw one by one", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
 
     // unwrap - buy - wrap 
     await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
@@ -348,7 +348,7 @@ makeSuite("Minting from oldMeh directly", function () {
     // mint and unwrap a block (single) then buy it on meh2016
     let s1 = await balancesSnapshot(oldMeh, wrapper, referrals)
     let mm = availableAreas[1]
-    let mintingTx = await wrapper.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: crowdsalePrice })
+    let mintingTx = await wrapper.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: crowdsalePrice })
     let unwrapTx = await wrapper.connect(buyer).unwrap(mm.fx, mm.fy, mm.fx, mm.fy, unwrapPrice)
     let signInTxbuyer = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
     await oldMeh.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: unwrapPrice })
@@ -390,7 +390,7 @@ makeSuite("Resetting sell price", function () {
     await setBalance(landlord.address, ethers.utils.parseEther("10"))
     // mint 2 blocks
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
     // set both for sale 
     await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
     // reset sell price for second block 

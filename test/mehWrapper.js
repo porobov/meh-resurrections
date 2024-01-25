@@ -147,7 +147,7 @@ makeSuite("More referrals than needed", testEnvironmentCollector, function () {
     let cc = availableAreas[0]
     let price = await wrapper.crowdsalePrice();  // single block 
     await wrapper.connect(buyer)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
     expect(await wrapper.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
   })
 })
@@ -193,7 +193,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     let cc = availableAreas[0]
     let price = await wrapper.crowdsalePrice();  // single block 
     await wrapper.connect(buyer)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
     await expect(wrapper.connect(buyer)
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
         .to.emit(oldMeh, "NewImage")
@@ -218,7 +218,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     let cc = availableAreas[1]
     let price = (await wrapper.crowdsalePrice()).mul(2)  // single block 
     await wrapper.connect(buyer)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
     await expect(wrapper.connect(buyer)
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
         .to.emit(oldMeh, "NewImage")
@@ -276,7 +276,7 @@ makeSuite("Image placement price", setupTestEnvironment, function () {
     let cc = availableAreas[0]
     let price = await wrapper.crowdsalePrice();  // single block 
     await wrapper.connect(buyer)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
 
     // setup mehadmin and new image placement price
     let mehAdmin = await getImpersonatedSigner(MEH_ADMIN_ADDRESS)
