@@ -192,9 +192,9 @@ class ProjectEnvironment {
         if (!mocksAreLoaded) {
             try {
                 mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
-                console.log(chalk.green('Loaded mock addresses for chainID: ' + this.chainID))
+                IS_VERBOUSE ? console.log(chalk.green('Loaded mock addresses for chainID: ' + this.chainID)) : {}
             } catch (err) {
-                console.log(chalk.green("No mocks found. Using real addresses."))
+                IS_VERBOUSE ? console.log(chalk.green("No mocks found. Using real addresses.")) : {}
             }
             if (!mockAddressesJSON && !isForkedMainnet() && isLocalTestnet()) {
                 throw("No mocks and no forked mainnet for local tests")
@@ -205,7 +205,7 @@ class ProjectEnvironment {
         // deployMocks will not create mocks if there are real addresses present
         // mainnet and testnets (goerli)
         let addressesJSON = {...this.realAddressesJSON, ...mockAddressesJSON}
-        console.log(addressesJSON)
+        IS_VERBOUSE ? console.log(addressesJSON) : {}
         
         // LOAD MEH ADMIN
         // only needed for MEH and referrals
@@ -214,7 +214,7 @@ class ProjectEnvironment {
             // current owner must be the same as the one who deployed mocks
             if (addressesJSON?.mehAdminAddress == this.operatorWallet.address) {
                 mehAdmin = this.operatorWallet
-                console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address))
+                IS_VERBOUSE ? console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address)) : {}
             } else {
                 throw('Current wallet differs from the one used to deploy mocks')
             }
@@ -224,7 +224,7 @@ class ProjectEnvironment {
                 // check that operator wallet is real Meh admin
                 throw('read mehAdmin key from disk (not implemented yet)')  // TODO
             } else {
-                console.log("Impersonating admin...")
+                IS_VERBOUSE ? console.log("Impersonating admin...") : {}
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
             }
         }
