@@ -40,7 +40,6 @@ async function setupTestEnvironment(options) {
     } else {
         // resetting hardfork (before loading existing env and impersonating admin!!!)
         await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain 
-        await exEnv.loadExistingEnvironment()
     }
     const deployer = new Deployer(exEnv, {
         isSavingOnDisk: false, 
@@ -59,7 +58,6 @@ async function setupMocks() {
 async function releaseWrapper() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
-    await exEnv.loadExistingEnvironment()
     const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
     return await deployer.deployAndSetup()
 }
@@ -73,6 +71,7 @@ class ProjectEnvironment {
         this.chainID = getConfigChainID()
         this.numConf = getConfigNumConfirmations(this.chainID)
         this.realAddressesJSON = this.getRealAddressesJSON(this.chainID)
+        this.mockAddressesJSON = {}
         this.mocksPath = this.getMocksPath(this.chainID)
         this.isLocalTestnet = isLocalTestnet()
         this.operatorWallet = operatorWallet
@@ -84,6 +83,8 @@ class ProjectEnvironment {
         this.meh2018
         this.meh2016
         this.weth
+
+        this.isInitialized = false
     }
 
     // FUTURE. move it to conf and tools. Have to rebuild multiple files 
@@ -159,16 +160,16 @@ class ProjectEnvironment {
             console.log(chalk.green('Deployed MEHs (OldMeh may differ from the original).'))
         }
 
-        // only save existing properties
-        if (isSavingToDisk) {
-            this.saveExistingEnvironment({
-                ...(this?.mehAdminAddress && {'mehAdminAddress': this.mehAdminAddress}),
-                ...(this?.weth && {'weth': this?.weth.address}), 
-                ...(this?.soloMargin && {'soloMargin': this.soloMargin.address}), 
-                ...(this?.meh2016 && {'meh2016': this.meh2016.address}), 
-                ...(this?.meh2018 && {'meh2018': this.meh2018.address}), 
-            })
+        // only save existing addresses
+        this.mockAddressesJSON = {
+            ...(this?.mehAdminAddress && { 'mehAdminAddress': this.mehAdminAddress }),
+            ...(this?.weth && { 'weth': this?.weth.address }),
+            ...(this?.soloMargin && { 'soloMargin': this.soloMargin.address }),
+            ...(this?.meh2016 && { 'meh2016': this.meh2016.address }),
+            ...(this?.meh2018 && { 'meh2018': this.meh2018.address }), 
         }
+
+        if (isSavingToDisk) { this.saveExistingEnvironment(this.mockAddressesJSON)}
     }
 
     saveExistingEnvironment(json) {
@@ -177,26 +178,18 @@ class ProjectEnvironment {
         }
 
     // see comments on the ProjectEnvironment class
-    async loadExistingEnvironment() {
-        // CHECK IF CONTRACTS ALREADY EXIST - MEANS WE ARE USING MOCKS
-        // TODO not sure if this is needed anywhere
-        let mocksAreLoaded = false 
-        if (this.meh2018 && this.meh2016 && this.weth && this.soloMarginAddress && this.mehAdminAddress) {
-            mocksAreLoaded = true
-            console.log(chalk.red("MOCKS ALREADY EXIST"))
-            return
-        }
+    async initEnv() {
+        if (this.isInitialized) { return }
 
-        // LOAD MOCKS FROM DISK
-        let mockAddressesJSON
-        if (!mocksAreLoaded) {
+        // LOAD MOCKS FROM DISK (IF NOT LOADED ALREADY)
+        if (this.mockAddressesJSON != {}) {
             try {
-                mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
+                this.mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
                 IS_VERBOUSE ? console.log(chalk.green('Loaded mock addresses for chainID: ' + this.chainID)) : {}
             } catch (err) {
                 IS_VERBOUSE ? console.log(chalk.green("No mocks found. Using real addresses.")) : {}
             }
-            if (!mockAddressesJSON && !isForkedMainnet() && isLocalTestnet()) {
+            if (!this.mockAddressesJSON && !isForkedMainnet() && isLocalTestnet()) {
                 throw("No mocks and no forked mainnet for local tests")
             }
         }
@@ -204,7 +197,7 @@ class ProjectEnvironment {
         // OVERWRITE REAL ADDRESSES WITH MOCKS(IF PRESENT)
         // deployMocks will not create mocks if there are real addresses present
         // mainnet and testnets (goerli)
-        let addressesJSON = {...this.realAddressesJSON, ...mockAddressesJSON}
+        let addressesJSON = {...this.realAddressesJSON, ...this.mockAddressesJSON}
         IS_VERBOUSE ? console.log(addressesJSON) : {}
         
         // LOAD MEH ADMIN
@@ -218,7 +211,6 @@ class ProjectEnvironment {
             } else {
                 throw('Current wallet differs from the one used to deploy mocks')
             }
-
         } else {
             if (getConfigChainID() == '1') {
                 // check that operator wallet is real Meh admin
@@ -229,12 +221,14 @@ class ProjectEnvironment {
             }
         }
 
-        // // INIT CONTRACTS
-        this.meh2018 = new ethers.Contract(addressesJSON.meh2018, newMehAbi, this.operatorWallet)
-        this.meh2016 = new ethers.Contract(addressesJSON.meh2016, oldMehAbi, mehAdmin)
-        this.weth = await ethers.getContractAt("WETH9", addressesJSON.weth)
-        this.soloMarginAddress = addressesJSON.soloMargin
+        // INIT CONTRACTS (only the ones that are not init yet)
+        this.meh2018 = !this.meh2018 ? new ethers.Contract(addressesJSON.meh2018, newMehAbi, this.operatorWallet) : this.meh2018
+        this.meh2016 = !this.meh2016 ? new ethers.Contract(addressesJSON.meh2016, oldMehAbi, mehAdmin) : this.meh2016
+        this.weth = !this.weth ? await ethers.getContractAt("WETH9", addressesJSON.weth) : this.weth
+        this.soloMarginAddress = !this.soloMarginAddress ? addressesJSON.soloMargin : this.soloMarginAddress
         this.mehAdminAddress = await mehAdmin.getAddress()
+
+        this.isInitialized = true
     }
     
     // mintTo(address guy, uint wad)
@@ -308,9 +302,8 @@ class Deployer {
 
     // will initialize and load previous state
     async initialize(){
-        // TODO there's no such param in the ProjectEnv class 
-        if (this.exEnv.isInitialized == false) throw ("Existing env is not initialized")
-        await this.loadConstants()
+        await this.exEnv.initEnv()  // project env
+        await this.loadConstants()  // already deployed wrapper infra
     }
 
     // this relies to wrapper deployment only (existing environment + build summary)
@@ -398,7 +391,6 @@ class Deployer {
         }
 
     // this address is used as 0 referral (not a contract)
-    // TODO remove and ask exEnv directly
     getMehAdminAddr() {
         return this.exEnv.mehAdminAddress
     }

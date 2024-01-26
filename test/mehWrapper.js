@@ -35,7 +35,6 @@ async function testEnvironmentCollector() {
   const exEnv = new ProjectEnvironment(owner)
   // resetting hardfork (before loading existing env and impersonating admin!!!)
   await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain
-  await exEnv.loadExistingEnvironment()
 
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
