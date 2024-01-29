@@ -163,7 +163,8 @@ contract MillionEther {
         if (blocks[fromX][fromY].landlord == address(0x0)) { 
                 // when buying at initial sale price doubles every 1000 blocks sold
                 // changed the price to 1 Gwei to be able to test with mocks on a testnet
-                return 1000000000 wei * (2 ** (blocksSold/1000));   
+                // then changed back as balancer is available on goerli (should be enough funds)
+                return 1 ether * (2 ** (blocksSold/1000));   
             } else {
                 // when the block is already bought and landlord have set a sell price
                 return blocks[fromX][fromY].sellPrice;
