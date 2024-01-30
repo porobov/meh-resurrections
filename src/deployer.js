@@ -3,9 +3,10 @@ const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
 const { BigNumber } = require("ethers")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isForkedMainnet } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isForkedMainnet, getFormattedBalance } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { concat } = require('ethers/lib/utils.js')
+const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 
 const oldMehAbi = conf.oldMehAbi
 const newMehAbi = conf.newMehAbi
@@ -122,7 +123,8 @@ class ProjectEnvironment {
     // WETH and flash loan contracts on a network
     async deployMocks(isSavingToDisk = false) {
         if ( getConfigChainID() == 1) { throw ("Cannot use mocks on mainnet!") }
-        ;[owner] = await ethers.getSigners()
+        // ;[owner] = await ethers.getSigners()
+        const owner = this.operatorWallet
         IS_VERBOUSE ? console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
@@ -139,14 +141,15 @@ class ProjectEnvironment {
             // Flashloaner contract will use this eth to buy from OldMEH
             // It converts weth from solomargin to eth (and then back)
             // the cost of a block in meh2016 mock is 1 gwei
-            await this.weth.deposit({
-                value: ethers.utils.parseUnits("10", "gwei")
-            })
+            const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("16001", "ether")
+            await setBalance(this.weth.address, SOLO_WETH_POOL_SIZE)
             // minting weth to soloMargin
             // Solomargin needs a pool of weth to issue loans
-            const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("1000000", "ether")
+            // Ammount is 1 weth higher than in flashloaner.js test
             await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
             console.log(chalk.green('Deployed WETH and Loan Platform'))
+            console.log(chalk.green("weth", await getFormattedBalance(this.weth.address)))
+            console.log(chalk.green("soloMargin", await getFormattedBalance(this.soloMargin.address)))
         }
 
         // MEHs mocks (will not deploy for mainnet)
@@ -170,6 +173,7 @@ class ProjectEnvironment {
         }
 
         if (isSavingToDisk) { this.saveExistingEnvironment(this.mockAddressesJSON)}
+        return this.mockAddressesJSON
     }
 
     saveExistingEnvironment(json) {
@@ -357,13 +361,6 @@ class Deployer {
                 
                 // setting charity address and NEW_DELAY
                 await this.finalMeh2016settings()
-
-                // FLASHLOAN
-                // SoloMargin charges 2 wei per loan. Here we put 20000 wei
-                // in advance for 10000 loans
-                IS_VERBOUSE ? console.log("Depositing WETH to wrapper") : {}
-                await this.exEnv.weth.deposit({value: 20000})
-                await this.exEnv.weth.transfer(this.mehWrapper.address, 20000)
             }
         } catch (e) {
             throw e
@@ -386,7 +383,8 @@ class Deployer {
             // newMeh: this.exEnv.meh2018,
             mehWrapper: this.mehWrapper,
             referrals: this.referrals,
-            owner: this.exEnv.operatorWallet
+            owner: this.exEnv.operatorWallet,
+            mehAdminAddress: this.exEnv.mehAdminAddress
             }
         }
 
@@ -559,5 +557,5 @@ module.exports = {
     Deployer,
     Constants,
     releaseWrapper,
-    setupMocks
+    setupMocks,
 }
