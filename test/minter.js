@@ -51,6 +51,7 @@ function makeSuite(name, tests) {
       minter = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
+      mehAdminAddress = env.mehAdminAddress
 
       const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
       usingToolsAdapter = await UsingToolsAdapter.deploy();
@@ -405,7 +406,7 @@ makeSuite("Minting from oldMeh directly", function () {
     
     // minting at oldMeh directly (creating excess referrals balace)
     // 50% goes to mehAdminAddress, the rest from this sale should go to royalties
-    let signInTxFriend = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
+    let signInTxFriend = await oldMeh.connect(buyer).signIn(mehAdminAddress)
     await oldMeh.connect(buyer).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
     let s2 = await balancesSnapshot(oldMeh, minter, referrals)
     let founderBalS2 = await minter.internalBalOf(await minter.founder())
