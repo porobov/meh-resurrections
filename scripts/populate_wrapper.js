@@ -1,16 +1,17 @@
-// This is to populate newly deployed meh project with old data.
-// needed for ux dev
-// npx hardhat run scripts/populate_wrapper.js
+// Populates newly deployed meh project with old data.
+// needed for ux dev. To be used locally and for testnets
+// npx hardhat run scripts/populate_wrapper.js --network localhost
 
 const fs = require('fs')
 const { ethers } = require("hardhat")
-const { ProjectEnvironment, Constants } = require("../src/deployer.js")
-const { blockID, countBlocks, balancesSnapshot, getTotalGas } = require("../src/test-helpers.js")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isThisLiveNetwork } = require("../src/tools.js")
+const { Constants } = require("../src/deployer.js")
+const { countBlocks } = require("../src/test-helpers.js")
+const { getConfigChainID, getConfigNumConfirmations } = require("../src/tools.js")
+const chalk = require('chalk');
 
 const ADS_PATH = "old_MEH_blocks/data/Old_NewImage_Events.json"
 const FIRST_ID = 1
-const LAST_ID = 1
+const LAST_ID = 10
 
 const ads = JSON.parse(fs.readFileSync(ADS_PATH))
 
@@ -24,14 +25,12 @@ async function populate() {
     const wrapper = await ethers.getContractAt("MehWrapper", consts.constants.wrapperAddresses)
 
     // populate
-    for (const i = FIRST_ID; i <= LAST_ID; i++) {
-        console.log("Puttig ads id:", i)
-        console.log("buy", ad.fromX, ad.toX, ad.fromY, ad.toY)
-        console.log("ads", ad.imageSourceUrl, ad.adUrl, ad.adText)
+    for (let i = FIRST_ID; i <= LAST_ID; i++) {
+        const ad = ads[i]
+        console.log("\nAds id", i, "Coords", ad.fromX, ad.fromY, ad.toX, ad.toY, "ads:", ad.imageSourceUrl, ad.adUrl, ad.adText)
 
         // calculate price
-        const ad = ads[i]
-        const [fx, fy, tx, ty] = [ad.fromX, ad.toX, ad.fromY, ad.toY]
+        const [fx, tx, fy, ty] = [ad.fromX, ad.toX, ad.fromY, ad.toY]
         let price = await wrapper.crowdsalePrice();
         let count = countBlocks(fx, fy, tx, ty)
         let total = price.mul(count)
@@ -39,13 +38,19 @@ async function populate() {
         // buy range
         // using try-catch here because there may be multiple ads put at the same area
         // we don't need precision here
-        console.log("Buying area:", fx, fy, tx, ty)
         try {
             const mintReciept = await(await wrapper.connect(landlord)
                 .buyBlocks(fx, fy, tx, ty, { value: total })).wait(numConf)
-            console.log(mintReciept)
+            console.log(chalk.green("mintReciept:", mintReciept?.transactionHash))
         } catch (e) {
-            console.log(e)
+            console.log(chalk.red(e?.reason))
+        }
+        try {
+            const placeImageReceipt = await(await wrapper.connect(landlord)
+                .placeImage(fx, fy, tx, ty, ad.imageSourceUrl, ad.adUrl, ad.adText)).wait(numConf)
+            console.log(chalk.green("placeImageReceipt:", placeImageReceipt?.transactionHash))
+        } catch (e) {
+            console.log(chalk.red(e?.reason))
         }
     }
 }
