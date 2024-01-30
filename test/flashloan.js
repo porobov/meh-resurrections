@@ -1,15 +1,16 @@
 const { expect } = require("chai");
-const { getImpersonatedSigner } = require("../src/tools.js")
-const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
+const { ProjectEnvironment } = require("../src/deployer.js")
 const { ethers } = require("hardhat");
 const conf = require('../conf.js');
 
 let flashloaner
 let mockCoord = 1
 let mockBuyer = "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990"
-let wethAddress = conf.wethAddress
+let wethAddress
 let data = '0x03'
 let MAX_FEE_PERCENT = 1
+const IS_VERBOUSE = conf.IS_VERBOUSE_TEST
+  // 
 
 describe("Flashloan", function () {
   
@@ -17,8 +18,18 @@ describe("Flashloan", function () {
   before('setup', async () => {
     ;[ownerGlobal, stranger] = await ethers.getSigners()
     const Flashloaner = await ethers.getContractFactory("FlashloanerAdapter");
-    flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
+    if (conf.IS_DEPLOYING_MOCKS_FOR_TESTS) { 
+      const exEnv = new ProjectEnvironment(ownerGlobal)
+      const mockAddressesJSON = await exEnv.deployMocks()
+      flashloaner = await Flashloaner.deploy(mockAddressesJSON.weth, mockAddressesJSON.soloMargin);
+      wethAddress = mockAddressesJSON.weth
+    } else {
+      flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
+      wethAddress = conf.wethAddress
+    }
     await flashloaner.deployed();
+    IS_VERBOUSE ? console.log("Flashloaner:", flashloaner.address) : {}
+    IS_VERBOUSE ? console.log("ETH balance of WETH contract:", await ethers.provider.getBalance(wethAddress)) : {}
   })
 
   // WARNING!!! Hardhat bug. See Receiver.sol for info. 
@@ -38,6 +49,7 @@ describe("Flashloan", function () {
       .to.be.revertedWith('BAL#528')
   })
 
+  // hardhat bug. Will work even with Receiver require commented.
   it("Only loan platform can call onFlashLoan function", async function () {
     await expect(flashloaner.connect(stranger).receiveFlashLoan([wethAddress], [1], [0], data))
         .to.be.revertedWith('Flashloaner: Caller is not loanPlatform')
