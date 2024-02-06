@@ -527,12 +527,9 @@ class Deployer {
             this.exEnv.weth.address,
             this.exEnv.soloMarginAddress,
         )
-        await this.mehWrapper.deployed() // wait numConf TODO?
-        IS_VERBOUSE ? console.log("MehWrapper deplyed to:", this.mehWrapper.address) : null
-        this.constants.add({wrapperAddresses: this.mehWrapper.address})
+        IS_VERBOUSE ? console.log("MehWrapper deployed to:", this.mehWrapper.address) : null
+        this.constants.add({ wrapperAddresses: this.mehWrapper.address })
     }
-
-
 }
 
 
@@ -551,7 +548,7 @@ async function deployContract(contractName, options, ...args) {
     }
     const contrFactory = await ethers.getContractFactory(contractName)
     const contr = await contrFactory.deploy(...args)
-    const reciept = await contr.deployTransaction.wait()
+    const reciept = await contr.deployTransaction.wait(getConfigNumConfirmations())
     if (gasReporter !== undefined) {
         gasReporter.addGasRecord(`${contractName} gas`, reciept.gasUsed)
     }
