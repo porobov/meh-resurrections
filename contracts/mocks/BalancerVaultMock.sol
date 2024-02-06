@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import "../balancer-labs/solidity-utils/misc/IWETH.sol";
 import "../balancer-labs/solidity-utils/openzeppelin/IERC20.sol";
 import "../Flashloaner.sol";
+import "hardhat/console.sol";
 
 contract BalancerVaultMock {
 
@@ -20,8 +21,13 @@ contract BalancerVaultMock {
     ) external {
         // send WETH to wrapper
         uint256 loanAmount = amounts[0];
+        require(loanAmount <= WETH.balanceOf(address(this)), "BAL#528");
         WETH.transfer(receiver, loanAmount);
 
+        // the following console.log line fixes some hardhat bug
+        // without this line flashloan.js test fails even though
+        // Vault does not deal with Eth at all
+        console.log(address(this).balance);
         // set fees to zero (as in real balancer)
         uint256[] memory feeAmounts = new uint256[](1);
         feeAmounts[0] = 0;
