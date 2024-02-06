@@ -128,7 +128,7 @@ class ProjectEnvironment {
         IS_VERBOUSE ? console.log(
             "Deploying mocks to Chain ID:", getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
-            "\nDeploying from address:", owner.address) : {}
+            "\nDeploying from address:", owner.address) : null
 
         // Loan platform and WETH mocks
         // Will not deploy if got mocks on chain (e.g. goerli)
@@ -189,9 +189,9 @@ class ProjectEnvironment {
         if (this.mockAddressesJSON != {}) {
             try {
                 this.mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
-                IS_VERBOUSE ? console.log(chalk.green('Loaded mock addresses for chainID: ' + this.chainID)) : {}
+                IS_VERBOUSE ? console.log(chalk.red('Loaded mock addresses for chainID: ' + this.chainID)) : null
             } catch (err) {
-                IS_VERBOUSE ? console.log(chalk.green("No mocks found. Using real addresses.")) : {}
+                IS_VERBOUSE ? console.log(chalk.green("No mocks found. Using real addresses.")) : null
             }
             if (!this.mockAddressesJSON && !isForkedMainnet() && isLocalTestnet()) {
                 throw("No mocks and no forked mainnet for local tests")
@@ -202,7 +202,7 @@ class ProjectEnvironment {
         // deployMocks will not create mocks if there are real addresses present
         // mainnet and testnets (goerli)
         let addressesJSON = {...this.realAddressesJSON, ...this.mockAddressesJSON}
-        IS_VERBOUSE ? console.log(addressesJSON) : {}
+        IS_VERBOUSE ? console.log(addressesJSON) : null
         
         // LOAD MEH ADMIN
         // only needed for MEH and referrals
@@ -211,7 +211,7 @@ class ProjectEnvironment {
             // current owner must be the same as the one who deployed mocks
             if (addressesJSON?.mehAdminAddress == this.operatorWallet.address) {
                 mehAdmin = this.operatorWallet
-                IS_VERBOUSE ? console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address)) : {}
+                IS_VERBOUSE ? console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address)) : null
             } else {
                 throw('Current wallet differs from the one used to deploy mocks')
             }
@@ -220,7 +220,7 @@ class ProjectEnvironment {
                 // check that operator wallet is real Meh admin
                 throw('read mehAdmin key from disk (not implemented yet)')  // TODO
             } else {
-                IS_VERBOUSE ? console.log("Impersonating admin...") : {}
+                IS_VERBOUSE ? console.log("Impersonating admin...") : null
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
             }
         }
@@ -264,10 +264,11 @@ class Constants {
     constructor(chainID) {
         try {
             this.constants = JSON.parse(fs.readFileSync(this.getPath(chainID)))
+            IS_VERBOUSE ? console.log(chalk.red("Loaded infrastructure smart contracts from constants for chain id"), chainID) : null
         } catch (err) {
             this.constants = {}
             // no refFactory, no refs, no wrapper
-            IS_VERBOUSE ? console.log(chalk.green("Not a single wrapper infrastructure smart contract on chain id"), chainID) : {}
+            IS_VERBOUSE ? console.log(chalk.green("Not a single wrapper infrastructure smart contract on chain id"), chainID) : null
         }
     }
 
@@ -343,7 +344,7 @@ class Deployer {
         // 
         try {
             !this.referralFactory ?
-                await this.deployReferralFactory() : {}
+                await this.deployReferralFactory() : null
 
             if (this.referralFactory && (this.numOfReferrals() < NUM_OF_REFERRALS)){
                 await this.deployReferrals()}
@@ -374,9 +375,9 @@ class Deployer {
             })
             // TODO why this.isLiveNetwork here? and why isLiveNetwork at all?
             this.isSavingOnDisk || this.isLiveNetwork ? 
-                this.constants.save(getConfigChainID()) : {}
+                this.constants.save(getConfigChainID()) : null
         }
-        IS_VERBOUSE ? gasReporter.reportToConsole() : {}
+        IS_VERBOUSE ? gasReporter.reportToConsole() : null
 
         return {
             oldMeh: this.exEnv.meh2016,
@@ -404,14 +405,19 @@ class Deployer {
     // unpause oldMEH (refferals register in oldMeh at deploy)
     // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
+        let gotReceipt = false
         let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
-        await tx.wait(getConfigNumConfirmations())
-        IS_VERBOUSE ? console.log("MEH unpaused...") : {}
+        gotReceipt = (await tx.wait(getConfigNumConfirmations())) ? true : false
+        (IS_VERBOUSE && gotReceipt) ? console.log("MEH unpaused...") : null
+        return gotReceipt
     }
 
     async pauseMeh2016() {
-        await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
-        IS_VERBOUSE ? console.log("MEH paused...") : {}
+        let gotReceipt = false
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
+        gotReceipt = (await tx.wait(getConfigNumConfirmations())) ? true : false
+        (IS_VERBOUSE && gotReceipt) ? console.log("MEH paused...") : null
+        return gotReceipt
     }
 
     // set first contract-referral as charity address
@@ -425,22 +431,25 @@ class Deployer {
         
         // charity can go to any referral addess (any of them can withdraw)
         let charityAddress = this.getLastReferral().address
-        IS_VERBOUSE ? console.log("Setting charity address:", charityAddress) : {}
-        IS_VERBOUSE ? console.log("Setting new delay in seconds:", this.newDelay) : {}
-        await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
+        let tx = await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
+        let receipt = await tx.wait(getConfigNumConfirmations())
+        if (receipt) {
+            IS_VERBOUSE ? console.log("Charity address is set:", charityAddress) : null
+            IS_VERBOUSE ? console.log("New delay in seconds is set:", this.newDelay) : null
+        }
     }
 
     // will deploy factory. Need unpaused MEH
     async deployReferralFactory() {
         await this.unpauseMeh2016()
         // TODO check if MEH is paused ()
-        IS_VERBOUSE ? console.log("Deploying referral factory") : {}
         const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
         this.referralFactory = await referralFactoryFactory.deploy(
             this.exEnv.meh2016.address, 
             this.getMehAdminAddr());
         this.constants.add({referralFactoryAddr: this.referralFactory.address})
         await this.pauseMeh2016()
+        IS_VERBOUSE ? console.log("Deployed referral factory") : null
     }
 
     async setUpReferral(referralAddress) {
@@ -454,7 +463,7 @@ class Deployer {
         const refGasUsed = reciept.gasUsed;
         const referral = await ethers.getContractAt("Referral", newRefAddress)
         // this.gasReporter.addGasRecord("Referrals", refGasUsed)
-        IS_VERBOUSE ? console.log("Deployed referral:", referral.address) : {}
+        IS_VERBOUSE ? console.log("Deployed referral:", referral.address) : null
         await this.pauseMeh2016()
         return referral
     }
@@ -490,12 +499,12 @@ class Deployer {
 
     // Pairs referrals and wrapper
     async pairRefsAndWrapper() {
-        IS_VERBOUSE ? console.log("Registering referrals...") : {}
+        IS_VERBOUSE ? console.log("Registering referrals...") : null
         // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
             let receipts = await this.pairSingleRefAndWrapper(referral)
             // referralsGas += receipt.gasUsed
-            IS_VERBOUSE ? console.log("Registered ref:", referral.address) : {}
+            IS_VERBOUSE ? console.log("Registered ref:", referral.address) : null
         }
         this.constants.add({areRefsAndWrapperPaired: true})
         this.areRefsAndWrapperPaired = true
@@ -505,7 +514,7 @@ class Deployer {
     // DEPLOY WRAPPER
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     async deployWrapper() {
-        IS_VERBOUSE ? console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")") : {}
+        IS_VERBOUSE ? console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")") : null
         // very ugly intrusion here. Using the same code to deploy MinterAdapter for tests
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
@@ -517,7 +526,7 @@ class Deployer {
             this.exEnv.soloMarginAddress,
         )
         await this.mehWrapper.deployed() // wait numConf TODO?
-        IS_VERBOUSE ? console.log("MehWrapper deplyed to:", this.mehWrapper.address) : {}
+        IS_VERBOUSE ? console.log("MehWrapper deplyed to:", this.mehWrapper.address) : null
         this.constants.add({wrapperAddresses: this.mehWrapper.address})
     }
 
