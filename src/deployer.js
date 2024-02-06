@@ -405,17 +405,18 @@ class Deployer {
     // unpause oldMEH (refferals register in oldMeh at deploy)
     // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
-        let gotReceipt = false
-        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
-        gotReceipt = (await tx.wait(getConfigNumConfirmations())) ? true : false
-        (IS_VERBOUSE && gotReceipt) ? console.log("MEH unpaused...") : null
+        // let gotReceipt = false
+        let receipt = await(await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false))
+            .wait(getConfigNumConfirmations())
+        let gotReceipt = receipt ? true : false;
+        (IS_VERBOUSE && gotReceipt) ? console.log("MEH unpaused...") : null;
         return gotReceipt
     }
 
     async pauseMeh2016() {
-        let gotReceipt = false
-        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
-        gotReceipt = (await tx.wait(getConfigNumConfirmations())) ? true : false
+        let receipt = await(await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false))
+            .wait(getConfigNumConfirmations())
+        let gotReceipt = receipt ? true : false;
         (IS_VERBOUSE && gotReceipt) ? console.log("MEH paused...") : null
         return gotReceipt
     }
@@ -448,8 +449,9 @@ class Deployer {
             this.exEnv.meh2016.address, 
             this.getMehAdminAddr());
         this.constants.add({referralFactoryAddr: this.referralFactory.address})
-        await this.pauseMeh2016()
-        IS_VERBOUSE ? console.log("Deployed referral factory") : null
+        if (await this.pauseMeh2016()) {
+            IS_VERBOUSE ? console.log("Deployed referral factory") : null
+        }
     }
 
     async setUpReferral(referralAddress) {
