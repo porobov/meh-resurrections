@@ -185,8 +185,8 @@ class ProjectEnvironment {
     async initEnv() {
         if (this.isInitialized) { return }
 
-        // LOAD MOCKS FROM DISK (IF NOT LOADED ALREADY)
-        if (this.mockAddressesJSON != {}) {
+        // TRY LOADING MOCKS FROM DISK (IF NOT LOADED ALREADY)
+        if (this.mockAddressesJSON == {}) {
             try {
                 this.mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
                 IS_VERBOUSE ? console.log(chalk.red('Loaded mock addresses for chainID: ' + this.chainID)) : null
@@ -199,7 +199,7 @@ class ProjectEnvironment {
         }
 
         // OVERWRITE REAL ADDRESSES WITH MOCKS(IF PRESENT)
-        // deployMocks will not create mocks if there are real addresses present
+        // deployMocks will not create mocks if there are real addresses present in the constants or in config
         // mainnet and testnets (goerli)
         let addressesJSON = {...this.realAddressesJSON, ...this.mockAddressesJSON}
         IS_VERBOUSE ? console.log(addressesJSON) : null
