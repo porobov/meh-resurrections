@@ -1,11 +1,19 @@
 # MEH-ressurections
 
 ## Node
-Use node version 16!
+Using node version 18.
 `nvm use v16`
 
 ## Deploying 
-When releasingWrapper to local testnet, remove addresses in constants and mocks.
+When releasing Wrapper to local testnet, remove addresses in constants and mocks (if present):
+test/mocking/31337_addresses.json
+constants/31337_constants.json
+
+Then run:
+```
+npx hardhat node
+```
+And in another terminal:
 ```
 npx hardhat run scripts/deployMocks.js
 npx hardhat run scripts/releaseWrapper.js
@@ -16,9 +24,12 @@ Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
 `npx hardhat test test/usingTools.js --network localhost`
 
 ## Website key-value storage notes
-UX fetches data from Cloudflare key-value storage using a key. 
-There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 github branches. Here are the branches and the way developement workflow is set.
+UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches.
+
+Here are the branches and the way developement workflow is set.
 goerli-preview -> mainnet-preview -> main
+
+Keys got same names.
 
 ## Hardhat commands
 
