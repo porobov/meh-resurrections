@@ -39,15 +39,17 @@ async function populate() {
         // using try-catch here because there may be multiple ads put at the same area
         // we don't need precision here
         try {
-            const mintReciept = await(await wrapper.connect(landlord)
-                .buyBlocks(fx, fy, tx, ty, { value: total })).wait(numConf)
+            const mintTx = await wrapper.connect(landlord).buyBlocks(fx, fy, tx, ty, { value: total })
+            console.log(chalk.gray("Minting tx:", mintTx?.hash))
+            const mintReciept = await mintTx.wait(numConf)
             console.log(chalk.green("mintReciept:", mintReciept?.transactionHash))
         } catch (e) {
             console.log(chalk.red(e?.reason))
         }
         try {
-            const placeImageReceipt = await(await wrapper.connect(landlord)
-                .placeImage(fx, fy, tx, ty, ad.imageSourceUrl, ad.adUrl, ad.adText)).wait(numConf)
+            const placeImageTx = await wrapper.connect(landlord).placeImage(fx, fy, tx, ty, ad.imageSourceUrl, ad.adUrl, ad.adText)
+            console.log(chalk.gray("Place image tx:", placeImageTx?.hash))
+            const placeImageReceipt = await placeImageTx.wait(numConf)
             console.log(chalk.green("placeImageReceipt:", placeImageReceipt?.transactionHash))
         } catch (e) {
             console.log(chalk.red(e?.reason))
