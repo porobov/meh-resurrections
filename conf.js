@@ -12,7 +12,7 @@ module.exports = {
     soloMarginAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8', //'0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
     mehAdminAddress: '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
     // GOERLI ADDRESSES
-    wethAddressGoerli: '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
+    wethAddressGoerli: '0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1',  // weth address used by balancer. Previously used weth 0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1
     soloMarginAddressGoerli: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
 
     // mainnet Block When MEH Was Paused - 14979315,
@@ -21,8 +21,8 @@ module.exports = {
     forkBlock: 16683483, 
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),
     NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
-    IS_DEPLOYING_MOCKS_FOR_TESTS: false,
-    IS_VERBOUSE_TEST: false,  // verbous logs (applies to tests only)
+    IS_DEPLOYING_MOCKS_FOR_TESTS: true,  // mocking (use without forking only if running tests i.e. not on hardhat network name)
+    IS_VERBOUSE_TEST: true,  // verbous logs (applies to tests only)
     FULL_TEST: true,  // if true will run time consuming tests
     BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",
     BLOCKS_FROM_2016_PATH: "./old_MEH_blocks/Old_Blocks.json",
@@ -30,6 +30,6 @@ module.exports = {
     // RESERVED_FOR_FOUNDER: {fx: 30, fy: 62, tx: 69, ty: 86},  // 10% of blocks are reserved for founder
     RESERVED_FOR_FOUNDER: {fx: 61, fy: 44, tx: 100, ty: 68},  // 10% of blocks are reserved for founder
     FOUNDER_SHARE_PERCENT: 85,
-    FOUNDER_ADDRESS: "0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4", // used in tests
+    FOUNDER_ADDRESS: "0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4", // used in tests (ledger 7)
     MARKETING_PARTNER_ADDRESS: "0x0000000000000000000000000000000000000001", // any wrong address other than 0 for now
 };
