@@ -3,7 +3,7 @@ const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
 const { BigNumber } = require("ethers")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isForkedMainnet, getFormattedBalance } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { concat } = require('ethers/lib/utils.js')
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
@@ -107,10 +107,11 @@ class ProjectEnvironment {
         }
         // check if we are on a fork
         if (isForkedMainnet()) {
+            // actually forking will take place on local testnet as well if we run npx hardhat node
             console.log(chalk.green("Forked mainnet"))
             return realAddresses["1"]
         } else {
-            console.log(chalk.green("Local network (No mainnet fork)"))
+            console.log(chalk.green("Not hardhat network"))
             return realAddresses?.[chainID] || {}
         }
     }
@@ -351,7 +352,9 @@ class Deployer {
             if (this.areRefsAndWrapperPaired) {
                 // wrapper signs in to old meh
                 await this.unpauseMeh2016()
-                await this.mehWrapper.signIn()
+                let mehWrapperSignInTx = await this.mehWrapper.signIn()  // TODO wait for confirmations
+                IS_VERBOUSE ? console.log(chalk.gray("Meh wrapper signs in. Tx:", mehWrapperSignInTx?.hash)) : null
+                await mehWrapperSignInTx.wait(getConfigNumConfirmations())
                 
                 // setting charity address and NEW_DELAY
                 await this.finalMeh2016settings()
@@ -398,17 +401,18 @@ class Deployer {
     // unpause oldMEH (refferals register in oldMeh at deploy)
     // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
-        // let gotReceipt = false
-        let receipt = await(await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false))
-            .wait(getConfigNumConfirmations())
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+        IS_VERBOUSE ? console.log(chalk.gray("Unpausing meh. Tx:", tx?.hash)) : null
+        let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
         (IS_VERBOUSE && gotReceipt) ? console.log("MEH unpaused...") : null;
         return gotReceipt
     }
 
     async pauseMeh2016() {
-        let receipt = await(await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false))
-            .wait(getConfigNumConfirmations())
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
+        IS_VERBOUSE ? console.log(chalk.gray("Pausing meh. Tx:", tx?.hash)) : null
+        let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
         (IS_VERBOUSE && gotReceipt) ? console.log("MEH paused...") : null
         return gotReceipt
@@ -426,6 +430,7 @@ class Deployer {
         // charity can go to any referral addess (any of them can withdraw)
         let charityAddress = this.getLastReferral().address
         let tx = await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
+        IS_VERBOUSE ? console.log(chalk.gray("Admin contract settings tx:", tx?.hash)) : null
         let receipt = await tx.wait(getConfigNumConfirmations())
         if (receipt) {
             IS_VERBOUSE ? console.log("Charity address is set:", charityAddress) : null
@@ -450,6 +455,7 @@ class Deployer {
     async setUpReferral(referralAddress) {
         await this.unpauseMeh2016()
         const tx = await this.referralFactory.createReferral(this.exEnv.meh2016.address, referralAddress)
+        IS_VERBOUSE ? console.log(chalk.gray("Deploying referral. Tx:", tx?.hash)) : null
         const reciept = await tx.wait(this.exEnv.numConf)
         const blockNumber = reciept.blockNumber
         const eventFilter = this.referralFactory.filters.NewReferral()
@@ -487,8 +493,12 @@ class Deployer {
       }
     
     async pairSingleRefAndWrapper(ref) {
-        let setWrapperRec = await (await ref.setWrapper(this.mehWrapper.address)).wait(this.exEnv.numConf)
-        let addRefferalRec = await (await this.mehWrapper.addRefferal(ref.address)).wait(this.exEnv.numConf)
+        let setWrapperTx = await ref.setWrapper(this.mehWrapper.address)
+        IS_VERBOUSE ? console.log(chalk.gray(`Setting wrapper for ref ${ref.address}. Tx ${setWrapperTx?.hash}`)) : null
+        let setWrapperRec = await setWrapperTx.wait(this.exEnv.numConf)
+        let addRefferalTx = await this.mehWrapper.addRefferal(ref.address)
+        IS_VERBOUSE ? console.log(chalk.gray(`Registering referral in wrapper ${ref.address}. Tx ${addRefferalTx?.hash}`)) : null
+        let addRefferalRec = await addRefferalTx.wait(this.exEnv.numConf)
         return [setWrapperRec, addRefferalRec]
     }
 
@@ -541,6 +551,7 @@ async function deployContract(contractName, options, ...args) {
     }
     const contrFactory = await ethers.getContractFactory(contractName)
     const contr = await contrFactory.deploy(...args)
+    isVerbouse ? console.log(chalk.gray(`Deploying ${contractName} Tx: ${contr?.deployTransaction?.hash}`)) : null
     const reciept = await contr.deployTransaction.wait(getConfigNumConfirmations())
     if (gasReporter !== undefined) {
         gasReporter.addGasRecord(`${contractName} gas`, reciept.gasUsed)
