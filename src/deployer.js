@@ -77,7 +77,6 @@ class ProjectEnvironment {
         this.isLocalTestnet = isLocalTestnet()
         this.operatorWallet = operatorWallet
         this.referralActivationTime = 3600
-        this.isMockingMEH = false
 
         this.soloMarginAddress
         this.mehAdminAddress
@@ -159,7 +158,6 @@ class ProjectEnvironment {
             this.meh2016 = await deployContract("MillionEtherMock", { "isVerbouse": IS_VERBOUSE })
             this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": IS_VERBOUSE })
             this.mehAdminAddress = owner.address
-            this.isMockingMEH = true
             console.log(chalk.green('Deployed MEHs (OldMeh may differ from the original).'))
         }
 
@@ -186,7 +184,7 @@ class ProjectEnvironment {
         if (this.isInitialized) { return }
 
         // TRY LOADING MOCKS FROM DISK (IF NOT LOADED ALREADY)
-        if (this.mockAddressesJSON == {}) {
+        if (Object.keys(this.mockAddressesJSON).length === 0) {
             try {
                 this.mockAddressesJSON = JSON.parse(fs.readFileSync(this.mocksPath))
                 IS_VERBOUSE ? console.log(chalk.red('Loaded mock addresses for chainID: ' + this.chainID)) : null
@@ -207,18 +205,14 @@ class ProjectEnvironment {
         // LOAD MEH ADMIN
         // only needed for MEH and referrals
         let mehAdmin
-        if (this.isMockingMEH == true) {
-            // current owner must be the same as the one who deployed mocks
-            if (addressesJSON?.mehAdminAddress == this.operatorWallet.address) {
-                mehAdmin = this.operatorWallet
-                IS_VERBOUSE ? console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address)) : null
-            } else {
-                throw('Current wallet differs from the one used to deploy mocks')
-            }
+        // current operator wallet must be the same as the one who deployed mocks
+        // ...or the real MEH admin when implementing to the main net
+        if (addressesJSON?.mehAdminAddress == this.operatorWallet.address) {
+            mehAdmin = this.operatorWallet
+            IS_VERBOUSE ? console.log(chalk.green('Loaded mehAdmin:', mehAdmin.address)) : null
         } else {
             if (getConfigChainID() == '1') {
-                // check that operator wallet is real Meh admin
-                throw('read mehAdmin key from disk (not implemented yet)')  // TODO
+                throw('Must be real Meh admin when releasing to the mainnet')
             } else {
                 IS_VERBOUSE ? console.log("Impersonating admin...") : null
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
