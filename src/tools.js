@@ -47,9 +47,8 @@ function getConfigChainID() {
   return network.config.chainId
 }
 
-function isThisLiveNetwork() {
-  let chainID = getConfigChainID()
-  return (chainID != 31337)
+function isLiveNetwork() {
+  return !isLocalTestnet()
 }
 
 function isLocalTestnet() { 
@@ -104,6 +103,6 @@ module.exports = {
   getConfigNumConfirmations,
   getImpersonatedSigner,
   resetHardhatToBlock,
-  isThisLiveNetwork,
+  isLiveNetwork,
   isLocalTestnet
 }

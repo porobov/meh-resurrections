@@ -294,7 +294,6 @@ class Deployer {
         this.isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
         this.newDelay = ("overrideDelay" in options) ? options.overrideDelay: NEW_DELAY
         this.isSavingOnDisk = options.isSavingOnDisk
-        this.isLiveNetwork = !isLocalTestnet()
         this.exEnv = existingEnvironment
         this.constants = new Constants(getConfigChainID())
     }
@@ -367,8 +366,8 @@ class Deployer {
                 'meh2016': this.exEnv.meh2016.address,
                 'meh2018': this.exEnv.meh2018.address,
             })
-            // TODO why this.isLiveNetwork here? and why isLiveNetwork at all?
-            this.isSavingOnDisk || this.isLiveNetwork ? 
+            // always saving constants for live networks 
+            this.isSavingOnDisk || isLiveNetwork() ? 
                 this.constants.save(getConfigChainID()) : null
         }
         IS_VERBOUSE ? gasReporter.reportToConsole() : null
@@ -476,7 +475,7 @@ class Deployer {
           let newRef = await this.setUpReferral(currentReferralAddr)
           this.referrals.push(newRef)
           currentReferralAddr = newRef.address
-          if (this.isLiveNetwork) {
+          if (isLiveNetwork()) {
             console.log("Live network. Wait for activation time and rerun script")
             break 
           } else { 
