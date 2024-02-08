@@ -1,19 +1,38 @@
 # MEH-ressurections
-flash-loans
-https://money-legos.studydefi.com/#/dydx?id=flashloans-on-dydx
 
-# Website key-value storage notes
-UX fetches data from Cloudflare key-value storage using a key. 
-There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 github branches. Here are the branches and the way developement workflow is set.
+## Node
+Using node version 18.
+`nvm use v16`
+
+## Deploying 
+When releasing Wrapper to local testnet, remove addresses in constants and mocks (if present):
+test/mocking/31337_addresses.json
+constants/31337_constants.json
+
+Then run:
+```
+npx hardhat node
+```
+And in another terminal:
+```
+npx hardhat run scripts/deployMocks.js
+npx hardhat run scripts/releaseWrapper.js
+```
+
+## Testing
+Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
+`npx hardhat test test/usingTools.js --network localhost`
+
+## Website key-value storage notes
+UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches.
+
+Here are the branches and the way developement workflow is set:
 goerli-preview -> mainnet-preview -> main
 
-# Advanced Sample Hardhat Project
+Keys got same names(almost all of them):
+goerli-preview -> mainnet-preview -> mainnet-public
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
-
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
-
-Try running some of the following tasks:
+## Hardhat commands
 
 ```shell
 npx hardhat accounts
