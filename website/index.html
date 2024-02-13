@@ -4,26 +4,44 @@
   <title>Hello World - Cloudflare Pages Example</title>
 </head>
 <body>
-  <h1 id="title"></h1> <!-- This will be populated with title from JSON -->
+  <h1 id="title">Test</h1> 
   <p id="description"></p> <!-- This will be populated with description from JSON -->
   <img id="image-url"> <!-- This will be populated with image URL from JSON -->
-  <img id="myImage" src="" alt="Image from JSON" />
+  <img id="myImage" src="" alt="Million Ether Pixels" />
 
   <script>
 
     // myKey is hardcoded in this file. Managed in the corresponding git branch. See Readme)
-    const WORKER_URL = "https://kv-value-retriever.porobov-p3798.workers.dev"
-    const MY_KEY = "goerli-preview" 
-    const fetchURL = WORKER_URL + "?myKey=" + MY_KEY
+    let MY_KEY = "goerli-preview" 
+    const envFetchFunctionName = "environment"
+    const envFetchUrl = window.location.href + '/' + envFetchFunctionName
+    console.log("currentc adddfas " , envFetchUrl);
 
+    // Fetch data from the server
+    fetch(envFetchUrl)
+        .then(response => response.text())
+        .then(data => {
+            // This is where you handle the data from the server.
+            console.log(data); // This will print 'This is a local environment!' or 'This is a live environment'
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+
+    const WORKER_URL = "https://kv-value-retriever.porobov-p3798.workers.dev"
+    const fetchURL = WORKER_URL + "?myKey=" + MY_KEY
     fetch(fetchURL)
       .then(response => response.json())
-      .then(data => {
-        console.log(data.adsSnapshot.bigPicBinary)
-        const base64Image = data.adsSnapshot.bigPicBinary.toString('base64')
-        const title = document.getElementById("title");
-        const imgElement = document.getElementById('myImage');
-        imgElement.src = `data:image/jpeg;base64,${base64Image}`
+      .then(rawData => {
+        const data = JSON.parse(rawData)
+        if (data.error) {
+          console.log(error)
+        } else {
+          const base64Image = data.adsSnapshot.bigPicBinary.toString('base64')
+          // const title = document.getElementById("title");
+          const imgElement = document.getElementById('myImage');
+          imgElement.src = `data:image/jpeg;base64,${base64Image}`
+        }
       })
       .catch(error => {
         console.error("Failed to fetch JSON data", error);
