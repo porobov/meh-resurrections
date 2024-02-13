@@ -18,24 +18,26 @@
     console.log("currentc adddfas " , envFetchUrl);
 
     // Fetch data from the server
-    fetch(envFetchUrl)
-        .then(response => response.text())
-        .then(data => {
-            // This is where you handle the data from the server.
-            console.log(data); // This will print 'This is a local environment!' or 'This is a live environment'
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    // wrangler pages dev <dir> --binding SOME_ENV_VAR="SOME_VALUE" 
+    // from here - https://community.cloudflare.com/t/set-environment-variables-in-pages-with-functions-for-local-development-environment/395448
+    // fetch(envFetchUrl)
+    //     .then(response => response.text())
+    //     .then(data => {
+    //         // This is where you handle the data from the server.
+    //         // console.log(data); // This will print 'This is a local environment!' or 'This is a live environment'
+    //     })
+    //     .catch((error) => {
+    //         console.error('Error:', error);
+    //     });
 
     const WORKER_URL = "https://kv-value-retriever.porobov-p3798.workers.dev"
+    // const WORKER_URL = "http://localhost:8787"
     const fetchURL = WORKER_URL + "?myKey=" + MY_KEY
     fetch(fetchURL)
       .then(response => response.json())
-      .then(rawData => {
-        const data = JSON.parse(rawData)
+      .then(data => {
         if (data.error) {
-          console.log(error)
+          console.log(data.error)
         } else {
           const base64Image = data.adsSnapshot.bigPicBinary.toString('base64')
           // const title = document.getElementById("title");
