@@ -35,7 +35,8 @@
         }
       })
       .catch(error => {
-        console.error("Failed to fetch JSON data. Error: ", error);
+        // make this error visible to user
+        console.error("Failed to fetch data. Try using a VPN service. Error: ", error);
       });
   </script>
 </body>
