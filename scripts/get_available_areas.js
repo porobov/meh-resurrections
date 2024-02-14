@@ -74,10 +74,6 @@ function isVacant(check, reserved) {
 async function main() { 
     ;[ownerGlobal, buyer] = await ethers.getSigners()
 
-    // let env = await setupTestEnvironment({isDeployingMocks: false, isDeployingMinterAdapter: true})
-    // wrapper = env.mehWrapper
-    // oldMeh = env.oldMeh
-    // await oldMeh.getBlockInfo(1, 1)  // ping oldMeh to make hardhat notice it 🤷
     let lenX = 9
     let lenY = 9
     let total = 0

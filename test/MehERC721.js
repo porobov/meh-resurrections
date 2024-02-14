@@ -253,7 +253,8 @@ makeSuite("Multiple recipients", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
+    // TODO is this really a range - check coords
+        .buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
 
     // unwrap - buy - wrap 
     let unwrapTxLandlord = await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.fx, cc.fy, unwrapPrice)
