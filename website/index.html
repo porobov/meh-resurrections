@@ -11,32 +11,19 @@
 
   <script>
 
-    // myKey is hardcoded in this file. Managed in the corresponding git branch. See Readme)
+    // myKey is hardcoded in this file. See Readme)
     let MY_KEY = "goerli-preview" 
-    const envFetchFunctionName = "environment"
-    const envFetchUrl = window.location.href + '/' + envFetchFunctionName
-    console.log("currentc adddfas " , envFetchUrl);
 
-    // Fetch data from the server
-    // wrangler pages dev <dir> --binding SOME_ENV_VAR="SOME_VALUE" 
-    // from here - https://community.cloudflare.com/t/set-environment-variables-in-pages-with-functions-for-local-development-environment/395448
-    // fetch(envFetchUrl)
-    //     .then(response => response.text())
-    //     .then(data => {
-    //         // This is where you handle the data from the server.
-    //         // console.log(data); // This will print 'This is a local environment!' or 'This is a live environment'
-    //     })
-    //     .catch((error) => {
-    //         console.error('Error:', error);
-    //     });
-
-    // https://kv-value-retriever.porobov-p3798.workers.dev/?myKey=goerli-preview
+    // e.g. https://kv-value-retriever.porobov-p3798.workers.dev/?myKey=goerli-preview
     const WORKER_URL = "https://kv-value-retriever.porobov-p3798.workers.dev"
     // const WORKER_URL = "http://localhost:8787"
+
     const fetchURL = WORKER_URL + "?myKey=" + MY_KEY
     fetch(fetchURL)
       .then(response => response.json())
       .then(rawData => {
+        // must parse JSON here! It lays in a stringified format in KV storage
+        // worker does not make any changes to it.
         const data = JSON.parse(rawData)
         if (data.error) {
           console.log(data.error)
@@ -48,7 +35,7 @@
         }
       })
       .catch(error => {
-        console.error("Failed to fetch JSON data", error);
+        console.error("Failed to fetch JSON data. Error: ", error);
       });
   </script>
 </body>
