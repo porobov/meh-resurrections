@@ -24,13 +24,23 @@ Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
 `npx hardhat test test/usingTools.js --network localhost`
 
 ## Website key-value storage notes
-UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches.
+UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches. When using React or Next, this is not gonna be needed (will move MY_KEY constant to .env)
 
 Here are the branches and the way developement workflow is set:
 goerli-preview -> mainnet-preview -> main
 
 Keys got same names(almost all of them):
 goerli-preview -> mainnet-preview -> mainnet-public
+
+## Website developement
+Use cloudflare wrangler:
+`wrangler pages dev /website`
+
+...or run webpage locally with node:
+`node server/server.js`
+
+...or use nodemon:
+`nodemon server/server.js`
 
 ## Hardhat commands
 
