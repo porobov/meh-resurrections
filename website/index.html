@@ -28,6 +28,7 @@
         if (data.error) {
           console.log(data.error)
         } else {
+          // see README for fields description
           const base64Image = data.adsSnapshot.bigPicBinary.toString('base64')
           // const title = document.getElementById("title");
           const imgElement = document.getElementById('myImage');
