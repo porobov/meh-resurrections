@@ -10,6 +10,7 @@ async function pause() {
     console.log("Pausing MEH on chain ID:", exEnv.chainID)
     await deployer.initialize()
     await deployer.pauseMeh2016()
+    // await deployer.unpauseMeh2016()
     console.log("MEH paused successfully")
 }
 
