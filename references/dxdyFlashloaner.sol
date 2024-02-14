@@ -68,9 +68,9 @@
 
         // This function is called by dydx
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
-        // only by dxdy
+        // only by loan platform
         require(msg.sender == address(soloMargin), "Caller is not soloMargin");
-        // dxdy was called by this wrapper
+        // loan platform was called by this wrapper
         require(sender == address(this), "Flashloaner: wrong soloMargin caller");
         // Decode variables
         (

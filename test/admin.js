@@ -19,7 +19,7 @@ function makeSuite(name, tests) {
     before('setup', async () => {
       ;[ownerGlobal, stranger, friend, newFounder, newPartner] = await ethers.getSigners()
       let env = await setupTestEnvironment({
-        isDeployingMocks: conf.IS_DEPLOYING_MOCKS, 
+        isDeployingMocksForTets: conf.IS_DEPLOYING_MOCKS_FOR_TESTS, 
         isDeployingMinterAdapter: true
       })
       owner = env.owner

@@ -36,6 +36,15 @@ module.exports = {
         }
       },
       {
+        version: "0.7.0",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      {
         version: "0.5.7",
         settings: {
           optimizer: {
@@ -66,6 +75,7 @@ module.exports = {
       forking: {
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         // blockNumber: 13132200 /// 13352488 //  // not paused contract
+        // see also conf.js for forkBlock parameter
         blockNumber: 14979315 // fixed recent block number (contracts paused)
       },
       timeout: 12000000,
@@ -114,7 +124,7 @@ module.exports = {
   },
 
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
+    enabled: false,  // process.env.REPORT_GAS !== undefined,
     currency: "USD",
     token: "ETH",
     gasPrice: 30,

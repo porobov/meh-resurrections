@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./interfaces/IOldMeh.sol";
 import "./interfaces/IMeh2018.sol";
-import "./interfaces/IWeth.sol";
+import "./balancer-labs/solidity-utils/misc/IWETH.sol";
 
 // Collector contract deals with MEH referrals
 contract UsingGlobals {

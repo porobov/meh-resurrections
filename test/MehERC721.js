@@ -14,7 +14,7 @@ const { BigNumber } = require('ethers');
 
 const BLOCKS_FROM_2018_PATH = conf.BLOCKS_FROM_2018_PATH
 const BLOCKS_FROM_2016_PATH = conf.BLOCKS_FROM_2016_PATH
-const IS_DEPLOYING_MOCKS = conf.IS_DEPLOYING_MOCKS
+const IS_DEPLOYING_MOCKS_FOR_TESTS = conf.IS_DEPLOYING_MOCKS_FOR_TESTS
 const RESERVED_FOR_FOUNDER = conf.RESERVED_FOR_FOUNDER
 const FULL_TEST = conf.FULL_TEST
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -42,7 +42,7 @@ function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer, friend, joker] = await ethers.getSigners()
-      let env = await setupTestEnvironment({isDeployingMocks: IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
+      let env = await setupTestEnvironment({isDeployingMocksForTets: IS_DEPLOYING_MOCKS_FOR_TESTS, isDeployingMinterAdapter: true})
       owner = env.owner
       wrapper = env.mehWrapper
       referrals= env.referrals
@@ -277,7 +277,7 @@ makeSuite("Multiple recipients", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
     // transfer 1 block to another account
     let transferTx = await wrapper.connect(landlord).transferFrom(landlord.address, friend.address, blockID(cc.tx, cc.ty))
 
@@ -315,7 +315,7 @@ makeSuite("Withdraw one by one", function () {
 
     // buy range
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
 
     // unwrap - buy - wrap 
     await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
@@ -349,7 +349,7 @@ makeSuite("Minting from oldMeh directly", function () {
     // mint and unwrap a block (single) then buy it on meh2016
     let s1 = await balancesSnapshot(oldMeh, wrapper, referrals)
     let mm = availableAreas[1]
-    let mintingTx = await wrapper.connect(buyer).mint(mm.fx, mm.fy, mm.fx, mm.fy, { value: crowdsalePrice })
+    let mintingTx = await wrapper.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: crowdsalePrice })
     let unwrapTx = await wrapper.connect(buyer).unwrap(mm.fx, mm.fy, mm.fx, mm.fy, unwrapPrice)
     let signInTxbuyer = await oldMeh.connect(buyer).signIn(conf.mehAdminAddress)
     await oldMeh.connect(buyer).buyBlocks(mm.fx, mm.fy, mm.fx, mm.fy, { value: unwrapPrice })
@@ -391,7 +391,7 @@ makeSuite("Resetting sell price", function () {
     await setBalance(landlord.address, ethers.utils.parseEther("10"))
     // mint 2 blocks
     await wrapper.connect(landlord)
-        .mint(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
+        .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
     // set both for sale 
     await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
     // reset sell price for second block 

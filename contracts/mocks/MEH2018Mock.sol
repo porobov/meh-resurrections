@@ -23,6 +23,10 @@ contract Meh2018Mock is ERC721 {
     constructor() ERC721("Million Ether Homepage", "MEH") {
     }
 
+    // @notice used for pairing with the contract
+    function isMEH() external view returns (bool) {
+        return true;
+    }
     /// @notice get an owner(address) of block at a specified coordinates
     function getBlockOwner(uint8 x, uint8 y) external view returns (address) {
         return ownerOf(blockID(x, y));

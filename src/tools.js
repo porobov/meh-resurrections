@@ -33,14 +33,22 @@ function getConfigNetworkName() {
     return network.name
 }
 
+// TODO
+// This dosn't really mean that no forked data is used 
+// hardhat will pull data for addressess from chain
+// e.g. flashloaner.js tests will always work with fork either on localhost or 
+// hardhat chain
+function isForkedMainnet() {
+  return getConfigNetworkName() == 'hardhat' ? true : false
+}
+
 // return ChainID specified in hardhat.config.js
 function getConfigChainID() {
   return network.config.chainId
 }
 
-function isThisLiveNetwork() {
-  let chainID = getConfigChainID()
-  return (chainID != 31337)
+function isLiveNetwork() {
+  return !isLocalTestnet()
 }
 
 function isLocalTestnet() { 
@@ -90,10 +98,11 @@ module.exports = {
   increaseTimeBy, 
   getBalance,
   getFormattedBalance,
+  isForkedMainnet,
   getConfigChainID,
   getConfigNumConfirmations,
   getImpersonatedSigner,
   resetHardhatToBlock,
-  isThisLiveNetwork,
+  isLiveNetwork,
   isLocalTestnet
 }

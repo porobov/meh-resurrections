@@ -9,7 +9,7 @@ function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, stranger] = await ethers.getSigners()
-      let env = await setupTestEnvironment({isDeployingMocks: conf.IS_DEPLOYING_MOCKS, isDeployingMinterAdapter: true})
+      let env = await setupTestEnvironment({isDeployingMocksForTets: conf.IS_DEPLOYING_MOCKS_FOR_TESTS, isDeployingMinterAdapter: true})
       wrapper = env.mehWrapper
     })
       this.timeout(142000)

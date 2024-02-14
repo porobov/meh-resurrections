@@ -85,7 +85,8 @@ contract Minter is MehERC721, Flashloaner, Collector {
     }
 
     // ordinary minting (is called by user)
-    function mint(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
+    // buyBlocks - function name in the original MEH
+    function buyBlocks(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) 
         external
         payable
         onlyLegalCoordinates(fromX, fromY, toX, toY)
@@ -114,7 +115,7 @@ contract Minter is MehERC721, Flashloaner, Collector {
         _borrowAndBuyFromMEH(landlord, fromX, fromY, toX, toY);
     }
 
-    // borrows ETH from dxdy and calls _buyFromMEH (SoloMargin calls it) 
+    // borrows ETH from loan platform and calls _buyFromMEH (SoloMargin calls it) 
     // with eth amount needed by MEH (1..512 ETH)
     function _borrowAndBuyFromMEH(address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
         // checking big loan

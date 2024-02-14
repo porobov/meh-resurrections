@@ -5,11 +5,21 @@ contract MehWrapper is Minter {
     constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress) Minter(wethAddress, soloMarginAddress) {
         oldMeh = IOldMeh(meh2016address);
         meh2018 = IMeh2018(meh2018address);
-        // check pairing
-        require(oldMeh.charityAddress() != address(0x0), "MehWrapper: wrong Meh2016 contract");
+        // // check pairing
+        (
+            uint _numUsers, 
+            uint16 _blocksSold, 
+            uint _totalWeiInvested, 
+            uint _numImages, 
+            uint _setting_imagePlacementPriceInWei,
+            uint _numNewStatus,
+            uint32 _setting_delay
+        ) = oldMeh.getStateInfo();
+        require(_setting_delay != 0, "MehWrapper: wrong Meh2016 contract");
         require(meh2018.isMEH() == true, "MehWrapper: wrong Meh2018 contract");
         require(IWETH(wethAddress).totalSupply() > 100000, "MehWrapper: wrong Weth contract");
-        require(IEuler(soloMarginAddress).moduleIdToProxy(MODULEID__MARKETS) == 0x3520d5a913427E6F0D6A83E07ccD4A4da316e4d3, "MehWrapper: wrong Solomargin contract");
+        // TODO make proper pairing for flashloan contract
+        require(address(IVault(soloMarginAddress).WETH()) == wethAddress, "MehWrapper: wrong Flashloan platform contract");
     }
 
     // this wrapper contract is a referral too (must sign in)
@@ -38,6 +48,8 @@ contract MehWrapper is Minter {
     }
 
     // forward ads placement
+    // Function made payable as hommage to MEH 2016 (community will decide what 
+    // to do with it)
     function placeImage(
         uint8 fromX,
         uint8 fromY,
@@ -46,7 +58,7 @@ contract MehWrapper is Minter {
         string calldata imageSourceUrl,
         string calldata adUrl,
         string calldata adText)
-    external
+    external payable
     {
         // only owner of blocks can place ads
         // (must be minted or wrapped)
@@ -55,7 +67,10 @@ contract MehWrapper is Minter {
             require(_isApprovedOrOwner(msg.sender, blocks[i]), 
                 "MehWrapper: Not a landlord");
         }
-        oldMeh.placeImage(fromX, fromY, toX, toY, imageSourceUrl, adUrl, adText);
+        // forwarding payment to MEH 2016
+        oldMeh.placeImage
+            {value: msg.value}
+            (fromX, fromY, toX, toY, imageSourceUrl, adUrl, adText);
     }
 
 

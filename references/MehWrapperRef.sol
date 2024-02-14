@@ -227,7 +227,7 @@ contract MehWrapperRef is ICallee, ERC721, Ownable {
     
     // This is the function called by dydx after giving us the loan    
     function callFunction(address sender, Account.Info memory accountInfo, bytes memory data) external override {
-        // only by dxdy
+        // only by loan platform
         require(msg.sender == address(soloMargin), "Caller is not soloMargin");
 
         // Decode the passed variables from the data object

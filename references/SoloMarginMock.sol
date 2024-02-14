@@ -3,7 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "hardhat/console.sol";
 import "../libs/dydx.sol";
-import "../interfaces/IWeth.sol";
+import "../balancer-labs/solidity-utils/misc/IWETH.sol";
 
 // This is stripped off SoloMargin contract
 // https://github.com/dydxprotocol/solo/blob/master/contracts/protocol/impl/OperationImpl.sol

@@ -1,43 +1,48 @@
 pragma solidity ^0.8.0;
 
-import "./interfaces/IEuler.sol";
-import "./interfaces/IWeth.sol";
+// import "./interfaces/IWeth.sol";
+import "./balancer-labs/vault/IVault.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "hardhat/console.sol";
 import "./Receiver.sol";
 
-contract Flashloaner is IFlashLoan, Receiver {
-    // The dydx Solo Margin contract, as can be found here:
-    // https://github.com/dydxprotocol/solo/blob/master/migrations/deployed.json
-    IEuler public loanPlatform;
-    IEulerMarkets public markets;
-    IEulerDToken public dToken;
-    // from https://github.com/euler-xyz/euler-contracts/blob/master/contracts/Constants.sol
-    uint internal constant MODULEID__MARKETS = 2;
+contract Flashloaner is IFlashLoanRecipient, Receiver {
+    IVault private vault;
+    // in case Balancer introduces fees for flashloans, currently fees are 0
+    // we will have to manually update minting price if this happens
+    uint8 MAX_FEE_PERCENT = 1;
 
     constructor(address wethAddress, address soloMarginAddress) {
         WETH = IWETH(wethAddress);
-        loanPlatform = IEuler(soloMarginAddress);
+        vault = IVault(soloMarginAddress);
     }
-    
-    // ** FLASHLOAN ** //
-    
     function _borrow(uint256 loanAmount, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
-        markets = IEulerMarkets(loanPlatform.moduleIdToProxy(MODULEID__MARKETS)); // 0x3520d5a913427E6F0D6A83E07ccD4A4da316e4d3);
-        dToken = IEulerDToken(markets.underlyingToDToken(address(WETH)));  // checking on every loan in case if market changes
-        dToken.flashLoan(loanAmount, abi.encode(loanAmount, buyer, fromX, fromY, toX, toY));
+        IERC20[] memory tokens = new IERC20[](1);
+        tokens[0] = WETH;
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = loanAmount;
+        bytes memory userData = abi.encode(buyer, fromX, fromY, toX, toY);
+
+        vault.flashLoan(this, tokens, amounts, userData);
     }
-    
-    function onFlashLoan(bytes memory data) external override {
-        require(msg.sender == address(loanPlatform), "Flashloaner: Caller is not loanPlatform");
+
+    function receiveFlashLoan(
+        IERC20[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory feeAmounts,
+        bytes memory userData
+    ) external override {
+        require(msg.sender == address(vault), "Flashloaner: Caller is not loanPlatform");
+        uint256 loanAmount = amounts[0];
         (
-            uint256 loanAmount,
             address buyer,
             uint8 fromX,
             uint8 fromY,
             uint8 toX,
             uint8 toY
-        ) = abi.decode(data, (uint256, address, uint8, uint8, uint8, uint8));
+        ) = abi.decode(userData, (address, uint8, uint8, uint8, uint8));
+        uint256 fees = feeAmounts[0];
+        require(fees / loanAmount * 100 <= MAX_FEE_PERCENT, "Flashloaner: fees are too high");
 
         require(WETH.balanceOf(address(this)) >= loanAmount, 
             "CANNOT REPAY LOAN");
@@ -48,8 +53,10 @@ contract Flashloaner is IFlashLoan, Receiver {
         // convert ETH to back to weth
         WETH.deposit{value:loanAmount}();
         // repay
-        WETH.transfer(msg.sender, loanAmount);
+        WETH.transfer(msg.sender, loanAmount + fees);
     }
+
+
 
     // is called by loanPlatform (see callFunction function above)
     // overriden in Minter.sol

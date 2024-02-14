@@ -9,6 +9,7 @@ interface IOldMeh {
     function sellBlocks(uint8, uint8, uint8, uint8, uint256) external;
     function getAreaPrice(uint8, uint8, uint8, uint8) external view returns(uint256);
     function getBlockInfo(uint8, uint8) external view returns (address, uint, uint);
+    function getStateInfo() external view returns (uint, uint16, uint, uint, uint, uint, uint32);
     function getUserInfo (address) external view returns (
         address referal,
         uint8 handshakes,
