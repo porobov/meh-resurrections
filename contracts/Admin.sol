@@ -13,10 +13,10 @@ contract Admin is Ownable {
     mapping(address => uint256) public internalBalOf;  // internal balances 
 
     // Coordinates reserved for founders
-    uint8 constant FROM_X_RESERVED = 61;
-    uint8 constant FROM_Y_RESERVED = 44;
-    uint8 constant TO_X_RESERVED = 100;
-    uint8 constant TO_Y_RESERVED = 68;
+    uint8 constant FROM_X_RESERVED = 55;
+    uint8 constant FROM_Y_RESERVED = 70;
+    uint8 constant TO_X_RESERVED = 94;  // width 40
+    uint8 constant TO_Y_RESERVED = 94;  // height 25
 
     // splitting income here to offload minting function
     function splitIncome() internal {

@@ -149,12 +149,20 @@ makeSuite("Reading contract", function () {
       }
       return 0
     }
+    // no intersection with 2016 owners
     for (let block of bb16) {
       expect(isReserved(block)).to.equal(0)
     }
+    // area reserved for founders intesects with 4 blocks reserved for 2018 owners
+    // that's ok. Priveledge is on the existing landlords side
+    let intersectionCounter = 0
     for (let block of bb18) {
-      expect(isReserved(block)).to.equal(0)
+      if (isReserved(block) != 0) {
+        console.log(block)
+        intersectionCounter++
+      }
     }
+    expect(intersectionCounter).to.equal(4)
   })
 
   it("Area for founders is defined correctly IN CONTRACT", async function () {
@@ -425,3 +433,4 @@ makeSuite("Minting from oldMeh directly", function () {
     expect(founderBalS3.sub(founderBalS2)).to.equal(referralSurplus)  // eth counted as royalties
   })
 })
+

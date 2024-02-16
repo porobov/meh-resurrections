@@ -126,7 +126,7 @@ class ProjectEnvironment {
         // ;[owner] = await ethers.getSigners()
         const owner = this.operatorWallet
         IS_VERBOUSE ? console.log(
-            "Deploying mocks to Chain ID:", getConfigChainID(), 
+            chalk.red("DEPLOYING MOCKS TO CHAIN ID:"), getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
             "\nDeploying from address:", owner.address) : null
 

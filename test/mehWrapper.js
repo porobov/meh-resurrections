@@ -259,7 +259,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
         .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
           .to.emit(oldMeh, "NewImage")
           .withArgs(anyValue, cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText);
-      // TODO try placing ads by byuer
+      
       await expect(wrapper.connect(buyer)
         .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
           .to.be.revertedWith("MehWrapper: Not a landlord")

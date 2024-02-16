@@ -21,14 +21,14 @@ module.exports = {
     forkBlock: 16683483, 
     WRAPPER_BLOCK_PRICE: ethers.utils.parseEther("0.25"),
     NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
-    IS_DEPLOYING_MOCKS_FOR_TESTS: true,  // mocking (use without forking only if running tests i.e. not on hardhat network name)
+    IS_DEPLOYING_MOCKS_FOR_TESTS: false,  // mocking (use without forking only if running tests i.e. not on hardhat network name)
     IS_VERBOUSE_TEST: true,  // verbous logs (applies to tests only)
     FULL_TEST: true,  // if true will run time consuming tests
     BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",
     BLOCKS_FROM_2016_PATH: "./old_MEH_blocks/Old_Blocks.json",
     AVAILABLE_AREAS_PATH: "./old_MEH_blocks/vacant_areas.json",
     // RESERVED_FOR_FOUNDER: {fx: 30, fy: 62, tx: 69, ty: 86},  // 10% of blocks are reserved for founder
-    RESERVED_FOR_FOUNDER: {fx: 61, fy: 44, tx: 100, ty: 68},  // 10% of blocks are reserved for founder
+    RESERVED_FOR_FOUNDER: {fx: 55, fy: 70, tx: 94, ty: 94},  // 10% of blocks are reserved for founder
     FOUNDER_SHARE_PERCENT: 85,
     FOUNDER_ADDRESS: "0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4", // used in tests (ledger 7)
     MARKETING_PARTNER_ADDRESS: "0x0000000000000000000000000000000000000001", // any wrong address other than 0 for now
