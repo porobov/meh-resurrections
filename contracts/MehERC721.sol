@@ -38,11 +38,12 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             (uint8 x, uint8 y) = blockXY(blocks[i]);
             (address landlord, uint u, uint256 price) = oldMeh.getBlockInfo(x,y);
             require(landlord != address(0), "MehERC721: Area is not minted yet");
+            require(price > 0, "MehERC721: Sanity check");  // every block must be on sale
             require(receipts[blocks[i]].isAwaitingWithdrawal == false, "MehERC721: Must withdraw receipt first");
             areaPrice += price;
         }
+
         // checking msg.value
-        require(areaPrice > 0, "MehERC721: Sanity check");
         require(areaPrice == msg.value, "MehERC721: Sending wrong amount of ether");
 
         // buying from oldMEH
@@ -50,7 +51,9 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             {value: areaPrice}
             (fromX, fromY, toX, toY);
 
-        // set prohibitary (but affordable) sell price so no one could buy it from oldMeh
+        // set prohibitary sell price so no one could buy it from oldMeh
+        // oldMeh is not resetting sell price after blocks are bought
+        // oldMeh will not allow to set 0 sell price, so we are setting to max
         oldMeh.sellBlocks(fromX, fromY, toX, toY, MAX_INT_TYPE);
 
         // minting on wrapper
@@ -81,21 +84,19 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     function resetSellPrice(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY, uint priceForEachBlockInWei) external {
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         for (uint i = 0; i < blocks.length; i++) {
+            // we don't need to check other requirements(e.g. isAwaitingWithdrawal). Used receipts get deleted. 
             require(receipts[blocks[i]].recipient == msg.sender, 
                 "MehERC721: Not a recipient");
             receipts[blocks[i]].sellPrice = priceForEachBlockInWei;
         }
         // ↓↓↓ will throw if block was already sold
+        // will throw if sellPrice is 0
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
     }
 
     // withdraw money for the unwrapped block.
     // must be available to anyone - able to clean up contract from excess eth
     function withdraw(uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) external { // anyone can call
-        // check receipts
-        // if sell price is different than that assigned in unwrap function
-        // it means that the block was sold. Then wrapper can withdraw money and send
-        // them to seller.
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
         uint256 payment = 0;
         address NULL_ADDR = address(0x00000000000000000000000000000000004E554C4C);  // "NULL" in hex
@@ -123,6 +124,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             "MehERC721: Payment must be above 0");
 
         // withdraw from MEH. Amount may be higher than payment
+        // because multiple sales may happen at the same time
         uint256 balBefore = address(this).balance;
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
         uint256 balAfter = address(this).balance;
