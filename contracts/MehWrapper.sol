@@ -18,7 +18,6 @@ contract MehWrapper is Minter {
         require(_setting_delay != 0, "MehWrapper: wrong Meh2016 contract");
         require(meh2018.isMEH() == true, "MehWrapper: wrong Meh2018 contract");
         require(IWETH(wethAddress).totalSupply() > 100000, "MehWrapper: wrong Weth contract");
-        // TODO make proper pairing for flashloan contract
         require(address(IVault(soloMarginAddress).WETH()) == wethAddress, "MehWrapper: wrong Flashloan platform contract");
     }
 

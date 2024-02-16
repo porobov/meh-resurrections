@@ -1,6 +1,7 @@
 const { expect } = require("chai");
 const { ProjectEnvironment } = require("../src/deployer.js")
 const { ethers } = require("hardhat");
+const { resetHardhatToBlock } = require("../src/tools.js")
 const conf = require('../conf.js');
 
 let flashloaner
@@ -24,6 +25,7 @@ describe("Flashloan", function () {
       flashloaner = await Flashloaner.deploy(mockAddressesJSON.weth, mockAddressesJSON.soloMargin);
       wethAddress = mockAddressesJSON.weth
     } else {
+      // await resetHardhatToBlock(conf.forkBlock)
       flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
       wethAddress = conf.wethAddress
     }
@@ -33,6 +35,9 @@ describe("Flashloan", function () {
   })
 
   // WARNING!!! Hardhat bug. See Receiver.sol for info. 
+  // We are only checking here if the transaction reverts or not.
+  // borrowExt only borrows money, converts Weth to eth, eth to weth and repays
+  // no changes in state whatsoever
   it("Borrows 1, 512 and 16000 WETH", async function () {
     let loanAmount = ethers.utils.parseEther("1")
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)

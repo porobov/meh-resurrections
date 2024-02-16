@@ -251,9 +251,9 @@ makeSuite("Multiple recipients", function () {
     let unwrapPrice = ethers.utils.parseEther("1")
     await setBalance(landlord.address, unwrapPrice.mul(unwrapPrice.mul(2)))
 
-    // buy range
+    // using same from and too coordinates for this test as those are the same anyway
+    // in the constants above. I.e. it is a range of a single block
     await wrapper.connect(landlord)
-    // TODO is this really a range - check coords
         .buyBlocks(cc.fx, cc.fy, cc.fx, cc.fy, { value: price })
 
     // unwrap - buy - wrap 
