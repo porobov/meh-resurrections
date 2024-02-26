@@ -18,6 +18,8 @@ contract Admin is Ownable {
     uint8 constant TO_X_RESERVED = 94;  // width 40
     uint8 constant TO_Y_RESERVED = 94;  // height 25
 
+    event NewCrowdsalePrice(uint256 newPrice);
+
     // splitting income here to offload minting function
     function splitIncome() internal {
         uint256 foundersShare = royalties * 85 / 100;
@@ -53,5 +55,6 @@ contract Admin is Ownable {
 
     function adminSetPrice(uint256 newPrice) external onlyOwner {
         crowdsalePrice = newPrice;
+        emit NewCrowdsalePrice(newPrice);
     }
 }
