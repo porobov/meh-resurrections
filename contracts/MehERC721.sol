@@ -23,6 +23,11 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     // metadata control
     string private _baseURIextended;
 
+    // events
+    event Wrapped(address indexed owner, uint256 areaPrice, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY);
+    event Unwrapping(address indexed owner, uint priceForEachBlockInWei, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY);
+    event ReceiptWithdrawn(address indexed recipient, uint256 payment, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY);
+
     constructor() ERC721("Million Ether Homepage", "MEH") {
     }
 
@@ -65,6 +70,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         for (uint i = 0; i < blocks.length; i++) {
             _mint(msg.sender, blocks[i]);
         }
+        emit Wrapped(msg.sender, areaPrice, fromX, fromY, toX, toY);
     }
 
     // any owner of a wrapped block can unwrap it (put on sale) and reclaim ownership
@@ -81,6 +87,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
             numOfReceipts++;
         }
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
+        emit Unwrapping(msg.sender, priceForEachBlockInWei, fromX, fromY, toX, toY);
     }
 
     // in case if sellPrice was set unbearably too high by mistake
@@ -95,6 +102,8 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         // ↓↓↓ will throw if block was already sold
         // will throw if sellPrice is 0
         oldMeh.sellBlocks(fromX, fromY, toX, toY, priceForEachBlockInWei);
+        // emiting same event as for unwrap function
+        emit Unwrapping(msg.sender, priceForEachBlockInWei, fromX, fromY, toX, toY);
     }
 
     // withdraw money for the unwrapped block.
@@ -142,6 +151,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         
         console.log("payment", msg.sender ,payment, address(this).balance);
         payable(singleRecipient).transfer(payment);
+        emit ReceiptWithdrawn(singleRecipient, payment, fromX, fromY, toX, toY);
     }
 
     // admin can rescue funds

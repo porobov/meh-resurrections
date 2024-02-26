@@ -102,14 +102,17 @@ makeSuite("Wrapping and unwrapping", function () {
       
       // 2. Wrap (send total sell price in value)
       let wrapTx = await wrapper.connect(landlord).wrap(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
-      
+      // check event is emitted
+      await expect(wrapTx)
+        .to.emit(wrapper, "Wrapped")
+        .withArgs(landlord.address, sellPrice, w.fx, w.fy, w.tx, w.ty);
+
       // 3. Withdraw money from oldMeh
       let withdrawTx = await oldMeh.connect(landlord).withdrawAll()
       const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
 
-      let totalGas = await getTotalGas([sellTx, wrapTx, withdrawTx])
-
       // gas is calculated approximately. letting 100 wei slip
+      let totalGas = await getTotalGas([sellTx, wrapTx, withdrawTx])
       expect(landlordBalBefore - landlordBalAfter - totalGas).to.be.within(-gasCalculationAccuracy, gasCalculationAccuracy)
       expect((await oldMeh.getBlockInfo(w.fx, w.fy)).landlord).to.equal(wrapper.address)
       expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(landlord.address)
@@ -139,6 +142,9 @@ makeSuite("Wrapping and unwrapping", function () {
       let unwrapTx = await wrapper.connect(landlord).unwrap(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
       // 2. Sign in to oldMEH (if not yet signed in)
       // await oldMeh.connect(landlord).signIn(conf.mehAdminAddress)
+      await expect(unwrapTx)
+        .to.emit(wrapper, "Unwrapping")
+        .withArgs(landlord.address, pricePerBlock, w.fx, w.fy, w.tx, w.ty);
 
       // 3. Buy blocks on oldMeh by landlord
       let buyTx = await oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
@@ -159,6 +165,9 @@ makeSuite("Wrapping and unwrapping", function () {
       const landlordBalAfter = await ethers.provider.getBalance(landlord.address)
       let sa = await balancesSnapshot(oldMeh, wrapper, referrals)
       expect((smid.meh).sub(sa.meh)).to.equal(sellPrice) // eth moved from oldMeh to wrapper
+      await expect(withdrawTx)
+        .to.emit(wrapper, "ReceiptWithdrawn")
+        .withArgs(landlord.address, sellPrice, w.fx, w.fy, w.tx, w.ty);
 
       // calculating gas
       let totalGas = await getTotalGas([unwrapTx, buyTx, sellTx, withdrawTx])
@@ -173,7 +182,6 @@ makeSuite("Wrapping and unwrapping", function () {
     })
   }
 })
-
 
 
 // wrapper must set new sell price to a wrapped block so that nobody can buy it. 
@@ -397,7 +405,10 @@ makeSuite("Resetting sell price", function () {
     // reset sell price for second block 
     let newUnwrapPrice = ethers.utils.parseEther("1.22")
     let newTotUnwrapPrice = unwrapPrice.add(newUnwrapPrice)
-    await wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice)
+    const resetSellPriceTx = await wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice)
+    await expect(resetSellPriceTx)
+        .to.emit(wrapper, "Unwrapping")
+        .withArgs(landlord.address, newUnwrapPrice, cc.tx, cc.ty, cc.tx, cc.ty);
     expect((await wrapper.receipts(blockID(cc.fx, cc.fy))).sellPrice).to.be.equal(unwrapPrice)
     expect((await wrapper.receipts(blockID(cc.tx, cc.ty))).sellPrice).to.be.equal(newUnwrapPrice)
     // buy both blocks on meh 
