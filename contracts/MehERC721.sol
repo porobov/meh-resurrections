@@ -20,6 +20,9 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     uint256 public numOfReceipts = 0;
     mapping(uint16 => Receipt) public receipts;  // single receipt for blockId
 
+    // metadata control
+    string private _baseURIextended;
+
     constructor() ERC721("Million Ether Homepage", "MEH") {
     }
 
@@ -149,5 +152,13 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         require((numOfReceipts == 0 && unclaimed > 0),
             "MehERC721: rescue conditions are not met");
         payable(owner()).transfer(unclaimed);
+    }
+
+    function setBaseURI(string memory baseURI_) external onlyOwner {
+        _baseURIextended = baseURI_;
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return _baseURIextended;
     }
 }

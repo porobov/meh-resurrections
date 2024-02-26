@@ -204,7 +204,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     let cc = occupiedAreas[0]
     await expect(wrapper.connect(buyer)
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
-        .to.be.revertedWith("ERC721: operator query for nonexistent token")
+        .to.be.revertedWith("ERC721: invalid token ID")
     cc = availableAreas[0]
     // not a landlord
     await expect(wrapper.connect(stranger)

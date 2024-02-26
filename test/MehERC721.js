@@ -169,7 +169,7 @@ makeSuite("Wrapping and unwrapping", function () {
 
       // expect(await wrapper.ownerOf(blockID(w.fx, w.fy))).to.equal(ZERO_ADDRESS)
       await expect(wrapper.ownerOf(blockID(w.fx, w.fy))).to.revertedWith(
-        "ERC721: owner query for nonexistent token")
+        "ERC721: invalid token ID")
     })
   }
 })
@@ -414,5 +414,41 @@ makeSuite("Resetting sell price", function () {
     let totalGas = await getTotalGas([tx1])
 
     expect(landlordBalAfter.sub(landlordBalBefore)).to.equal(newTotUnwrapPrice.sub(totalGas))
+  })
+})
+
+makeSuite("Metadata", function () {
+  it("Cannot wrap blocks with wrong input", async function () {
+    
+    // set base uri 
+    const defaultBaseURI = "https://img.themillionetherhomepage.com/?tokenid="
+    await expect(wrapper.connect(joker).setBaseURI(defaultBaseURI))
+      .to.be.revertedWith("Ownable: caller is not the owner")
+    await wrapper.connect(owner).setBaseURI(defaultBaseURI)
+
+    // wrap token (tokenURI is only available for minted tokens)
+    const w = areas2016[0]
+    ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
+    const landlord = await getImpersonatedSigner(landlordAddress)
+    const pricePerBlock = ethers.utils.parseEther("1")
+    const blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
+    const sellPrice = (pricePerBlock).mul(blocksCount)
+    await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+    const sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
+    const wrapTx = await wrapper.connect(landlord).wrap(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
+
+    // get tokenURI
+    const tokenId = blockID(w.fx, w.fy)
+    const tokenURI = await wrapper.connect(joker).tokenURI(tokenId)
+    const expectedURI = defaultBaseURI + tokenId
+    expect(tokenURI).to.equal(expectedURI)
+
+    // reset new baseURI
+    const newBaseURI = "https://img.new.com/?tokenid="
+    await wrapper.connect(owner).setBaseURI(newBaseURI)
+    const newTokenURI = await wrapper.connect(joker).tokenURI(tokenId)
+    const newExpectedURI = newBaseURI + tokenId
+    expect(newTokenURI).to.equal(newExpectedURI)
+
   })
 })
