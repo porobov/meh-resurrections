@@ -140,7 +140,6 @@ class ProjectEnvironment {
             // sending ETH to weth mock
             // Flashloaner contract will use this eth to buy from OldMEH
             // It converts weth from solomargin to eth (and then back)
-            // the cost of a block in meh2016 mock is 1 gwei
             const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("16001", "ether")
             await setBalance(this.weth.address, SOLO_WETH_POOL_SIZE)
             // minting weth to soloMargin
@@ -352,7 +351,7 @@ class Deployer {
             if (this.areRefsAndWrapperPaired) {
                 // wrapper signs in to old meh
                 await this.unpauseMeh2016()
-                let mehWrapperSignInTx = await this.mehWrapper.signIn()  // TODO wait for confirmations
+                let mehWrapperSignInTx = await this.mehWrapper.signIn()
                 IS_VERBOUSE ? console.log(chalk.gray("Meh wrapper signs in. Tx:", mehWrapperSignInTx?.hash)) : null
                 await mehWrapperSignInTx.wait(getConfigNumConfirmations())
                 
@@ -440,8 +439,8 @@ class Deployer {
 
     // will deploy factory. Need unpaused MEH
     async deployReferralFactory() {
+        // have to unpause contract. No way to check if it paused or not (except trying to interact)
         await this.unpauseMeh2016()
-        // TODO check if MEH is paused ()
         const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
         this.referralFactory = await referralFactoryFactory.deploy(
             this.exEnv.meh2016.address, 
