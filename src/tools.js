@@ -51,6 +51,7 @@ function isLiveNetwork() {
   return !isLocalTestnet()
 }
 
+// "hardhat" network got same id
 function isLocalTestnet() { 
   return (getConfigChainID() == 31337)
 }

@@ -106,8 +106,9 @@ class ProjectEnvironment {
             }
         }
         // check if we are on a fork
+        // actually forking will take place on "localhost" network as well 
+        // TODO should be another logic here
         if (isForkedMainnet()) {
-            // actually forking will take place on local testnet as well if we run npx hardhat node
             console.log(chalk.green("Forked mainnet"))
             return realAddresses["1"]
         } else {
@@ -144,7 +145,6 @@ class ProjectEnvironment {
             await setBalance(this.weth.address, SOLO_WETH_POOL_SIZE)
             // minting weth to soloMargin
             // Solomargin needs a pool of weth to issue loans
-            // Ammount is 1 weth higher than in flashloaner.js test
             await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
             console.log(chalk.green('Deployed WETH and Loan Platform'))
             console.log(chalk.green("weth", await getFormattedBalance(this.weth.address)))
