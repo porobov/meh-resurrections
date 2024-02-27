@@ -435,6 +435,14 @@ class Deployer {
             IS_VERBOUSE ? console.log("Charity address is set:", charityAddress) : null
             IS_VERBOUSE ? console.log("New delay in seconds is set:", this.newDelay) : null
         }
+
+        // setting base token URI for wrapper
+        const setBaseURItx = await this.mehWrapper.setBaseURI(conf.NFT_BASE_URI)
+        IS_VERBOUSE ? console.log(chalk.gray("setBaseURI tx:", setBaseURItx?.hash)) : null
+        const setBaseURIreceipt = await setBaseURItx.wait(getConfigNumConfirmations())
+        if (setBaseURIreceipt) {
+            IS_VERBOUSE ? console.log("Base token URI is set:", conf.NFT_BASE_URI) : null
+        }
     }
 
     // will deploy factory. Need unpaused MEH

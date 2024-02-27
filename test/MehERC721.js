@@ -429,13 +429,14 @@ makeSuite("Resetting sell price", function () {
 })
 
 makeSuite("Metadata", function () {
-  it("Cannot wrap blocks with wrong input", async function () {
+  it("NFT base URI is available and can be reset by owner", async function () {
     
     // set base uri 
     const defaultBaseURI = "https://img.themillionetherhomepage.com/?tokenid="
     await expect(wrapper.connect(joker).setBaseURI(defaultBaseURI))
       .to.be.revertedWith("Ownable: caller is not the owner")
-    await wrapper.connect(owner).setBaseURI(defaultBaseURI)
+    // commented the line below because now this URI is set up at deployment
+    // await wrapper.connect(owner).setBaseURI(defaultBaseURI)
 
     // wrap token (tokenURI is only available for minted tokens)
     const w = areas2016[0]
