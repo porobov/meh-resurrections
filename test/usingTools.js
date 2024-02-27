@@ -7,7 +7,7 @@ const WANNA_CHECK_ALL_COORDS = false
 
 let usingToolsAdapter
 
-describe("Minter", function () {
+describe("Block coordinates tools", function () {
   
     this.timeout(142000)
     before('setup', async () => {
@@ -22,6 +22,10 @@ describe("Minter", function () {
         expect(await usingToolsAdapter.blockIDExt(2,1)).to.equal(2)
         expect(await usingToolsAdapter.blockIDExt(100,1)).to.equal(100)
         expect(await usingToolsAdapter.blockIDExt(1,2)).to.equal(101)
+        expect(await usingToolsAdapter.blockIDExt(100,2)).to.equal(200)
+        expect(await usingToolsAdapter.blockIDExt(1,100)).to.equal(9901)
+        expect(await usingToolsAdapter.blockIDExt(100,99)).to.equal(9900)
+        expect(await usingToolsAdapter.blockIDExt(99,100)).to.equal(9999)
         expect(await usingToolsAdapter.blockIDExt(100,100)).to.equal(10000)
     })
 
@@ -33,6 +37,9 @@ describe("Minter", function () {
         expect(await usingToolsAdapter.blockXYExt(101)).to.eql([1,2])
         expect(await usingToolsAdapter.blockXYExt(200)).to.eql([100,2])
         expect(await usingToolsAdapter.blockXYExt(201)).to.eql([1,3])
+        expect(await usingToolsAdapter.blockXYExt(9900)).to.eql([100,99])
+        expect(await usingToolsAdapter.blockXYExt(9901)).to.eql([1,100])
+        expect(await usingToolsAdapter.blockXYExt(9999)).to.eql([99,100])
         expect(await usingToolsAdapter.blockXYExt(10000)).to.eql([100,100])
     })
 
