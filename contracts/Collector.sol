@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "./Admin.sol";
 import "./Referral.sol";
 
@@ -33,12 +33,12 @@ contract Collector is Admin {
         uint256 totalFunds = 0;
         
         // withdrawing from 6 last referrals
-        console.log("Withdrawing from referrals, numOfRefs: %s, start index: %s", numOfRefs, numOfRefs-1);
+        // console.log("Withdrawing from referrals, numOfRefs: %s, start index: %s", numOfRefs, numOfRefs-1);
         while (collectedFrom < numOfHandshakes) {
             totalFunds += Referral(referrals[numOfRefs-collectedFrom-1]).withdraw();
             collectedFrom++;
-            console.log("withdrawed from %s: %s", collectedFrom, referrals[numOfRefs-collectedFrom]);
-            console.log("total: ", totalFunds);
+            // console.log("withdrawed from %s: %s", collectedFrom, referrals[numOfRefs-collectedFrom]);
+            // console.log("total: ", totalFunds);
         }
         return totalFunds;
     }

@@ -149,7 +149,7 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
         require(singleRecipient != NULL_ADDR && singleRecipient != address(0),
             "MehERC721: Wrong recipient");
         
-        console.log("payment", msg.sender ,payment, address(this).balance);
+        // console.log("payment", msg.sender ,payment, address(this).balance);
         payable(singleRecipient).transfer(payment);
         emit ReceiptWithdrawn(singleRecipient, payment, fromX, fromY, toX, toY);
     }
