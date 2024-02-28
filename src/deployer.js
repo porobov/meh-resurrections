@@ -99,10 +99,10 @@ class ProjectEnvironment {
                 'meh2016': conf.oldMehAddress,
                 'meh2018': conf.newMehAddress,
             },
-            "5":
+            "11155111":
             {
-                'weth': conf.wethAddressGoerli,
-                'soloMargin': conf.soloMarginAddressGoerli,
+                'weth': conf.wethAddressTestnet,
+                'soloMargin': conf.soloMarginAddressTestnet,
             }
         }
         // check if we are on a fork
@@ -489,7 +489,7 @@ class Deployer {
           this.referrals.push(newRef)
           currentReferralAddr = newRef.address
           if (isLiveNetwork()) {
-            console.log("Live network. Wait for activation time and rerun script")
+            console.log(chalk.red("Live network. Wait for activation time and rerun script. The script must stop now!"))
             break 
           } else { 
             // level shows how far it is from mehAdmin (who is 0)

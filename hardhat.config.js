@@ -91,10 +91,11 @@ module.exports = {
       timeout: 2000000,
     },
 
-    goerli: {
-      chainId: 5,   // specifying chainId manually, used in getConfigChainID() function from tools
+    // we gonna use single testname in conf. Rn it is sepolia
+    testnet: {
+      chainId: 11155111,   // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_GOERLI_URL !== undefined ? process.env.ALCHEMY_GOERLI_URL : "",
+      url: process.env.ALCHEMY_SEPOLIA_URL !== undefined ? process.env.ALCHEMY_SEPOLIA_URL : "",
       accounts: {
         mnemonic: process.env.MNEMONIC !== undefined ? process.env.MNEMONIC : "",
       },

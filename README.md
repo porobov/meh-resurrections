@@ -27,10 +27,10 @@ Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
 UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches. When using React or Next, this is not gonna be needed (will move MY_KEY constant to .env)
 
 Here are the branches and the way developement workflow is set:
-goerli-preview -> mainnet-preview -> main
+goerli-preview (testnet-preview) -> mainnet-preview -> main
 
 Keys got same names(almost all of them):
-goerli-preview -> mainnet-preview -> mainnet-public
+testnet-preview -> mainnet-preview -> mainnet-public
 
 ## Fields of the JSON retrieved from KV storage
 adsSnapshot - everything needed to construct main site view (ads and links)

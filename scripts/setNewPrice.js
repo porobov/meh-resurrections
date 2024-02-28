@@ -18,7 +18,7 @@ async function pause() {
       console.log(chalk.gray("Tx:", tx?.hash))
       console.log("New price is set to", NEW_PRICE_IN_ETH)
     } else {
-      console.log(chalk.red("Can only set new price for goerli. Modify script for mainnet"))
+      console.log(chalk.red("Can only set new price for testnet. Modify script for mainnet"))
     }
 }
 

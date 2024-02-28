@@ -11,9 +11,9 @@ module.exports = {
     wethAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',  // address used by balancer
     soloMarginAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8', //'0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e',
     mehAdminAddress: '0xF51f08910eC370DB5977Cff3D01dF4DfB06BfBe1',
-    // GOERLI ADDRESSES
-    wethAddressGoerli: '0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1',  // weth address used by balancer. Previously used weth 0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1
-    soloMarginAddressGoerli: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    // TESTNET ADDRESSES
+    wethAddressTestnet: '0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9',  // weth address used by balancer. 
+    soloMarginAddressTestnet: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',  // vault address. same on all networks
 
     // mainnet Block When MEH Was Paused - 14979315,
     // balancer vault is deployed at block 12272146
