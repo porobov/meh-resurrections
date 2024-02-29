@@ -64,19 +64,25 @@ class GasReporter {
 
   constructor() {
     this.report = ''
+    this.totalGasCostEth = 0
+    this.totalGasCostsUsd = 0
   }
 
   addGasRecord(functionName, gasUsed) {
     const gasPrice = process.env.GAS_PRICE_GWEI !== undefined ? process.env.GAS_PRICE_GWEI : 0
     const usd = process.env.ETH_USD_USD !== undefined ? process.env.ETH_USD_USD : 0
-    const gasCostsEth = ethers.utils.formatEther(gasUsed.mul(ethers.utils.parseUnits (gasPrice, "gwei")))
+    const gasCostsEth = parseFloat(ethers.utils.formatEther(gasUsed.mul(ethers.utils.parseUnits (gasPrice, "gwei"))))
     const gasCostsUsd = gasCostsEth * usd
     this.report += 
-    `Gas used by ${functionName} is ${gasUsed} gas | ${gasCostsEth} Eth | ${gasCostsUsd} USD | (gas price: ${gasPrice} Gwei, ETHUSD: ${usd}) \n`
+    `${functionName}: ${gasUsed} gas | ${gasCostsEth} Eth | ${gasCostsUsd} USD | (gas price: ${gasPrice} Gwei, ETHUSD: ${usd}) \n`
+    this.totalGasCostEth += gasCostsEth  // converting to number
+    this.totalGasCostsUsd += gasCostsUsd
   }
 
   reportToConsole() {
-    console.log(this.report)
+    console.log("Gas\n", this.report)
+    console.log("--------------------------------")
+    console.log(`TOTAL GAS: ${this.totalGasCostEth} Eth | ${this.totalGasCostsUsd} USD`)
   }
 }
 

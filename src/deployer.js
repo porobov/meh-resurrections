@@ -12,7 +12,6 @@ const oldMehAbi = conf.oldMehAbi
 const newMehAbi = conf.newMehAbi
 const wethAbi = conf.wethAbi
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-const gasReporter = new GasReporter()
 // 
 const NUM_OF_REFERRALS = conf.NUM_OF_REFERRALS
 // current timestamp = 1673521526 = 2 ** 30.64
@@ -296,6 +295,7 @@ class Deployer {
         this.isSavingOnDisk = options.isSavingOnDisk
         this.exEnv = existingEnvironment
         this.constants = new Constants(getConfigChainID())
+        this.gasReporter = new GasReporter()
     }
 
     // will initialize and load previous state
@@ -353,7 +353,8 @@ class Deployer {
                 await this.unpauseMeh2016()
                 let mehWrapperSignInTx = await this.mehWrapper.signIn()
                 IS_VERBOUSE ? console.log(chalk.gray("Meh wrapper signs in. Tx:", mehWrapperSignInTx?.hash)) : null
-                await mehWrapperSignInTx.wait(getConfigNumConfirmations())
+                const signInReceipt = await mehWrapperSignInTx.wait(getConfigNumConfirmations())
+                this.gasReporter.addGasRecord("Meh wrapper signs in", signInReceipt.gasUsed)
                 
                 // setting charity address and NEW_DELAY
                 await this.finalMeh2016settings()
@@ -372,7 +373,7 @@ class Deployer {
             this.isSavingOnDisk || isLiveNetwork() ? 
                 this.constants.save(getConfigChainID()) : null
         }
-        IS_VERBOUSE ? gasReporter.reportToConsole() : null
+        IS_VERBOUSE ? this.gasReporter.reportToConsole() : null
 
         return {
             oldMeh: this.exEnv.meh2016,
@@ -405,6 +406,7 @@ class Deployer {
         let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
         (IS_VERBOUSE && gotReceipt) ? console.log("MEH unpaused...") : null;
+        this.gasReporter.addGasRecord("Unpausing", receipt.gasUsed)
         return gotReceipt
     }
 
@@ -414,6 +416,7 @@ class Deployer {
         let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
         (IS_VERBOUSE && gotReceipt) ? console.log("MEH paused...") : null
+        this.gasReporter.addGasRecord("Pausing", receipt.gasUsed)
         return gotReceipt
     }
 
@@ -435,6 +438,7 @@ class Deployer {
             IS_VERBOUSE ? console.log("Charity address is set:", charityAddress) : null
             IS_VERBOUSE ? console.log("New delay in seconds is set:", this.newDelay) : null
         }
+        this.gasReporter.addGasRecord("Charity and new delay", receipt.gasUsed)
 
         // setting base token URI for wrapper
         const setBaseURItx = await this.mehWrapper.setBaseURI(conf.NFT_BASE_URI)
@@ -443,16 +447,20 @@ class Deployer {
         if (setBaseURIreceipt) {
             IS_VERBOUSE ? console.log("Base token URI is set:", conf.NFT_BASE_URI) : null
         }
+        this.gasReporter.addGasRecord("Base token URI is set", setBaseURIreceipt.gasUsed)
     }
 
     // will deploy factory. Need unpaused MEH
     async deployReferralFactory() {
         // have to unpause contract. No way to check if it paused or not (except trying to interact)
         await this.unpauseMeh2016()
-        const referralFactoryFactory = await ethers.getContractFactory("ReferralFactory");
-        this.referralFactory = await referralFactoryFactory.deploy(
+        this.referralFactory = await deployContract(
+            "ReferralFactory",
+            { "isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter },
             this.exEnv.meh2016.address, 
-            this.getMehAdminAddr());
+            this.getMehAdminAddr()
+        )
+
         this.constants.add({referralFactoryAddr: this.referralFactory.address})
         if (await this.pauseMeh2016()) {
             IS_VERBOUSE ? console.log("Deployed referral factory") : null
@@ -468,9 +476,8 @@ class Deployer {
         const eventFilter = this.referralFactory.filters.NewReferral()
         const events = await this.referralFactory.queryFilter(eventFilter, blockNumber, blockNumber)
         const newRefAddress = events[0].args.newReferralAddr
-        const refGasUsed = reciept.gasUsed;
         const referral = await ethers.getContractAt("Referral", newRefAddress)
-        // this.gasReporter.addGasRecord("Referrals", refGasUsed)
+        this.gasReporter.addGasRecord("Referral", reciept.gasUsed)
         IS_VERBOUSE ? console.log("Deployed referral:", referral.address) : null
         await this.pauseMeh2016()
         return referral
@@ -503,9 +510,11 @@ class Deployer {
         let setWrapperTx = await ref.setWrapper(this.mehWrapper.address)
         IS_VERBOUSE ? console.log(chalk.gray(`Setting wrapper for ref ${ref.address}. Tx ${setWrapperTx?.hash}`)) : null
         let setWrapperRec = await setWrapperTx.wait(this.exEnv.numConf)
+        this.gasReporter.addGasRecord("Setting wrapper for ref", setWrapperRec.gasUsed)
         let addRefferalTx = await this.mehWrapper.addRefferal(ref.address)
         IS_VERBOUSE ? console.log(chalk.gray(`Registering referral in wrapper ${ref.address}. Tx ${addRefferalTx?.hash}`)) : null
         let addRefferalRec = await addRefferalTx.wait(this.exEnv.numConf)
+        this.gasReporter.addGasRecord("Registering referral in wrapper", addRefferalRec.gasUsed)
         return [setWrapperRec, addRefferalRec]
     }
 
@@ -515,12 +524,10 @@ class Deployer {
         // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
             let receipts = await this.pairSingleRefAndWrapper(referral)
-            // referralsGas += receipt.gasUsed
             IS_VERBOUSE ? console.log("Registered ref:", referral.address) : null
         }
         this.constants.add({areRefsAndWrapperPaired: true})
         this.areRefsAndWrapperPaired = true
-        // this.gasReporter.addGasRecord("Registering referrals", referralsGas)
     }
 
     // DEPLOY WRAPPER
@@ -531,7 +538,7 @@ class Deployer {
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
             wrapperContractName,
-            {"isVerbouse": IS_VERBOUSE, "gasReporter": gasReporter},
+            {"isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter},
             this.exEnv.meh2016.address,
             this.exEnv.meh2018.address,
             this.exEnv.weth.address,
