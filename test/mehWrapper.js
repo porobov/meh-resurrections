@@ -118,7 +118,7 @@ makeSuite("Normal operation", testEnvironmentCollector, function () {
     await deployer.unpauseMeh2016()
     await deployer.mehWrapper.connect(owner).signIn()
     expect(await wrapper.isSignedIn()).to.be.equal(true)
-    expect((await oldMeh.getUserInfo(wrapper.address)).referal).to.be.equal(deployer.getLastReferral().address)
+    expect((await oldMeh.getUserInfo(wrapper.address)).referal).to.be.equal(deployer.getLastReferral().target)
   })
 })
 
@@ -131,7 +131,7 @@ makeSuite("More referrals than needed", testEnvironmentCollector, function () {
 
     // add another referral
     let lastReferral = deployer.getLastReferral()
-    let additionalRef = await deployer.setUpReferral(lastReferral.address)
+    let additionalRef = await deployer.setUpReferral(lastReferral.target)
     await deployer.pairSingleRefAndWrapper(additionalRef)
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
     await deployer.unpauseMeh2016()
@@ -229,10 +229,10 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     let w = areas2016[0]
     ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
     let landlord = await getImpersonatedSigner(landlordAddress)
-    let pricePerBlock = ethers.utils.parseEther("1")
+    let pricePerBlock = ethers.parseEther("1")
     let blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
     let sellPrice = (pricePerBlock).mul(blocksCount)
-    await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+    await setBalance(landlord.address, sellPrice.add(ethers.parseEther("2")));
     
     // Transactions to wrap a 2016 block
     await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
@@ -252,7 +252,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
         .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
       // setup founder
       let founder = await getImpersonatedSigner(await wrapper.founder())
-      let decentlyEarnedEth = ethers.utils.parseEther("1.0")
+      let decentlyEarnedEth = ethers.parseEther("1.0")
       await setBalance(founder.address, decentlyEarnedEth)
 
       await expect(wrapper.connect(founder)
@@ -279,7 +279,7 @@ makeSuite("Image placement price", setupTestEnvironment, function () {
 
     // setup mehadmin and new image placement price
     let mehAdmin = await getImpersonatedSigner(MEH_ADMIN_ADDRESS)
-    let newImagePlacementPriceInWei = ethers.utils.parseEther("1.0")
+    let newImagePlacementPriceInWei = ethers.parseEther("1.0")
     // adminContractSettings (newDelayInSeconds, newCharityAddress, newImagePlacementPriceInWei)
     await oldMeh.connect(mehAdmin).adminContractSettings(1, referrals[referrals.length - 1].address, newImagePlacementPriceInWei)
 
@@ -288,7 +288,7 @@ makeSuite("Image placement price", setupTestEnvironment, function () {
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
         .to.be.revertedWithoutReason()
     
-    let decentlyEarnedEth = ethers.utils.parseEther("1.0")
+    let decentlyEarnedEth = ethers.parseEther("1.0")
     await setBalance(mehAdmin.address, decentlyEarnedEth)
 
     await expect(wrapper.connect(buyer)

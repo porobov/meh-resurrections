@@ -23,7 +23,7 @@ const bb18 = JSON.parse(fs.readFileSync(BLOCKS_FROM_2018_PATH))
 
 let usingToolsAdapter
 let founder_address
-let mintingPrice = ethers.utils.parseEther("1")
+let mintingPrice = ethers.parseEther("1")
 let gasCalculationAccuracy = 300
 
 let availableAreas = [
@@ -59,8 +59,8 @@ makeSuite("Wrapping and unwrapping", function () {
   it("Cannot wrap blocks with wrong input", async function () {
     const w = bb16[0]  // block to wrap
     let landlord = await getImpersonatedSigner(w.landlord)
-    let sellPrice = ethers.utils.parseEther("1")
-    await setBalance(landlord.address, ethers.utils.parseEther("2"));
+    let sellPrice = ethers.parseEther("1")
+    await setBalance(landlord.address, ethers.parseEther("2"));
     
     // trying to wrap area which is not minted yet
     const wa = availableAreas[0]
@@ -88,10 +88,10 @@ makeSuite("Wrapping and unwrapping", function () {
       ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
  
       let landlord = await getImpersonatedSigner(landlordAddress)
-      let pricePerBlock = ethers.utils.parseEther("1")
+      let pricePerBlock = ethers.parseEther("1")
       let blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
       let sellPrice = (pricePerBlock).mul(blocksCount)
-      await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+      await setBalance(landlord.address, sellPrice.add(ethers.parseEther("2")));
       
       const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
 
@@ -127,10 +127,10 @@ makeSuite("Wrapping and unwrapping", function () {
       let landlordAddress = await wrapper.ownerOf(blockID(w.fx, w.fy));
  
       let landlord = await getImpersonatedSigner(landlordAddress)
-      let pricePerBlock = ethers.utils.parseEther("1")
+      let pricePerBlock = ethers.parseEther("1")
       let blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
       let sellPrice = (pricePerBlock).mul(blocksCount)
-      await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+      await setBalance(landlord.address, sellPrice.add(ethers.parseEther("2")));
       
       let sb = await balancesSnapshot(oldMeh, wrapper, referrals)
       const landlordBalBefore = await ethers.provider.getBalance(landlord.address)
@@ -157,7 +157,7 @@ makeSuite("Wrapping and unwrapping", function () {
       // WARNING Sell price:
       // - cannot be 0
       // - must be big enough to prevent others from buying it cheap (if the landlord wants to keep the blocks)
-      let hugePrice = ethers.utils.parseEther("1000000000")
+      let hugePrice = ethers.parseEther("1000000000")
       let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, hugePrice)
       
       // 5. Withdraw money from wrapper
@@ -193,7 +193,7 @@ makeSuite("Other", function () {
     ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
 
     let landlord = await getImpersonatedSigner(landlordAddress)
-    let pricePerBlock = ethers.utils.parseEther("1")
+    let pricePerBlock = ethers.parseEther("1")
     await setBalance(landlord.address, pricePerBlock.mul(3));
     
     let sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.fx, w.fy, pricePerBlock)
@@ -219,7 +219,7 @@ makeSuite("Other", function () {
     const w = areas2016[0]  // block to wrap
     let landlordAddress = await wrapper.ownerOf(blockID(w.fx, w.fy))
     let landlord = await getImpersonatedSigner(landlordAddress)
-    let pricePerBlock = ethers.utils.parseEther("1")
+    let pricePerBlock = ethers.parseEther("1")
     await setBalance(landlord.address, pricePerBlock.mul(3));
     
     let unwrapTx = await wrapper.connect(landlord).unwrap(w.fx, w.fy, w.fx, w.fy, pricePerBlock)
@@ -256,7 +256,7 @@ makeSuite("Multiple recipients", function () {
     const cc = availableAreas[0]
     let landlord = await getImpersonatedSigner(w.landlord)
     let price = await wrapper.crowdsalePrice();
-    let unwrapPrice = ethers.utils.parseEther("1")
+    let unwrapPrice = ethers.parseEther("1")
     await setBalance(landlord.address, unwrapPrice.mul(unwrapPrice.mul(2)))
 
     // using same from and too coordinates for this test as those are the same anyway
@@ -280,7 +280,7 @@ makeSuite("Multiple recipients", function () {
     let price = await wrapper.crowdsalePrice();
     let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
     let total = price.mul(count)
-    let unwrapPrice = ethers.utils.parseEther("1")
+    let unwrapPrice = ethers.parseEther("1")
     await setBalance(landlord.address, unwrapPrice.mul(count + 2))
 
     // buy range
@@ -316,10 +316,10 @@ makeSuite("Withdraw one by one", function () {
     let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
     let total = price.mul(count)
 
-    let unwrapPrice = ethers.utils.parseEther("1")
+    let unwrapPrice = ethers.parseEther("1")
     let totUnwrapPrice = unwrapPrice.mul(count)
 
-    await setBalance(landlord.address, ethers.utils.parseEther("10"))
+    await setBalance(landlord.address, ethers.parseEther("10"))
 
     // buy range
     await wrapper.connect(landlord)
@@ -350,7 +350,7 @@ makeSuite("Withdraw one by one", function () {
 makeSuite("Minting from oldMeh directly", function () {
   // makes funds rescue possible
   it("funds are separated", async function () {
-    let mintingPrice = ethers.utils.parseEther("1")
+    let mintingPrice = ethers.parseEther("1")
     let unwrapPrice = mintingPrice.mul(2)
     let crowdsalePrice = await wrapper.crowdsalePrice();
 
@@ -395,15 +395,15 @@ makeSuite("Resetting sell price", function () {
     let price = await wrapper.crowdsalePrice();
     let count = countBlocks(cc.fx, cc.fy, cc.tx, cc.ty)
     let total = price.mul(count)
-    let unwrapPrice = ethers.utils.parseEther("1")
-    await setBalance(landlord.address, ethers.utils.parseEther("10"))
+    let unwrapPrice = ethers.parseEther("1")
+    await setBalance(landlord.address, ethers.parseEther("10"))
     // mint 2 blocks
     await wrapper.connect(landlord)
         .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
     // set both for sale 
     await wrapper.connect(landlord).unwrap(cc.fx, cc.fy, cc.tx, cc.ty, unwrapPrice)
     // reset sell price for second block 
-    let newUnwrapPrice = ethers.utils.parseEther("1.22")
+    let newUnwrapPrice = ethers.parseEther("1.22")
     let newTotUnwrapPrice = unwrapPrice.add(newUnwrapPrice)
     const resetSellPriceTx = await wrapper.connect(landlord).resetSellPrice(cc.tx, cc.ty, cc.tx, cc.ty, newUnwrapPrice)
     await expect(resetSellPriceTx)
@@ -442,10 +442,10 @@ makeSuite("Metadata", function () {
     const w = areas2016[0]
     ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);
     const landlord = await getImpersonatedSigner(landlordAddress)
-    const pricePerBlock = ethers.utils.parseEther("1")
+    const pricePerBlock = ethers.parseEther("1")
     const blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
     const sellPrice = (pricePerBlock).mul(blocksCount)
-    await setBalance(landlord.address, sellPrice.add(ethers.utils.parseEther("2")));
+    await setBalance(landlord.address, sellPrice.add(ethers.parseEther("2")));
     const sellTx = await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
     const wrapTx = await wrapper.connect(landlord).wrap(w.fx, w.fy, w.tx, w.ty, { value: sellPrice })
 

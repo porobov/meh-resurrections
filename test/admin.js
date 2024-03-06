@@ -33,7 +33,7 @@ function makeSuite(name, tests) {
           }
       founder = await getImpersonatedSigner(beneficiaries.founder)
       partner = await getImpersonatedSigner(beneficiaries.partner)
-      let startinAmount = ethers.utils.parseEther("1.0")
+      let startinAmount = ethers.parseEther("1.0")
       await setBalance(partner.address, startinAmount)
       await setBalance(founder.address, startinAmount)
 
@@ -72,7 +72,7 @@ makeSuite("Basic", function () {
         if
         (
           tx.from.toLowerCase() == senderAddr.toLowerCase()
-          && tx.value == ethers.utils.parseEther("0.00123")
+          && tx.value == ethers.parseEther("0.00123")
         ) {
           isFound = true
           console.log(tx)
@@ -91,14 +91,14 @@ makeSuite("Basic", function () {
 
   it("Is splitting income correctly", async function () {
     // send funds to wrapper and set royalties through test-adapter
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await setBalance(wrapper.address, value)
+    await setBalance(wrapper.target, value)
     // split income through test-adapter
     await wrapper._splitIncomeExt()
     // check
-    let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
-    let partnersShare = value.sub(foundersShare)
+    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
+    let partnersShare = value - (foundersShare)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(foundersShare)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(partnersShare)
     expect(await wrapper.royalties()).to.be.equal(0)
@@ -115,12 +115,12 @@ makeSuite("Withdrawals", function () {
 
   it("Founder and partners can withdraw royalties", async function () {
     // send funds to wrapper and set royalties through test-adapter
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await setBalance(wrapper.address, value)
+    await setBalance(wrapper.target, value)
 
-    let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
-    let partnersShare = value.sub(foundersShare)
+    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
+    let partnersShare = value - (foundersShare)
 
     // founder withdraws
     const founderBalBefore = await ethers.provider.getBalance(beneficiaries.founder)
@@ -129,8 +129,8 @@ makeSuite("Withdrawals", function () {
     expect(await wrapper.royalties()).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(partnersShare)
-    let founderReceived = founderBalAfter.sub(founderBalBefore)
-    expect(foundersShare.sub(founderReceived)).to.be.equal(await getTotalGas([founderTx]))
+    let founderReceived = founderBalAfter - (founderBalBefore)
+    expect(foundersShare - (founderReceived)).to.be.equal(await getTotalGas([founderTx]))
 
     // partner withdraws (can call withdrawShare with 0 royalties)
     const partnerBalBefore = await ethers.provider.getBalance(beneficiaries.partner)
@@ -139,15 +139,15 @@ makeSuite("Withdrawals", function () {
     expect(await wrapper.royalties()).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(0)
-    let partnerReceived = partnerBalAfter.sub(partnerBalBefore)
-    expect(partnersShare.sub(partnerReceived)).to.be.equal(await getTotalGas([partnerTx]))
+    let partnerReceived = partnerBalAfter - (partnerBalBefore)
+    expect(partnersShare - (partnerReceived)).to.be.equal(await getTotalGas([partnerTx]))
   })
 })
 
 makeSuite("Settings", function () {
 
   it("Admin (and only admin) can set srowdsale price", async function () {
-    let newPrice = ethers.utils.parseEther("1.0")
+    let newPrice = ethers.parseEther("1.0")
     await expect(wrapper.connect(stranger).adminSetPrice(newPrice))
       .to.be.revertedWith("Ownable: caller is not the owner")
     await wrapper.connect(owner).adminSetPrice(newPrice)
@@ -155,14 +155,14 @@ makeSuite("Settings", function () {
   })
 
   it("Founder (and only founder) can set new founder address", async function () {
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     await wrapper.setRoyalties(value)
-    await setBalance(wrapper.address, value)
+    await setBalance(wrapper.target, value)
 
     // split income through test-adapter
     await wrapper._splitIncomeExt()
-    let foundersShare = value.mul(conf.FOUNDER_SHARE_PERCENT).div(100)
-    let partnersShare = value.sub(foundersShare)
+    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
+    let partnersShare = value - (foundersShare)
 
     // set new founder address
     await expect(wrapper.connect(stranger).setFounder(newFounder.address))

@@ -21,7 +21,7 @@ async function increaseTimeBy(seconds) {
 
 //await ethers.getDefaultProvider().getBalance(address) - will always querry chain data
 async function getFormattedBalance(address) {
-  return ethers.utils.formatEther(await getBalance(address))
+  return ethers.formatEther(await getBalance(address))
 }
 
 async function getBalance(address) {
@@ -71,7 +71,7 @@ class GasReporter {
   addGasRecord(functionName, gasUsed) {
     const gasPrice = process.env.GAS_PRICE_GWEI !== undefined ? process.env.GAS_PRICE_GWEI : 0
     const usd = process.env.ETH_USD_USD !== undefined ? process.env.ETH_USD_USD : 0
-    const gasCostsEth = parseFloat(ethers.utils.formatEther(gasUsed.mul(ethers.utils.parseUnits (gasPrice, "gwei"))))
+    const gasCostsEth = parseFloat(ethers.formatEther(gasUsed * (ethers.parseUnits (gasPrice, "gwei"))))
     const gasCostsUsd = gasCostsEth * usd
     this.report += 
     `${functionName}: ${gasUsed} gas | ${gasCostsEth} Eth | ${gasCostsUsd} USD | (gas price: ${gasPrice} Gwei, ETHUSD: ${usd}) \n`

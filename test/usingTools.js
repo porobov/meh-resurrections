@@ -13,7 +13,7 @@ describe("Block coordinates tools", function () {
     before('setup', async () => {
         const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
         usingToolsAdapter = await UsingToolsAdapter.deploy();
-        await usingToolsAdapter.deployed();
+        await usingToolsAdapter.waitForDeployment();
     })
 
     // blockID

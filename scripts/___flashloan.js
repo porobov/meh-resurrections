@@ -24,7 +24,7 @@ async function increaseTimeBy(seconds) {
 
 //await ethers.getDefaultProvider().getBalance(address) - will always querry chain data
 async function getFormattedBalance(address) {
-  return ethers.utils.formatEther(await network.provider.send("eth_getBalance", [address]))
+  return ethers.formatEther(await network.provider.send("eth_getBalance", [address]))
 }
 
 async function waitForActivationTime(level) {
@@ -34,7 +34,7 @@ async function waitForActivationTime(level) {
 async function setUpReferral(referralAddress, level, wrapperAddress) {
     const referralFactory = await ethers.getContractFactory("Referral");
     const referral = await referralFactory.deploy(oldMehAddress, referralAddress);
-    await referral.deployed();
+    await referral.waitForDeployment();
     await referral.setWrapper(wrapperAddress)
     await waitForActivationTime(level)
     return referral
@@ -55,7 +55,7 @@ async function main() {
     //deploy wrapper
     const MehWrapper = await ethers.getContractFactory("MehWrapper");
     const mehWrapper = await MehWrapper.deploy();
-    await mehWrapper.deployed();
+    await mehWrapper.waitForDeployment();
     
     // put more than 2 wei to mehWrapper contract (SoloMargin requirement)
     const weth = new ethers.Contract(wethAddress, wethAbi, owner)
@@ -81,7 +81,7 @@ async function main() {
   
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
-    console.log("charity meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
+    console.log("charity meh balance:", ethers.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
     console.log("charity balance:", await getFormattedBalance(referrals[0].address))
     console.log("wrapper balance:", await getFormattedBalance(mehWrapper.address))
     
@@ -89,21 +89,21 @@ async function main() {
     // buy blocks
     // now wrapper can buy blocks for free 
     // as it collects all the revenue from referrals and charity
-    const tx = await mehWrapper.connect(owner).buyFromMEH(82,82,82,82,{value: ethers.utils.parseEther("0.25")});
+    const tx = await mehWrapper.connect(owner).buyFromMEH(82,82,82,82,{value: ethers.parseEther("0.25")});
     const receipt = await tx.wait(1)
-    const gasCosts = receipt.cumulativeGasUsed.mul(ethers.utils.parseUnits ("60", "gwei"))
+    const gasCosts = receipt.cumulativeGasUsed * (ethers.parseUnits ("60", "gwei"))
     console.log("gas:", receipt.cumulativeGasUsed.toNumber())
-    console.log("gas:", ethers.utils.formatEther(gasCosts))
+    console.log("gas:", ethers.formatEther(gasCosts))
 
     // temp. sending eth to the contract
     // await owner.sendTransaction({
     //   to: mehWrapper.address,
-    //   value: ethers.utils.parseEther("0.1")
+    //   value: ethers.parseEther("0.1")
     // })
 
     console.log("owner balance:", await getFormattedBalance(owner.address))
     console.log("meh balance:", await getFormattedBalance(oldMehAddress))
-    console.log("charity meh balance:", ethers.utils.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
+    console.log("charity meh balance:", ethers.formatEther((await oldMeh.getUserInfo(referrals[0].address)).balance))
     console.log("charity balance:", await getFormattedBalance(referrals[0].address))
     console.log("wrapper balance:", await getFormattedBalance(mehWrapper.address))
     

@@ -21,7 +21,7 @@ makeSuite("Receiving", function () {
 
   // Other tests make sure that wrapper does receive funds from WETH and OldMeh
   it("Cannot receive funds from strangers", async function () {
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     await expect(stranger.sendTransaction({
       to: wrapper.address,
       value: value,

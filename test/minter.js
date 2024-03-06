@@ -55,7 +55,7 @@ function makeSuite(name, tests) {
 
       const UsingToolsAdapter = await ethers.getContractFactory("UsingToolsAdapter");
       usingToolsAdapter = await UsingToolsAdapter.deploy();
-      await usingToolsAdapter.deployed();
+      await usingToolsAdapter.waitForDeployment();
 
       await increaseTimeBy(21513600)  // set to the latest block as of 21.02.23
       await mine(6534257)  // and mine respective number of blocks
@@ -269,7 +269,7 @@ makeSuite("buyFromMEH", function () {
   for (let cc of availableAreas) {
     it(`_buyFromMEH works: (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
-      let oldMehPrice = ethers.utils.parseEther("1")
+      let oldMehPrice = ethers.parseEther("1")
       let total = oldMehPrice.mul(count)
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
       await minter._buyFromMEHExt(
@@ -286,7 +286,7 @@ makeSuite("buyFromMEH", function () {
 
   it("_buyFromMEH throws on occupied areas", async function () {
     let cc = occupiedAreas[0]
-    let oldMehPrice = ethers.utils.parseEther("1")
+    let oldMehPrice = ethers.parseEther("1")
     await expect(minter._buyFromMEHExt(
       oldMehPrice, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: oldMehPrice })
         ).to.be.revertedWithoutReason() 
@@ -409,7 +409,7 @@ makeSuite("Minting from oldMeh directly", function () {
   // makes funds rescue possible
   it("referral surplus goes to royalties", async function () {
     let cc = availableAreas[0]
-    let mintingPrice = ethers.utils.parseEther("1")
+    let mintingPrice = ethers.parseEther("1")
     let s1 = await balancesSnapshot(oldMeh, minter, referrals)  // state 1
     
     // minting at oldMeh directly (creating excess referrals balace)

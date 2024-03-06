@@ -27,13 +27,13 @@ async function balancesSnapshot(oldMeh, mehWrapper, referrals) {
 }
 
 function txGas(receipt) {
-  return receipt.gasUsed.mul(receipt.effectiveGasPrice)
+  return receipt.gasUsed * (receipt.gasPrice)
 }
 
 async function getTotalGas(txs) {
-  let totGas = new BigNumber.from("0")
+  let totGas = 0n
   for (let tx of txs) {
-    totGas = totGas.add(txGas((await tx.wait())))
+    totGas = totGas + (txGas((await tx.wait())))
   }
   return totGas
 }

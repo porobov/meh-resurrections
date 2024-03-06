@@ -59,7 +59,7 @@ function makeSuite(name, tests) {
 makeSuite("Collector basic", function () {
 
   it("Anyone can send funds to Collector", async function () {
-      let value = ethers.utils.parseEther("1.0")
+      let value = ethers.parseEther("1.0")
       const collectorBalBefore = await ethers.provider.getBalance(wrapper.address)
       await wrapper.connect(stranger).referralPayback({ value: value })
       const collectorBalAfter = await ethers.provider.getBalance(wrapper.address)
@@ -126,7 +126,7 @@ makeSuite("Collector withdrawals", function () {
     let ref = deployer.referrals[0]
 
     // send funds by stranger
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     await stranger.sendTransaction({
       to: ref.address,
       value: value,

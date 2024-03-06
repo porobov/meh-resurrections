@@ -2,10 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
-const { BigNumber } = require("ethers")
 const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance } = require("../src/tools.js")
 const conf = require('../conf.js')
-const { concat } = require('ethers/lib/utils.js')
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 
 const oldMehAbi = conf.oldMehAbi
@@ -135,19 +133,19 @@ class ProjectEnvironment {
           
         if (!this.realAddressesJSON.weth && !this.realAddressesJSON.soloMargin) {
             this.weth = await deployContract("WETH9", { "isVerbouse": IS_VERBOUSE })
-            this.soloMargin = await deployContract("BalancerVaultMock", { "isVerbouse": IS_VERBOUSE }, this.weth.address)
-            this.soloMarginAddress = this.soloMargin.address
+            this.soloMargin = await deployContract("BalancerVaultMock", { "isVerbouse": IS_VERBOUSE }, this.weth.target)
+            this.soloMarginAddress = this.soloMargin.target
             // sending ETH to weth mock
             // Flashloaner contract will use this eth to buy from OldMEH
             // It converts weth from solomargin to eth (and then back)
-            const SOLO_WETH_POOL_SIZE = ethers.utils.parseUnits("16001", "ether")
-            await setBalance(this.weth.address, SOLO_WETH_POOL_SIZE)
+            const SOLO_WETH_POOL_SIZE = ethers.parseUnits("16001", "ether")
+            await setBalance(this.weth.target, SOLO_WETH_POOL_SIZE)
             // minting weth to soloMargin
             // Solomargin needs a pool of weth to issue loans
-            await this.weth.mintTo(this.soloMargin.address, SOLO_WETH_POOL_SIZE)
+            await this.weth.mintTo(this.soloMarginAddress, SOLO_WETH_POOL_SIZE)
             console.log(chalk.green('Deployed WETH and Loan Platform'))
-            console.log(chalk.green("weth", await getFormattedBalance(this.weth.address)))
-            console.log(chalk.green("soloMargin", await getFormattedBalance(this.soloMargin.address)))
+            console.log(chalk.green("weth", await getFormattedBalance(this.weth.target)))
+            console.log(chalk.green("soloMargin", await getFormattedBalance(this.soloMarginAddress)))
         }
 
         // MEHs mocks (will not deploy for mainnet)
@@ -163,10 +161,10 @@ class ProjectEnvironment {
         // only save existing addresses
         this.mockAddressesJSON = {
             ...(this?.mehAdminAddress && { 'mehAdminAddress': this.mehAdminAddress }),
-            ...(this?.weth && { 'weth': this?.weth.address }),
-            ...(this?.soloMargin && { 'soloMargin': this.soloMargin.address }),
-            ...(this?.meh2016 && { 'meh2016': this.meh2016.address }),
-            ...(this?.meh2018 && { 'meh2018': this.meh2018.address }), 
+            ...(this?.weth && { 'weth': this?.weth.target }),
+            ...(this?.soloMargin && { 'soloMargin': this.soloMarginAddress }),
+            ...(this?.meh2016 && { 'meh2016': this.meh2016.target }),
+            ...(this?.meh2018 && { 'meh2018': this.meh2018.target }), 
         }
 
         if (isSavingToDisk) { this.saveExistingEnvironment(this.mockAddressesJSON)}
@@ -215,6 +213,7 @@ class ProjectEnvironment {
             } else {
                 IS_VERBOUSE ? console.log("Impersonating admin...") : null
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
+                // await setBalance(mehAdmin.address, ethers.parseEther("200"));
             }
         }
 
@@ -230,7 +229,7 @@ class ProjectEnvironment {
     
     // mintTo(address guy, uint wad)
     async mintWeth(recipient, amountInWeth) {
-        const amountInWei = ethers.utils.parseUnits(amountInWeth, "ether")
+        const amountInWei = ethers.parseUnits(amountInWeth, "ether")
         await this.weth.mintTo(recipient, amountInWei)
         console.log("minted", amountInWeth, "weth to", recipient )
     }
@@ -364,10 +363,10 @@ class Deployer {
         } finally {
             // add constants from existing environment
             this.constants.add({
-                'weth': this.exEnv.weth.address,
+                'weth': this.exEnv.weth.target,
                 'soloMargin': this.exEnv.soloMarginAddress,  // solomargin contract itself is not always present in exEnv
-                'meh2016': this.exEnv.meh2016.address,
-                'meh2018': this.exEnv.meh2018.address,
+                'meh2016': this.exEnv.meh2016.target,
+                'meh2018': this.exEnv.meh2018.target,
             })
             // always saving constants for live networks 
             this.isSavingOnDisk || isLiveNetwork() ? 
@@ -428,9 +427,8 @@ class Deployer {
         // address newCharityAddress, 
         // uint newImagePlacementPriceInWei)
     async finalMeh2016settings() {
-        
         // charity can go to any referral addess (any of them can withdraw)
-        let charityAddress = this.getLastReferral().address
+        let charityAddress = this.getLastReferral().target
         let tx = await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
         IS_VERBOUSE ? console.log(chalk.gray("Admin contract settings tx:", tx?.hash)) : null
         let receipt = await tx.wait(getConfigNumConfirmations())
@@ -457,11 +455,11 @@ class Deployer {
         this.referralFactory = await deployContract(
             "ReferralFactory",
             { "isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter },
-            this.exEnv.meh2016.address, 
+            this.exEnv.meh2016.target, 
             this.getMehAdminAddr()
         )
 
-        this.constants.add({referralFactoryAddr: this.referralFactory.address})
+        this.constants.add({referralFactoryAddr: this.referralFactory.target})
         if (await this.pauseMeh2016()) {
             IS_VERBOUSE ? console.log("Deployed referral factory") : null
         }
@@ -469,7 +467,7 @@ class Deployer {
 
     async setUpReferral(referralAddress) {
         await this.unpauseMeh2016()
-        const tx = await this.referralFactory.createReferral(this.exEnv.meh2016.address, referralAddress)
+        const tx = await this.referralFactory.createReferral(this.exEnv.meh2016.target, referralAddress)
         IS_VERBOUSE ? console.log(chalk.gray("Deploying referral. Tx:", tx?.hash)) : null
         const reciept = await tx.wait(this.exEnv.numConf)
         const blockNumber = reciept.blockNumber
@@ -478,7 +476,7 @@ class Deployer {
         const newRefAddress = events[0].args.newReferralAddr
         const referral = await ethers.getContractAt("Referral", newRefAddress)
         this.gasReporter.addGasRecord("Referral", reciept.gasUsed)
-        IS_VERBOUSE ? console.log("Deployed referral:", referral.address) : null
+        IS_VERBOUSE ? console.log("Deployed referral:", referral.target) : null
         await this.pauseMeh2016()
         return referral
     }
@@ -489,12 +487,12 @@ class Deployer {
         let nOfRefs = this.numOfReferrals()
         let currentReferralAddr = this.getMehAdminAddr()
         if (nOfRefs > 0) {
-            currentReferralAddr = this.getLastReferral().address
+            currentReferralAddr = this.getLastReferral().target
         }
         for (nOfRefs; nOfRefs < NUM_OF_REFERRALS; nOfRefs++) {
           let newRef = await this.setUpReferral(currentReferralAddr)
           this.referrals.push(newRef)
-          currentReferralAddr = newRef.address
+          currentReferralAddr = newRef.target
           if (isLiveNetwork()) {
             console.log(chalk.red("Live network. Wait for activation time and rerun script. The script must stop now!"))
             break 
@@ -503,16 +501,16 @@ class Deployer {
             await this.exEnv.waitForActivationTime(nOfRefs + 1)
           }
         }
-        this.constants.add({referralsAddresses: this.referrals.map(ref => ref.address)})
+        this.constants.add({referralsAddresses: this.referrals.map(ref => ref.target)})
       }
     
     async pairSingleRefAndWrapper(ref) {
-        let setWrapperTx = await ref.setWrapper(this.mehWrapper.address)
-        IS_VERBOUSE ? console.log(chalk.gray(`Setting wrapper for ref ${ref.address}. Tx ${setWrapperTx?.hash}`)) : null
+        let setWrapperTx = await ref.setWrapper(this.mehWrapper.target)
+        IS_VERBOUSE ? console.log(chalk.gray(`Setting wrapper for ref ${ref.target}. Tx ${setWrapperTx?.hash}`)) : null
         let setWrapperRec = await setWrapperTx.wait(this.exEnv.numConf)
         this.gasReporter.addGasRecord("Setting wrapper for ref", setWrapperRec.gasUsed)
-        let addRefferalTx = await this.mehWrapper.addRefferal(ref.address)
-        IS_VERBOUSE ? console.log(chalk.gray(`Registering referral in wrapper ${ref.address}. Tx ${addRefferalTx?.hash}`)) : null
+        let addRefferalTx = await this.mehWrapper.addRefferal(ref.target)
+        IS_VERBOUSE ? console.log(chalk.gray(`Registering referral in wrapper ${ref.target}. Tx ${addRefferalTx?.hash}`)) : null
         let addRefferalRec = await addRefferalTx.wait(this.exEnv.numConf)
         this.gasReporter.addGasRecord("Registering referral in wrapper", addRefferalRec.gasUsed)
         return [setWrapperRec, addRefferalRec]
@@ -524,7 +522,7 @@ class Deployer {
         // let referralsGas = BigNumber.from(0)
         for (let referral of this.referrals) {
             let receipts = await this.pairSingleRefAndWrapper(referral)
-            IS_VERBOUSE ? console.log("Registered ref:", referral.address) : null
+            IS_VERBOUSE ? console.log("Registered ref:", referral.target) : null
         }
         this.constants.add({areRefsAndWrapperPaired: true})
         this.areRefsAndWrapperPaired = true
@@ -533,19 +531,19 @@ class Deployer {
     // DEPLOY WRAPPER
     // wrapper constructor(meh2016address, meh2018address, wethAddress, soloMarginAddress)
     async deployWrapper() {
-        IS_VERBOUSE ? console.log("Deploying wrapper(", this.exEnv.meh2016.address, this.exEnv.meh2018.address, this.exEnv.weth.address, this.exEnv.soloMarginAddress, ")") : null
+        IS_VERBOUSE ? console.log("Deploying wrapper(", this.exEnv.meh2016.target, this.exEnv.meh2018.target, this.exEnv.weth.target, this.exEnv.soloMarginAddress, ")") : null
         // very ugly intrusion here. Using the same code to deploy MinterAdapter for tests
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
             wrapperContractName,
             {"isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter},
-            this.exEnv.meh2016.address,
-            this.exEnv.meh2018.address,
-            this.exEnv.weth.address,
+            this.exEnv.meh2016.target,
+            this.exEnv.meh2018.target,
+            this.exEnv.weth.target,
             this.exEnv.soloMarginAddress,
         )
-        IS_VERBOUSE ? console.log("MehWrapper deployed to:", this.mehWrapper.address) : null
-        this.constants.add({ wrapperAddresses: this.mehWrapper.address })
+        IS_VERBOUSE ? console.log("MehWrapper deployed to:", this.mehWrapper.target) : null
+        this.constants.add({ wrapperAddresses: this.mehWrapper.target })
     }
 }
 
@@ -565,14 +563,14 @@ async function deployContract(contractName, options, ...args) {
     }
     const contrFactory = await ethers.getContractFactory(contractName)
     const contr = await contrFactory.deploy(...args)
-    isVerbouse ? console.log(chalk.gray(`Deploying ${contractName} Tx: ${contr?.deployTransaction?.hash}`)) : null
-    const reciept = await contr.deployTransaction.wait(getConfigNumConfirmations())
+    isVerbouse ? console.log(chalk.gray(`Deploying ${contractName} Tx: ${contr?.deploymentTransaction().hash}`)) : null
+    const reciept = await contr.deploymentTransaction().wait(getConfigNumConfirmations())
     if (gasReporter !== undefined) {
         gasReporter.addGasRecord(`${contractName} gas`, reciept.gasUsed)
     }
-    await contr.deployed()
+    // await contr.waitForDeployment()
     if (isVerbouse) {
-        console.log(`Deployed ${contractName} to ${contr.address}`)
+        console.log(`Deployed ${contractName} to ${contr.target}`)
     }
     return contr
 }

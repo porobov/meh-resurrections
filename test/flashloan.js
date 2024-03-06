@@ -29,7 +29,7 @@ describe("Flashloan", function () {
       flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
       wethAddress = conf.wethAddress
     }
-    await flashloaner.deployed();
+    await flashloaner.waitForDeployment();
     IS_VERBOUSE ? console.log("Flashloaner:", flashloaner.address) : {}
     IS_VERBOUSE ? console.log("ETH balance of WETH contract:", await ethers.provider.getBalance(wethAddress)) : {}
   })
@@ -39,17 +39,17 @@ describe("Flashloan", function () {
   // borrowExt only borrows money, converts Weth to eth, eth to weth and repays
   // no changes in state whatsoever
   it("Borrows 1, 512 and 16000 WETH", async function () {
-    let loanAmount = ethers.utils.parseEther("1")
+    let loanAmount = ethers.parseEther("1")
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
-    loanAmount = ethers.utils.parseEther("512")
+    loanAmount = ethers.parseEther("512")
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
-    loanAmount = ethers.utils.parseEther("16000")
+    loanAmount = ethers.parseEther("16000")
     await flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord)
   })
 
   // Making sure we are really testing something
   it("Cannot Borrow 1000000 WETH", async function () {
-    let loanAmount = ethers.utils.parseEther("1000000")
+    let loanAmount = ethers.parseEther("1000000")
     await expect(flashloaner.borrowExt(loanAmount, mockBuyer, mockCoord, mockCoord, mockCoord, mockCoord))
       .to.be.revertedWith('BAL#528')
   })
@@ -65,7 +65,7 @@ describe("Flashloan", function () {
   // it("Fees cannot be too high", async function () {
   //   // getting impersonated flashloan platform and sending funds to it to cover transaction fees
   //   const impersonatedLoanplatform = await getImpersonatedSigner(conf.soloMarginAddress)
-  //   let transactionCost = ethers.utils.parseEther("1")
+  //   let transactionCost = ethers.parseEther("1")
   //   await setBalance(conf.soloMarginAddress, transactionCost)
   //   await expect(flashloaner.connect(impersonatedLoanplatform).receiveFlashLoan([wethAddress], [1], [0], data))
   //       .to.be.revertedWith('Flashloaner: fees are too high')

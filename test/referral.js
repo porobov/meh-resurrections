@@ -73,7 +73,7 @@ makeSuite("Referrals setup", function () {
   //   let referral = await deployer.setUpReferral(mehAdminAddress)
   //   await expect(stranger.sendTransaction({
   //     to: referral.address,
-  //     value: ethers.utils.parseEther("1.0"),
+  //     value: ethers.parseEther("1.0"),
   //   })).to.be.revertedWith("Referral: Only receives from oldMEH")
   // })
 
@@ -83,7 +83,7 @@ makeSuite("Referrals setup", function () {
   // referral payback function). So there's no necessity in checking sender here
   it("Can receive money from strangers", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
-    let value = ethers.utils.parseEther("1.0")
+    let value = ethers.parseEther("1.0")
     const refBalBefore = await ethers.provider.getBalance(referral.address)
     await stranger.sendTransaction({
       to: referral.address,
@@ -97,7 +97,7 @@ makeSuite("Referrals setup", function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
-    let mintingPrice = ethers.utils.parseEther("1.0")
+    let mintingPrice = ethers.parseEther("1.0")
     let referralShare = mintingPrice.div(2)
     let cc = availableAreas[0]
 
@@ -138,7 +138,7 @@ makeSuite("Referrals withdrawal", function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
-    let mintingPrice = ethers.utils.parseEther("1.0")
+    let mintingPrice = ethers.parseEther("1.0")
     let referralShare = mintingPrice.div(2)
     let cc = availableAreas[0]
 

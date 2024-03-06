@@ -6,7 +6,7 @@ const chalk = require('chalk')
 
 const NEW_PRICE_IN_ETH = "0.001"
 
-const newPrice = ethers.utils.parseEther(NEW_PRICE_IN_ETH)
+const newPrice = ethers.parseEther(NEW_PRICE_IN_ETH)
 async function pause() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)

@@ -1,11 +1,11 @@
 require("dotenv").config();
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-etherscan");
-require("@nomiclabs/hardhat-waffle");
+// require("@nomiclabs/hardhat-ethers");
+// require("@nomiclabs/hardhat-etherscan");
+require("@nomicfoundation/hardhat-toolbox");
 require('@openzeppelin/hardhat-upgrades');
-require("hardhat-gas-reporter");
-require("solidity-coverage");
-require("@nomicfoundation/hardhat-chai-matchers");
+// require("hardhat-gas-reporter");
+// require("solidity-coverage");
+// require("@nomicfoundation/hardhat-chai-matchers");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -72,6 +72,8 @@ module.exports = {
       url: "http://127.0.0.1:8545"
     },
     hardhat: {
+      // fork: "london",
+      numConfirmations: 0,
       forking: {
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         // blockNumber: 13132200 /// 13352488 //  // not paused contract
@@ -79,6 +81,7 @@ module.exports = {
         blockNumber: 14979315 // fixed recent block number (contracts paused)
       },
       timeout: 12000000,
+      // gasPrice: 24377776494,
     },
     // read-only mainnet (for blocks import)
     readMain: {
