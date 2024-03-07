@@ -1,4 +1,5 @@
 const { ethers, network } = require("hardhat");
+const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
 // returns impersonated signer for local hardfork
 // if "ProviderError: unknown account..." see below
@@ -47,6 +48,10 @@ function getConfigChainID() {
   return network.config.chainId
 }
 
+function getConfigNetworkUrl() {
+  return network.config.url
+}
+
 function isLiveNetwork() {
   return !isLocalTestnet()
 }
@@ -87,17 +92,18 @@ class GasReporter {
 }
 
 async function resetHardhatToBlock(blockNumber){
-  await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-          {
-          forking: {
-              jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
-              blockNumber: blockNumber,  
-          },
-          },
-      ],
-      });
+  await helpers.reset(getConfigNetworkUrl(), blockNumber);
+  // await network.provider.request({
+  //     method: "hardhat_reset",
+  //     params: [
+  //         {
+  //         forking: {
+  //             // jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+  //             blockNumber: blockNumber,  
+  //         },
+  //         },
+  //     ],
+  //     });
 }
 
 module.exports = { 

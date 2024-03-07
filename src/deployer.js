@@ -27,7 +27,7 @@ const IS_VERBOUSE = !(!conf.IS_VERBOUSE_TEST && isLocalTestnet());
 // ensures all contracts are in clean state either by fork or redeploying
 async function setupTestEnvironment(options) {
     let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
-    let isDeployingMocksForTets = ("isDeployingMocksForTets" in options) ? options.isDeployingMocksForTets : false
+    let isDeployingMocksForTets = conf.IS_DEPLOYING_MOCKS_FOR_TESTS
 
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)

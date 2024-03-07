@@ -5,7 +5,7 @@ function blockID(x, y) {
   }
   
 function countBlocks(fx, fy, tx, ty) {
-return (tx - fx + 1) * (ty - fy + 1)
+return BigInt((tx - fx + 1) * (ty - fy + 1))
 }
 
 function rand1to100() {
@@ -14,13 +14,13 @@ function rand1to100() {
 
 async function balancesSnapshot(oldMeh, mehWrapper, referrals) {
   snapshot = {}
-  snapshot.meh = await ethers.provider.getBalance(oldMeh.address)
-  snapshot.wrapper = await ethers.provider.getBalance(mehWrapper.address)
+  snapshot.meh = await ethers.provider.getBalance(oldMeh.target)
+  snapshot.wrapper = await ethers.provider.getBalance(mehWrapper.target)
   snapshot.royalties = await mehWrapper.royalties()
   snapshot.referrals = []
   for (const referral of referrals) {
-    let meh = (await oldMeh.getUserInfo(referral.address)).balance
-    let wrapper = await ethers.provider.getBalance(referral.address)
+    let meh = (await oldMeh.getUserInfo(referral.target)).balance
+    let wrapper = await ethers.provider.getBalance(referral.target)
     snapshot.referrals.push({meh: meh, wrapper: wrapper})
   }
   return snapshot

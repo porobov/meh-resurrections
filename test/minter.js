@@ -46,7 +46,7 @@ function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer] = await ethers.getSigners()
-      let env = await setupTestEnvironment({isDeployingMocksForTets: IS_DEPLOYING_MOCKS_FOR_TESTS, isDeployingMinterAdapter: true})
+      let env = await setupTestEnvironment({isDeployingMinterAdapter: true})
       owner = env.owner
       minter = env.mehWrapper
       referrals= env.referrals
@@ -253,11 +253,11 @@ makeSuite("Reading contract", function () {
     // multiple blocks
     let cc = {fx: 61, fy: 44, tx: 100, ty: 68}
     let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
-    let total = price.mul(count)
+    let total = price * (count)
     expect(await minter._areaCrowdsalePriceExt(cc.fx, cc.fy, cc.tx, cc.ty)).to.equal(total)
     // single block and two blocks
     expect(await minter._areaCrowdsalePriceExt(1,1,1,1)).to.equal(price)
-    expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price.mul(2))
+    expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price * (2n))
   })
 })
 
@@ -270,16 +270,16 @@ makeSuite("buyFromMEH", function () {
     it(`_buyFromMEH works: (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
       let oldMehPrice = ethers.parseEther("1")
-      let total = oldMehPrice.mul(count)
+      let total = oldMehPrice * (count)
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
       await minter._buyFromMEHExt(
         total, buyer.address, cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-      expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)  // all money is returned
-      expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
-      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(sa.wrapper - (sb.wrapper)).to.equal(total)  // all money is returned
+      expect(sa.meh - (sb.meh)).to.equal(0)
+      expect(sa.royalties - (sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.target)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
     })
   }
@@ -303,10 +303,10 @@ makeSuite("_borrowAndBuyFromMEH", function () {
       await minter._borrowAndBuyFromMEHExt(buyer.address, cc.fx, cc.fy, cc.tx, cc.ty)
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)  // all money is returned
-      expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
-      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(sa.wrapper - (sb.wrapper)).to.equal(0)  // all money is returned
+      expect(sa.meh - (sb.meh)).to.equal(0)
+      expect(sa.royalties - (sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.target)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
     })
   }
@@ -338,16 +338,16 @@ makeSuite("mint", function () {
     it(`Will mint blocks, royalties are payed (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       let price = await minter.crowdsalePrice();
       let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
-      let total = price.mul(count)
+      let total = price * (count)
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
       await minter.connect(buyer)
         .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-      expect(sa.wrapper.sub(sb.wrapper)).to.equal(total)
-      expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(sa.royalties.sub(sb.royalties)).to.equal(total)
-      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(sa.wrapper - (sb.wrapper)).to.equal(total)
+      expect(sa.meh - (sb.meh)).to.equal(0)
+      expect(sa.royalties - (sb.royalties)).to.equal(total)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.target)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(buyer.address)
       for (const referral of sa.referrals) {
         expect(referral.meh).to.equal(0)
@@ -360,12 +360,12 @@ makeSuite("mint", function () {
 
 
 
-
 makeSuite("mintReserved ", function () {
 
   it("Will throw with wrong input", async function () {
     let cf = RESERVED_FOR_FOUNDER
-    await expect(minter.connect(buyer).buyBlocks(cf.fx, cf.fy, cf.fx - 1, cf.fy))
+    const mintingPrice = ethers.parseEther("1")
+    await expect(minter.connect(buyer).buyBlocks(cf.fx, cf.fy, cf.fx - 1, cf.fy), { value: mintingPrice })
       .to.be.revertedWith("Wrong coordinates")
   })
 
@@ -376,10 +376,10 @@ makeSuite("mintReserved ", function () {
         .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)
-      expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
-      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(sa.wrapper - (sb.wrapper)).to.equal(0)
+      expect(sa.meh - (sb.meh)).to.equal(0)
+      expect(sa.royalties - (sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.target)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(founder_address)
     })
   }
@@ -391,10 +391,10 @@ makeSuite("mintReserved ", function () {
         .mintReserved(cc.fx, cc.fy, cc.tx, cc.ty)
       let sa = await balancesSnapshot(oldMeh, minter, referrals)
 
-      expect(sa.wrapper.sub(sb.wrapper)).to.equal(0)
-      expect(sa.meh.sub(sb.meh)).to.equal(0)
-      expect(sa.royalties.sub(sb.royalties)).to.equal(0)
-      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.address)
+      expect(sa.wrapper - (sb.wrapper)).to.equal(0)
+      expect(sa.meh - (sb.meh)).to.equal(0)
+      expect(sa.royalties - (sb.royalties)).to.equal(0)
+      expect((await oldMeh.getBlockInfo(cc.fx, cc.fy)).landlord).to.equal(minter.target)
       expect(await minter.ownerOf(blockID(cc.fx, cc.fy))).to.equal(cc.landlord)
       for (const referral of sa.referrals) {
         expect(referral.meh).to.equal(0)
@@ -418,7 +418,7 @@ makeSuite("Minting from oldMeh directly", function () {
     await oldMeh.connect(buyer).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
     let s2 = await balancesSnapshot(oldMeh, minter, referrals)
     let founderBalS2 = await minter.internalBalOf(await minter.founder())
-    expect(s2.meh.sub(s1.meh)).to.equal(mintingPrice)
+    expect(s2.meh - (s1.meh)).to.equal(mintingPrice)
 
     // minting new block (single)
     let mm = availableAreas[1]
@@ -427,10 +427,9 @@ makeSuite("Minting from oldMeh directly", function () {
     let s3 = await balancesSnapshot(oldMeh, minter, referrals)
     let founderBalS3 = await minter.internalBalOf(await minter.founder())
     
-    let referralSurplus = mintingPrice.div(2) // 50% is collected from charity
-    expect(s2.meh.sub(s3.meh)).to.equal(referralSurplus)  // eth went to referral
-    expect(s3.wrapper.sub(s2.wrapper)).to.equal(price.add(referralSurplus))  // eth went to referral
-    expect(founderBalS3.sub(founderBalS2)).to.equal(referralSurplus)  // eth counted as royalties
+    let referralSurplus = mintingPrice / (2n) // 50% is collected from charity
+    expect(s2.meh - (s3.meh)).to.equal(referralSurplus)  // eth went to referral
+    expect(s3.wrapper - (s2.wrapper)).to.equal(price + (referralSurplus))  // eth went to referral
+    expect(founderBalS3 - (founderBalS2)).to.equal(referralSurplus)  // eth counted as royalties
   })
 })
-

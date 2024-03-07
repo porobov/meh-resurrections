@@ -32,9 +32,12 @@ let deployer
 
 async function testEnvironmentCollector() {
   ;[owner] = await ethers.getSigners()
-  const exEnv = new ProjectEnvironment(owner)
-  // resetting hardfork (before loading existing env and impersonating admin!!!)
+
   await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain
+  const exEnv = new ProjectEnvironment(owner)
+  if (conf.IS_DEPLOYING_MOCKS_FOR_TESTS) { 
+    await exEnv.deployMocks()
+  }
 
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
@@ -118,7 +121,7 @@ makeSuite("Normal operation", testEnvironmentCollector, function () {
     await deployer.unpauseMeh2016()
     await deployer.mehWrapper.connect(owner).signIn()
     expect(await wrapper.isSignedIn()).to.be.equal(true)
-    expect((await oldMeh.getUserInfo(wrapper.address)).referal).to.be.equal(deployer.getLastReferral().target)
+    expect((await oldMeh.getUserInfo(wrapper.target)).referal).to.be.equal(deployer.getLastReferral().target)
   })
 })
 
@@ -140,7 +143,7 @@ makeSuite("More referrals than needed", testEnvironmentCollector, function () {
     await deployer.mehWrapper.connect(owner).signIn()
     await deployer.finalMeh2016settings()  // setting charity address
     await deployer.exEnv.weth.deposit({value: 20000})
-    await deployer.exEnv.weth.transfer(deployer.mehWrapper.address, 20000)
+    await deployer.exEnv.weth.transfer(deployer.mehWrapper.target, 20000)
 
     // try to buy area
     let cc = availableAreas[0]
@@ -215,7 +218,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
   it("Can place image to minted area", async function () {
     // buy area
     let cc = availableAreas[1]
-    let price = (await wrapper.crowdsalePrice()).mul(2)  // single block 
+    let price = (await wrapper.crowdsalePrice()) * (2n)  // single block 
     await wrapper.connect(buyer)
         .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
     await expect(wrapper.connect(buyer)
@@ -231,8 +234,8 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     let landlord = await getImpersonatedSigner(landlordAddress)
     let pricePerBlock = ethers.parseEther("1")
     let blocksCount = countBlocks(w.fx, w.fy, w.tx, w.ty)
-    let sellPrice = (pricePerBlock).mul(blocksCount)
-    await setBalance(landlord.address, sellPrice.add(ethers.parseEther("2")));
+    let sellPrice = (pricePerBlock) * (blocksCount)
+    await setBalance(landlord.address, sellPrice + (ethers.parseEther("2")));
     
     // Transactions to wrap a 2016 block
     await oldMeh.connect(landlord).sellBlocks(w.fx, w.fy, w.tx, w.ty, pricePerBlock)
@@ -281,7 +284,7 @@ makeSuite("Image placement price", setupTestEnvironment, function () {
     let mehAdmin = await getImpersonatedSigner(MEH_ADMIN_ADDRESS)
     let newImagePlacementPriceInWei = ethers.parseEther("1.0")
     // adminContractSettings (newDelayInSeconds, newCharityAddress, newImagePlacementPriceInWei)
-    await oldMeh.connect(mehAdmin).adminContractSettings(1, referrals[referrals.length - 1].address, newImagePlacementPriceInWei)
+    await oldMeh.connect(mehAdmin).adminContractSettings(1, referrals[referrals.length - 1].target, newImagePlacementPriceInWei)
 
     // try to place image now with no money
     await expect(wrapper.connect(buyer)

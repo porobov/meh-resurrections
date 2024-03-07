@@ -71,6 +71,7 @@ module.exports = {
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
       url: "http://127.0.0.1:8545"
     },
+    /*
     hardhat: {
       // fork: "london",
       numConfirmations: 0,
@@ -83,6 +84,7 @@ module.exports = {
       timeout: 12000000,
       // gasPrice: 24377776494,
     },
+    */
     // read-only mainnet (for blocks import)
     readMain: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools

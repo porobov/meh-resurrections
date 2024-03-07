@@ -22,12 +22,13 @@ contract BalancerVaultMock {
         // send WETH to wrapper
         uint256 loanAmount = amounts[0];
         require(loanAmount <= WETH.balanceOf(address(this)), "BAL#528");
+        console.log("Balancer vault eth bal:", WETH.balanceOf(address(this)));
+        console.log("Balancer vault eth bal:", address(this).balance);
         WETH.transfer(receiver, loanAmount);
 
         // the following console.log line fixes some hardhat bug
         // without this line flashloan.js test fails even though
         // Vault does not deal with Eth at all
-        console.log(address(this).balance);
         // set fees to zero (as in real balancer)
         uint256[] memory feeAmounts = new uint256[](1);
         feeAmounts[0] = 0;

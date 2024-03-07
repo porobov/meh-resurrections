@@ -5,14 +5,16 @@ const { resetHardhatToBlock } = require("../src/tools.js")
 const { getTotalGas } = require("../src/test-helpers.js")
 const conf = require('../conf.js');
 
-const mehAdminAddress = conf.mehAdminAddress
+let mehAdminAddress
 let deployer
 
 async function testEnvironmentCollector() {
   ;[owner] = await ethers.getSigners()
+
+  !conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await resetHardhatToBlock(conf.forkBlock) : null // TODO make configurable depending on chain
   const exEnv = new ProjectEnvironment(owner)
-  // resetting hardfork (before loading existing env and impersonating admin!!!)
-  await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain
+  conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await exEnv.deployMocks() : null
+  mehAdminAddress = exEnv.mehAdminAddress
 
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
@@ -29,7 +31,7 @@ async function testEnvironmentCollector() {
   // await deployer.mehWrapper.signIn()
   // await deployer.finalMeh2016settings()
   // await deployer.exEnv.weth.deposit({value: 20000})
-  // await deployer.exEnv.weth.transfer(deployer.mehWrapper.address, 20000)
+  // await deployer.exEnv.weth.transfer(deployer.mehWrapper.target, 20000)
 
   return {
       oldMeh: deployer.exEnv.meh2016,
@@ -60,16 +62,16 @@ makeSuite("Collector basic", function () {
 
   it("Anyone can send funds to Collector", async function () {
       let value = ethers.parseEther("1.0")
-      const collectorBalBefore = await ethers.provider.getBalance(wrapper.address)
+      const collectorBalBefore = await ethers.provider.getBalance(wrapper.target)
       await wrapper.connect(stranger).referralPayback({ value: value })
-      const collectorBalAfter = await ethers.provider.getBalance(wrapper.address)
-      expect(collectorBalAfter.sub(collectorBalBefore)).to.be.equal(value)
+      const collectorBalAfter = await ethers.provider.getBalance(wrapper.target)
+      expect(collectorBalAfter - (collectorBalBefore)).to.be.equal(value)
     })
   
   // can only add a real referral
   it("Can only add a paired referral", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
-    await expect(wrapper.connect(owner).addRefferal(referral.address))
+    await expect(wrapper.connect(owner).addRefferal(referral.target))
       .to.be.revertedWith("Collector: Referral is not owned by wrapper")
   })
 
@@ -78,14 +80,14 @@ makeSuite("Collector basic", function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.pairSingleRefAndWrapper(referral)
     // only owner
-    await expect(wrapper.connect(stranger).addRefferal(referral.address))
+    await expect(wrapper.connect(stranger).addRefferal(referral.target))
       .to.be.revertedWith("Ownable: caller is not the owner")
     // only real referral
     await expect(wrapper.connect(owner).addRefferal(notAReferral.address))
       .to.be.revertedWithoutReason() // reverts with function call to a non-contract account
-    await wrapper.connect(owner).addRefferal(referral.address)
+    await wrapper.connect(owner).addRefferal(referral.target)
     let referralIndex = 0
-    expect(await wrapper.referrals(referralIndex)).to.be.equal(referral.address)
+    expect(await wrapper.referrals(referralIndex)).to.be.equal(referral.target)
   })
 })
 
@@ -111,7 +113,7 @@ makeSuite("Chain of referrals", function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     await deployer.unpauseMeh2016()
     await deployer.mehWrapper.signIn()
-    await expect(wrapper.connect(owner).addRefferal(referral.address))
+    await expect(wrapper.connect(owner).addRefferal(referral.target))
       .to.be.revertedWith("Collector: Cannot add referrals after sign in")
   })
 })
@@ -128,7 +130,7 @@ makeSuite("Collector withdrawals", function () {
     // send funds by stranger
     let value = ethers.parseEther("1.0")
     await stranger.sendTransaction({
-      to: ref.address,
+      to: ref.target,
       value: value,
     })
     // stranger withdrawal
@@ -139,6 +141,6 @@ makeSuite("Collector withdrawals", function () {
     const tx = await wrapper.connect(owner).adminWithdrawFromReferrals()
     let totalGas = await getTotalGas([tx])
     const ownerBalAfter = await ethers.provider.getBalance(owner.address)
-    expect(ownerBalAfter.sub(ownerBalBefore)).to.be.equal(value.sub(totalGas))
+    expect(ownerBalAfter - (ownerBalBefore)).to.be.equal(value - (totalGas))
   })
 })

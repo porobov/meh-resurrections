@@ -49,6 +49,8 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         // convert WETH to eth
         WETH.withdraw(loanAmount);
         // buy from MEH and get all the money back
+        console.log("Flashloaner eth bal:", WETH.balanceOf(address(this)));
+        console.log("Flashloaner eth bal:", address(this).balance);
         _buyFromMEH(loanAmount, buyer, fromX, fromY, toX, toY);
         // convert ETH to back to weth
         WETH.deposit{value:loanAmount}();

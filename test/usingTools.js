@@ -31,16 +31,16 @@ describe("Block coordinates tools", function () {
 
     // blockXY
     it("Calculating blockXY correctly", async function () {
-        expect(await usingToolsAdapter.blockXYExt(1)).to.eql([1,1])
-        expect(await usingToolsAdapter.blockXYExt(2)).to.eql([2,1])
-        expect(await usingToolsAdapter.blockXYExt(100)).to.eql([100,1])
-        expect(await usingToolsAdapter.blockXYExt(101)).to.eql([1,2])
-        expect(await usingToolsAdapter.blockXYExt(200)).to.eql([100,2])
-        expect(await usingToolsAdapter.blockXYExt(201)).to.eql([1,3])
-        expect(await usingToolsAdapter.blockXYExt(9900)).to.eql([100,99])
-        expect(await usingToolsAdapter.blockXYExt(9901)).to.eql([1,100])
-        expect(await usingToolsAdapter.blockXYExt(9999)).to.eql([99,100])
-        expect(await usingToolsAdapter.blockXYExt(10000)).to.eql([100,100])
+        expect(await usingToolsAdapter.blockXYExt(1)).to.eql([1n,1n])
+        expect(await usingToolsAdapter.blockXYExt(2)).to.eql([2n,1n])
+        expect(await usingToolsAdapter.blockXYExt(100)).to.eql([100n,1n])
+        expect(await usingToolsAdapter.blockXYExt(101)).to.eql([1n,2n])
+        expect(await usingToolsAdapter.blockXYExt(200)).to.eql([100n,2n])
+        expect(await usingToolsAdapter.blockXYExt(201)).to.eql([1n,3n])
+        expect(await usingToolsAdapter.blockXYExt(9900)).to.eql([100n,99n])
+        expect(await usingToolsAdapter.blockXYExt(9901)).to.eql([1n,100n])
+        expect(await usingToolsAdapter.blockXYExt(9999)).to.eql([99n,100n])
+        expect(await usingToolsAdapter.blockXYExt(10000)).to.eql([100n,100n])
     })
 
     // blockXY
@@ -57,7 +57,7 @@ describe("Block coordinates tools", function () {
 
     // blocksList
     it("Calculating blocksList correctly", async function () {
-        expect(await usingToolsAdapter.blocksListExt(1,1,1,1)).to.eql([1])
+        expect(await usingToolsAdapter.blocksListExt(1,1,1,1)).to.eql([1n])
 
         async function checkCoords(c) {
             let blocklist = []

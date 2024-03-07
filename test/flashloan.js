@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { ProjectEnvironment } = require("../src/deployer.js")
 const { ethers } = require("hardhat");
-const { resetHardhatToBlock } = require("../src/tools.js")
 const conf = require('../conf.js');
 
 let flashloaner
@@ -9,7 +8,6 @@ let mockCoord = 1
 let mockBuyer = "0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990"
 let wethAddress
 let data = '0x03'
-let MAX_FEE_PERCENT = 1
 const IS_VERBOUSE = conf.IS_VERBOUSE_TEST
   // 
 
@@ -25,7 +23,6 @@ describe("Flashloan", function () {
       flashloaner = await Flashloaner.deploy(mockAddressesJSON.weth, mockAddressesJSON.soloMargin);
       wethAddress = mockAddressesJSON.weth
     } else {
-      // await resetHardhatToBlock(conf.forkBlock)
       flashloaner = await Flashloaner.deploy(conf.wethAddress, conf.soloMarginAddress);
       wethAddress = conf.wethAddress
     }

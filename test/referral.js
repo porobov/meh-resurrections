@@ -4,9 +4,7 @@ const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
 const { resetHardhatToBlock, increaseTimeBy } = require("../src/tools.js")
 const conf = require('../conf.js');
 
-
-const oldMehAddress = conf.oldMehAddress
-const mehAdminAddress = conf.mehAdminAddress
+let mehAdminAddress
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 let deployer
 
@@ -17,9 +15,12 @@ let availableAreas = [
 
 async function testEnvironmentReferrals() {
   ;[owner] = await ethers.getSigners()
+
+  !conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await resetHardhatToBlock(conf.forkBlock) : null // TODO make configurable depending on chain
   const exEnv = new ProjectEnvironment(owner)
-  // resetting hardfork (before loading existing env and impersonating admin!!!)
-  await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain
+  conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await exEnv.deployMocks() : null
+
+  mehAdminAddress = exEnv.mehAdminAddress
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
       isDeployingMinterAdapter: true,
@@ -53,26 +54,26 @@ makeSuite("Referrals setup", function () {
   it("Creates new referral", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     expect(await referral.wrapper()).to.be.equal(ZERO_ADDRESS)
-    expect(await referral.oldMeh()).to.be.equal(oldMeh.address)
+    expect(await referral.oldMeh()).to.be.equal(oldMeh.target)
     expect(await referral.owner()).to.be.equal(owner.address)
   })
 
   it("Sets wrapper address and transfers ownership to it", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
-    await expect(referral.connect(stranger).setWrapper(wrapper.address)).to.be.revertedWith(
+    await expect(referral.connect(stranger).setWrapper(wrapper.target)).to.be.revertedWith(
       "Ownable: caller is not the owner")
 
-    await referral.connect(owner).setWrapper(wrapper.address)
-    expect(await referral.wrapper()).to.be.equal(wrapper.address)
-    expect(await referral.oldMeh()).to.be.equal(oldMeh.address)
-    expect(await referral.owner()).to.be.equal(wrapper.address)
+    await referral.connect(owner).setWrapper(wrapper.target)
+    expect(await referral.wrapper()).to.be.equal(wrapper.target)
+    expect(await referral.oldMeh()).to.be.equal(oldMeh.target)
+    expect(await referral.owner()).to.be.equal(wrapper.target)
   })
 
   // removed this test. See below ↓↓↓
   // it("Cannot receive money from strangers", async function () {
   //   let referral = await deployer.setUpReferral(mehAdminAddress)
   //   await expect(stranger.sendTransaction({
-  //     to: referral.address,
+  //     to: referral.target,
   //     value: ethers.parseEther("1.0"),
   //   })).to.be.revertedWith("Referral: Only receives from oldMEH")
   // })
@@ -84,13 +85,13 @@ makeSuite("Referrals setup", function () {
   it("Can receive money from strangers", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)
     let value = ethers.parseEther("1.0")
-    const refBalBefore = await ethers.provider.getBalance(referral.address)
+    const refBalBefore = await ethers.provider.getBalance(referral.target)
     await stranger.sendTransaction({
-      to: referral.address,
+      to: referral.target,
       value: value,
     })
-    const refBalAfter = await ethers.provider.getBalance(referral.address)
-    expect(refBalAfter.sub(refBalBefore)).to.be.equal(value)
+    const refBalAfter = await ethers.provider.getBalance(referral.target)
+    expect(refBalAfter - (refBalBefore)).to.be.equal(value)
   })
 
   it("Only wrapper can withdraw from referral (separate functions)", async function () {
@@ -98,13 +99,13 @@ makeSuite("Referrals setup", function () {
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
     let mintingPrice = ethers.parseEther("1.0")
-    let referralShare = mintingPrice.div(2)
+    let referralShare = mintingPrice / (2n)
     let cc = availableAreas[0]
 
     // sending eth from oldMEh to referral
-    await oldMeh.connect(stranger).signIn(referral.address)
+    await oldMeh.connect(stranger).signIn(referral.target)
     await oldMeh.connect(stranger).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
-    let info = await oldMeh.getUserInfo(referral.address)
+    let info = await oldMeh.getUserInfo(referral.target)
     expect(info.balance).to.be.equal(referralShare)
 
     // trying to withdraw by a stranger
@@ -112,23 +113,23 @@ makeSuite("Referrals setup", function () {
       "Ownable: caller is not the owner")
     await expect(referral.connect(stranger).sendFundsToWrapper()).to.be.revertedWith(
       "Ownable: caller is not the owner")
-    await referral.connect(owner).setWrapper(wrapper.address)
+    await referral.connect(owner).setWrapper(wrapper.target)
     await expect(referral.connect(stranger).withdrawFromMeh()).to.be.revertedWith(
       "Ownable: caller is not the owner")
     await expect(referral.connect(stranger).sendFundsToWrapper()).to.be.revertedWith(
       "Ownable: caller is not the owner")
 
     // withdraw from meh
-    const refBalBefore = await ethers.provider.getBalance(referral.address)
-    await wrapper.connect(owner).refWithdrawFromMeh(referral.address)
-    const refBalAfter = await ethers.provider.getBalance(referral.address)
-    expect(refBalAfter.sub(refBalBefore)).to.be.equal(referralShare)
+    const refBalBefore = await ethers.provider.getBalance(referral.target)
+    await wrapper.connect(owner).refWithdrawFromMeh(referral.target)
+    const refBalAfter = await ethers.provider.getBalance(referral.target)
+    expect(refBalAfter - (refBalBefore)).to.be.equal(referralShare)
 
     // send to wrapper
-    const wrapperBalBefore = await ethers.provider.getBalance(wrapper.address)
-    await wrapper.connect(owner).refSendFundsToWrapper(referral.address)
-    const wrapperBalAfter = await ethers.provider.getBalance(wrapper.address)
-    expect(wrapperBalAfter.sub(wrapperBalBefore)).to.be.equal(referralShare)
+    const wrapperBalBefore = await ethers.provider.getBalance(wrapper.target)
+    await wrapper.connect(owner).refSendFundsToWrapper(referral.target)
+    const wrapperBalAfter = await ethers.provider.getBalance(wrapper.target)
+    expect(wrapperBalAfter - (wrapperBalBefore)).to.be.equal(referralShare)
   })
 })
 
@@ -139,27 +140,27 @@ makeSuite("Referrals withdrawal", function () {
     await deployer.unpauseMeh2016()  // bacause setUpReferral pauses contract
     await increaseTimeBy(3600 * 1)  // let 10 hours pass
     let mintingPrice = ethers.parseEther("1.0")
-    let referralShare = mintingPrice.div(2)
+    let referralShare = mintingPrice / (2n)
     let cc = availableAreas[0]
 
     // sending eth from oldMEh to referral
-    await oldMeh.connect(stranger).signIn(referral.address)
+    await oldMeh.connect(stranger).signIn(referral.target)
     await oldMeh.connect(stranger).buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: mintingPrice })
-    let info = await oldMeh.getUserInfo(referral.address)
+    let info = await oldMeh.getUserInfo(referral.target)
 
     // trying to withdraw by a stranger
     await expect(referral.connect(stranger).withdraw()).to.be.revertedWith(
       "Ownable: caller is not the owner")
-    await referral.connect(owner).setWrapper(wrapper.address)
+    await referral.connect(owner).setWrapper(wrapper.target)
     await expect(referral.connect(stranger).withdraw()).to.be.revertedWith(
       "Ownable: caller is not the owner")
 
     // send to wrapper
-    const wrapperBalBefore = await ethers.provider.getBalance(wrapper.address)
-    let amount = await wrapper.connect(owner).callStatic.refWithdraw(referral.address)
-    await wrapper.connect(owner).refWithdraw(referral.address)
-    const wrapperBalAfter = await ethers.provider.getBalance(wrapper.address)
+    const wrapperBalBefore = await ethers.provider.getBalance(wrapper.target)
+    let amount = await wrapper.connect(owner).refWithdraw.staticCall(referral.target)
+    await wrapper.connect(owner).refWithdraw(referral.target)
+    const wrapperBalAfter = await ethers.provider.getBalance(wrapper.target)
     expect(amount).to.be.equal(referralShare)
-    expect(wrapperBalAfter.sub(wrapperBalBefore)).to.be.equal(referralShare)
+    expect(wrapperBalAfter - (wrapperBalBefore)).to.be.equal(referralShare)
   })
 })
