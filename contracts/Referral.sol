@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 import "./Receiver.sol";
 import "./Collector.sol";
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -54,7 +54,7 @@ contract Referral is Initializable,  OwnableUpgradeable{
     }
 
     function _withdrawFromMeh() internal {
-        // console.log("fixing hardhat", address(this).balance);
+        console.log("fixing hardhat", address(this).balance);
         oldMeh.withdrawAll();
     }
 

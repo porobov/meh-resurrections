@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 import "../libs/dydx.sol";
 import "../balancer-labs/solidity-utils/misc/IWETH.sol";
 
@@ -86,7 +86,7 @@ function _call(
     )
         private
     {   
-        // console.log("Sending weth to:", args.callee);
+        console.log("Sending weth to:", args.callee);
         WETH.transfer(args.callee, 2 ether);
         ICallee(args.callee).callFunction(
             msg.sender,

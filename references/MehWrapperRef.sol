@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-// import "hardhat/console.sol";
+import "hardhat/console.sol";
 
 // These definitions are taken from across multiple dydx contracts, and are
 // limited to just the bare minimum necessary to make flash loans work.
@@ -270,7 +270,7 @@ contract MehWrapperRef is ICallee, ERC721, Ownable {
     function _withdrawFromReferrals() private {
         // using reverse order and do only 7 (or is it 6?) referrals
         // a way to upgrade referrals
-        // console.log("... _withdrawFromReferrals");
+        console.log("... _withdrawFromReferrals");
         for (uint i = 6; i > 0; i--) { // TODO does not withdraw from refferal[0]
             IReferral(referrals[i]).withdraw();
         }
@@ -306,18 +306,18 @@ contract MehWrapperRef is ICallee, ERC721, Ownable {
     // is called by SoloMargin (see callFunction function above)
     // TODO only soloMargin?
     function _buyFromMEH(uint256 price, address buyer, uint8 fromX, uint8 fromY, uint8 toX, uint8 toY) internal {
-        // console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
+        console.log("... Buying from MEH..., wrapper balance is: %s", address(this).balance);
         require((oldMeh.buyBlocks
             {value: price}
             (fromX, fromY, toX, toY)) > 0, "purchasePrice returned by old Meh is below or is zero");
         
-        // console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
+        console.log("... Withdrawing from refereals..., wrapper balance is: %s", address(this).balance);
         // get all the funds back from referrals
         _withdrawFromReferrals();
         // convert ETH to weth
-        // console.log("... Converting to WETH..., wrapper balance is: %s", address(this).balance);
+        console.log("... Converting to WETH..., wrapper balance is: %s", address(this).balance);
         WETH.deposit{value:price}();
-        // console.log("... Converted to WETH..., wrapper balance is: %s", address(this).balance);
+        console.log("... Converted to WETH..., wrapper balance is: %s", address(this).balance);
 
         // mint NFT to buyer
         uint16[] memory blocks = blocksList(fromX, fromY, toX, toY);
