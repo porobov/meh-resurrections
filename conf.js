@@ -21,7 +21,7 @@ module.exports = {
     WRAPPER_BLOCK_PRICE: ethers.parseEther("0.25"),
     NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
     IS_DEPLOYING_MOCKS_FOR_TESTS: true,  // mocking (use without forking only if running tests i.e. not on hardhat network name)
-    IS_VERBOUSE_TEST: true,  // verbous logs (applies to tests only)
+    IS_VERBOUSE_TEST: false,  // verbous logs (applies to tests only)
     FULL_TEST: true,  // if true will run time consuming tests
     BLOCKS_FROM_2018_PATH: "./old_MEH_blocks/2018_Import_Back.json",
     BLOCKS_FROM_2016_PATH: "./old_MEH_blocks/Old_Blocks.json",

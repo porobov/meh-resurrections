@@ -27,17 +27,14 @@ let imageSourceUrl = "imageSourceUrl"
 let adUrl = "adUrl"
 let adText = "adText"
 
-const MEH_ADMIN_ADDRESS = conf.mehAdminAddress
 let deployer
 
 async function testEnvironmentCollector() {
   ;[owner] = await ethers.getSigners()
 
-  await resetHardhatToBlock(conf.forkBlock)  // TODO make configurable depending on chain
+  !conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await resetHardhatToBlock(conf.forkBlock) : null // TODO make configurable depending on chain
   const exEnv = new ProjectEnvironment(owner)
-  if (conf.IS_DEPLOYING_MOCKS_FOR_TESTS) { 
-    await exEnv.deployMocks()
-  }
+  conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await exEnv.deployMocks() : null
 
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
@@ -46,20 +43,15 @@ async function testEnvironmentCollector() {
   // same as deploy and setup function, but not finalized 
   await deployer.initialize()
   await deployer.deployReferralFactory()
-  // await deployer.deployReferrals()
   await deployer.deployWrapper()
   await deployer.unpauseMeh2016()
-  // await deployer.pairRefsAndWrapper()
-  // await deployer.mehWrapper.signIn()
-  // await deployer.finalMeh2016settings()
-  // await deployer.exEnv.weth.deposit({value: 20000})
-  // await deployer.exEnv.weth.transfer(deployer.mehWrapper.address, 20000)
 
   return {
       oldMeh: deployer.exEnv.meh2016,
       mehWrapper: deployer.mehWrapper,
       referrals: deployer.referrals,
-      owner: deployer.exEnv.operatorWallet
+      owner: deployer.exEnv.operatorWallet,
+      mehAdminAddress: exEnv.mehAdminAddress
       }
 }
 
@@ -69,11 +61,12 @@ function makeSuite(name, envSetupFunction, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer, stranger] = await ethers.getSigners()
-      let env = await envSetupFunction({})
+      const env = await envSetupFunction({})
       owner = env.owner
       wrapper = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
+      MEH_ADMIN_ADDRESS = env.mehAdminAddress
     })
       this.timeout(142000)
       tests();
@@ -208,8 +201,8 @@ makeSuite("Placing image", setupTestEnvironment, function () {
     await expect(wrapper.connect(buyer)
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
         .to.be.revertedWith("ERC721: invalid token ID")
-    cc = availableAreas[0]
     // not a landlord
+    cc = availableAreas[0]
     await expect(wrapper.connect(stranger)
       .placeImage(cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText))
         .to.be.revertedWith("MehWrapper: Not a landlord")
@@ -227,7 +220,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
         .withArgs(anyValue, cc.fx, cc.fy, cc.tx, cc.ty, imageSourceUrl, adUrl, adText);
   })
 
-  it(`Can place image to a wrapped block`, async function () {
+  it(`(No-mocks env only). Can place image to a wrapped block`, async function () {
     // prepare data
     let w = areas2016[0]
     ;[landlordAddress, u, s] = await oldMeh.getBlockInfo(w.fx, w.fy);

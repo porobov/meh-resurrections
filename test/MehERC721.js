@@ -40,7 +40,7 @@ function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
       ;[ownerGlobal, buyer, friend, joker] = await ethers.getSigners()
-      let env = await setupTestEnvironment({isDeployingMinterAdapter: true})
+      const env = await setupTestEnvironment({isDeployingMinterAdapter: true})
       owner = env.owner
       wrapper = env.mehWrapper
       referrals= env.referrals
@@ -52,7 +52,7 @@ function makeSuite(name, tests) {
       tests();
   });
 }
-/*
+
 makeSuite("Wrapping and unwrapping", function () {
 
   it("(No-mocks env only). Cannot wrap blocks with wrong input", async function () {
@@ -344,7 +344,7 @@ makeSuite("Withdraw one by one", function () {
     expect(landlordBalAfter - (landlordBalBefore)).to.equal(totUnwrapPrice - (totalGas))
   })
 })
-*/
+
 // similar test is for minter.sol
 makeSuite("Minting from oldMeh directly", function () {
   // makes funds rescue possible
@@ -383,7 +383,7 @@ makeSuite("Minting from oldMeh directly", function () {
     expect(await wrapper.numOfReceipts()).to.be.equal(0)
   })
 })
-/*
+
 // similar test is for minter.sol
 makeSuite("Resetting sell price", function () {
   // makes funds rescue possible
@@ -463,4 +463,3 @@ makeSuite("Metadata", function () {
 
   })
 })
-*/
