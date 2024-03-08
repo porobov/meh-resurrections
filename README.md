@@ -62,6 +62,24 @@ Use cloudflare wrangler:
 ...or use nodemon:
 `nodemon server/server.js`
 
+## Etherscan verify
+Verifying mehWrapper.sol
+
+constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress)
+
+1. Change file etherscan-verify-arguments.js:
+```
+module.exports = [    
+    "0xCedaDc7a2E2291809cB0Cd8A6C092B16CDc7e833",
+    "0x2e3b15B8038406008192d8f855bAD3929AD22123",
+    "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+    "0xBA12222222228d8Ba445958a75a0704d566BF2C8",
+  ];
+```
+
+2 Run:
+`npx hardhat verify --constructor-args etherscan-verify-arguments.js --network testnet 0x40C82017a737f4aEe6850923ef2E2bc63af72D55`
+
 ## Hardhat commands
 
 ```shell

@@ -53,15 +53,19 @@ module.exports = {
           }
         }
       },
-      {
-        version: "0.4.2",
-        // settings: {
-        //   optimizer: {
-        //     // enabled: true,
-        //     // runs: 200
-        //   }
-        // }
-      },
+      //hardhat-verify found one or more errors during the verification process:
+      // Etherscan only supports compiler versions 0.4.11 and higher.
+      // See https://etherscan.io/solcversions for more information.
+      // Seems like there's no need in compiling old meh.
+      // {
+      //   version: "0.4.2",
+      //   // settings: {
+      //   //   optimizer: {
+      //   //     // enabled: true,
+      //   //     // runs: 200
+      //   //   }
+      //   // }
+      // },
     ]
   },
   defaultNetwork: "localhost",
@@ -138,4 +142,9 @@ module.exports = {
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
+  sourcify: {
+    // Disabled by default
+    // Doesn't need an API key
+    enabled: false
+  }
 };
