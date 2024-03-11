@@ -211,7 +211,7 @@ makeSuite("Placing image", setupTestEnvironment, function () {
   it("Can place image to minted area", async function () {
     // buy area
     let cc = availableAreas[1]
-    let price = (await wrapper.crowdsalePrice()) * (2n)  // single block 
+    let price = (await wrapper.crowdsalePrice()) * 2n  // single block 
     await wrapper.connect(buyer)
         .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: price })
     await expect(wrapper.connect(buyer)

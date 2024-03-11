@@ -49,8 +49,9 @@ function getConfigChainID() {
   return network.config.chainId
 }
 
+// returns RPC node address
 function getConfigNetworkUrl() {
-  return network.config.url
+  return network.config.forking ? network.config.forking.url : network.config.url
 }
 
 function isLiveNetwork() {
@@ -93,19 +94,7 @@ class GasReporter {
 }
 
 async function resetHardhatToBlock(blockNumber) {
-  console.log("getConfigNetworkUrl:", getConfigNetworkUrl())
   await helpers.reset(getConfigNetworkUrl(), blockNumber);
-  // await network.provider.request({
-  //     method: "hardhat_reset",
-  //     params: [
-  //         {
-  //         forking: {
-  //             // jsonRpcUrl: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
-  //             blockNumber: blockNumber,  
-  //         },
-  //         },
-  //     ],
-  //     });
 }
 
 module.exports = {
@@ -119,5 +108,6 @@ module.exports = {
   getImpersonatedSigner,
   resetHardhatToBlock,
   isLiveNetwork,
-  isLocalTestnet
+  isLocalTestnet,
+  getConfigNetworkUrl
 }

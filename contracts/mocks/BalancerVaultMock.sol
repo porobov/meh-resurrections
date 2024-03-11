@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 import "../balancer-labs/solidity-utils/misc/IWETH.sol";
 import "../balancer-labs/solidity-utils/openzeppelin/IERC20.sol";
 import "../Flashloaner.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract BalancerVaultMock {
 
@@ -22,8 +22,8 @@ contract BalancerVaultMock {
         // send WETH to wrapper
         uint256 loanAmount = amounts[0];
         require(loanAmount <= WETH.balanceOf(address(this)), "BAL#528");
-        console.log("Balancer vault eth bal:", WETH.balanceOf(address(this)));
-        console.log("Balancer vault eth bal:", address(this).balance);
+        // console.log("Balancer vault eth bal:", WETH.balanceOf(address(this)));
+        // console.log("Balancer vault eth bal:", address(this).balance);
         WETH.transfer(receiver, loanAmount);
 
         // the following console.log line fixes some hardhat bug

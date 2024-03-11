@@ -213,7 +213,8 @@ class ProjectEnvironment {
             } else {
                 IS_VERBOUSE ? console.log("Impersonating admin...") : null
                 mehAdmin = await getImpersonatedSigner(addressesJSON.mehAdminAddress)
-                // await setBalance(mehAdmin.address, ethers.parseEther("200"));
+                // after London hardfork gas is estimated differently. This is a workaround
+                await setBalance(mehAdmin.address, ethers.parseEther("200"))
             }
         }
 

@@ -137,15 +137,15 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
 
         // withdraw from MEH. Amount may be higher than payment
         // because multiple sales may happen at the same time
-        console.log("balBefore", address(this).balance);
+        // console.log("balBefore", address(this).balance);
         uint256 balBefore = address(this).balance;
         oldMeh.withdrawAll(); // will withdraw all funds owned by Wrapper on MEH
-        console.log("balAfter", address(this).balance);
+        // console.log("balAfter", address(this).balance);
         uint256 balAfter = address(this).balance;
 
         // funds separation (does not interfere with contract bal directly)
         unclaimed += balAfter - balBefore;
-        console.log("payment", msg.sender, unclaimed, payment);
+        // console.log("payment", msg.sender, unclaimed, payment);
         unclaimed -= payment;  // will throw on underflow
 
         // payout

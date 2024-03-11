@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 // import "./interfaces/IWeth.sol";
 import "./balancer-labs/vault/IVault.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 import "./Receiver.sol";
 
 contract Flashloaner is IFlashLoanRecipient, Receiver {
@@ -49,8 +49,8 @@ contract Flashloaner is IFlashLoanRecipient, Receiver {
         // convert WETH to eth
         WETH.withdraw(loanAmount);
         // buy from MEH and get all the money back
-        console.log("Flashloaner eth bal:", WETH.balanceOf(address(this)));
-        console.log("Flashloaner eth bal:", address(this).balance);
+        // console.log("Flashloaner eth bal:", WETH.balanceOf(address(this)));
+        // console.log("Flashloaner eth bal:", address(this).balance);
         _buyFromMEH(loanAmount, buyer, fromX, fromY, toX, toY);
         // convert ETH to back to weth
         WETH.deposit{value:loanAmount}();

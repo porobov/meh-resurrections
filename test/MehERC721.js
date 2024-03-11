@@ -70,10 +70,10 @@ makeSuite("Wrapping and unwrapping", function () {
     // wrong value provided
     let sellTx = await oldMeh.connect(landlord).sellBlocks(w.x, w.y, w.x, w.y, sellPrice)
     await expect(
-      wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice + (1) }))
+      wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice + 1n }))
       .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
     await expect(
-      wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice - (1) }))
+      wrapper.connect(landlord).wrap(w.x, w.y, w.x, w.y, { value: sellPrice - 1n }))
       .to.be.revertedWith("MehERC721: Sending wrong amount of ether")
   })
 
@@ -200,7 +200,7 @@ makeSuite("Other", function () {
     
     // sell price must be set ot a prohibitary value so noine could buy the wrapped block
     // from oldMeh
-    let max_uint = (new BigNumber.from("2")).pow(256) - (1)
+    let max_uint = ethers.MaxUint256
     expect((await oldMeh.getBlockInfo(w.fx, w.fy)).sellPrice).to.equal(max_uint)
     await expect(oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })).to.be.revertedWithoutReason()
 
@@ -219,7 +219,7 @@ makeSuite("Other", function () {
     let landlordAddress = await wrapper.ownerOf(blockID(w.fx, w.fy))
     let landlord = await getImpersonatedSigner(landlordAddress)
     let pricePerBlock = ethers.parseEther("1")
-    await setBalance(landlord.address, pricePerBlock * (3));
+    await setBalance(landlord.address, pricePerBlock * 3n);
     
     let unwrapTx = await wrapper.connect(landlord).unwrap(w.fx, w.fy, w.fx, w.fy, pricePerBlock)
     let buyTx = await oldMeh.connect(landlord).buyBlocks(w.fx, w.fy, w.fx, w.fy, { value: pricePerBlock })

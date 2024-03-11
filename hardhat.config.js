@@ -68,19 +68,23 @@ module.exports = {
     localhost: {
       chainId: 31337,   // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
-      url: "http://127.0.0.1:8545"
+      url: "http://127.0.0.1:8545",
+      // after London gas estimate is wrong
+      // increasing accounts balances for tests
+      accountsBalance: 1000000000000000000000000n
     },
     hardhat: {
-      // fork: "london",
       numConfirmations: 0,
       forking: {
+        // url: "https://core.gashawk.io/rpc",
         // url: process.env.TENDERLY_API_KEY !== undefined ? "https://sepolia.gateway.tenderly.co/" + process.env.TENDERLY_API_KEY : "",
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
         blockNumber: conf.forkBlock 
       },
       timeout: 12000000,
-      gas: "auto",
-      // gasPrice: 51815777556,
+      // gas: "auto", // this is one of the solutions for after-London forks. 
+      // But used another solution. Accept ultra-high gas prices for forked
+      // mainnet chain and increase balances
     },
     // read-only mainnet (for blocks import)
     readMain: {

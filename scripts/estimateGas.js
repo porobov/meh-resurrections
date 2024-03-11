@@ -1,9 +1,12 @@
 // npx hardhat run scripts/estimateGas.js --network hardhat
-const { getConfigNumConfirmations, getImpersonatedSigner } = require("../src/tools.js")
+// this is also a playground for various tests
+const { getConfigNumConfirmations, getImpersonatedSigner  } = require("../src/tools.js")
 const conf = require('../conf.js')
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+const { ethers } = require("hardhat")
 
 async function gas() {
+
   // gas price
   const feeData = await ethers.provider.getFeeData()
   const gasPrice = feeData.gasPrice;

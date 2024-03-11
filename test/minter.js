@@ -257,7 +257,7 @@ makeSuite("Reading contract", function () {
     expect(await minter._areaCrowdsalePriceExt(cc.fx, cc.fy, cc.tx, cc.ty)).to.equal(total)
     // single block and two blocks
     expect(await minter._areaCrowdsalePriceExt(1,1,1,1)).to.equal(price)
-    expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price * (2n))
+    expect(await minter._areaCrowdsalePriceExt(1,1,2,1)).to.equal(price * 2n)
   })
 })
 
@@ -338,7 +338,7 @@ makeSuite("mint", function () {
     it(`Will mint blocks, royalties are payed (${cc.fx}, ${cc.fy}, ${cc.tx}, ${cc.ty})`, async function () {
       let price = await minter.crowdsalePrice();
       let count = await usingToolsAdapter.countBlocksExt(cc.fx, cc.fy, cc.tx, cc.ty)
-      let total = price * (count)
+      let total = price * count
       let sb = await balancesSnapshot(oldMeh, minter, referrals)
       await minter.connect(buyer)
         .buyBlocks(cc.fx, cc.fy, cc.tx, cc.ty, { value: total })
@@ -427,7 +427,7 @@ makeSuite("Minting from oldMeh directly", function () {
     let s3 = await balancesSnapshot(oldMeh, minter, referrals)
     let founderBalS3 = await minter.internalBalOf(await minter.founder())
     
-    let referralSurplus = mintingPrice / (2n) // 50% is collected from charity
+    let referralSurplus = mintingPrice / 2n // 50% is collected from charity
     expect(s2.meh - (s3.meh)).to.equal(referralSurplus)  // eth went to referral
     expect(s3.wrapper - (s2.wrapper)).to.equal(price + (referralSurplus))  // eth went to referral
     expect(founderBalS3 - (founderBalS2)).to.equal(referralSurplus)  // eth counted as royalties

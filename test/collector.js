@@ -14,8 +14,7 @@ async function testEnvironmentCollector() {
   !conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await resetHardhatToBlock(conf.forkBlock) : null // TODO make configurable depending on chain
   const exEnv = new ProjectEnvironment(owner)
   conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await exEnv.deployMocks() : null
-  mehAdminAddress = exEnv.mehAdminAddress
-
+  
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
       isDeployingMinterAdapter: true,
@@ -24,20 +23,15 @@ async function testEnvironmentCollector() {
   // same as deploy and setup function, but not finalized 
   await deployer.initialize()
   await deployer.deployReferralFactory()
-  // await deployer.deployReferrals()
   await deployer.deployWrapper()
   await deployer.unpauseMeh2016()
-  // await deployer.pairRefsAndWrapper()
-  // await deployer.mehWrapper.signIn()
-  // await deployer.finalMeh2016settings()
-  // await deployer.exEnv.weth.deposit({value: 20000})
-  // await deployer.exEnv.weth.transfer(deployer.mehWrapper.target, 20000)
 
   return {
       oldMeh: deployer.exEnv.meh2016,
       mehWrapper: deployer.mehWrapper,
       referrals: deployer.referrals,
-      owner: deployer.exEnv.operatorWallet
+      owner: deployer.exEnv.operatorWallet,
+      mehAdminAddress: deployer.exEnv.mehAdminAddress
       }
 }
 
@@ -52,6 +46,7 @@ function makeSuite(name, tests) {
       wrapper = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
+      mehAdminAddress = env.mehAdminAddress
     })
       this.timeout(142000)
       tests();
@@ -59,7 +54,6 @@ function makeSuite(name, tests) {
 }
 
 makeSuite("Collector basic", function () {
-
   it("Anyone can send funds to Collector", async function () {
       let value = ethers.parseEther("1.0")
       const collectorBalBefore = await ethers.provider.getBalance(wrapper.target)
@@ -67,7 +61,6 @@ makeSuite("Collector basic", function () {
       const collectorBalAfter = await ethers.provider.getBalance(wrapper.target)
       expect(collectorBalAfter - (collectorBalBefore)).to.be.equal(value)
     })
-  
   // can only add a real referral
   it("Can only add a paired referral", async function () {
     let referral = await deployer.setUpReferral(mehAdminAddress)

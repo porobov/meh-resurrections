@@ -20,7 +20,6 @@ async function testEnvironmentReferrals() {
   const exEnv = new ProjectEnvironment(owner)
   conf.IS_DEPLOYING_MOCKS_FOR_TESTS ? await exEnv.deployMocks() : null
 
-  mehAdminAddress = exEnv.mehAdminAddress
   deployer = new Deployer(exEnv, {
       isSavingOnDisk: false,
       isDeployingMinterAdapter: true,
@@ -39,6 +38,7 @@ function makeSuite(name, tests) {
       wrapper = env.mehWrapper
       referrals= env.referrals
       oldMeh = env.oldMeh
+      mehAdminAddress = env.mehAdminAddress
     })
       this.timeout(142000)
       tests();
