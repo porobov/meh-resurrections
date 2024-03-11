@@ -6,11 +6,12 @@ const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 // https://github.com/NomicFoundation/hardhat/issues/1226 
 async function getImpersonatedSigner(addr) {
   // old solution
-  // await hre.network.provider.request({
+  // hre.network.provider.request({
   //     method: "hardhat_impersonateAccount",
   //     params: [addr],
   //   });
   // return ethers.getSigner(addr)
+  // return await helpers.impersonateAccount(addr)
   return ethers.getImpersonatedSigner(addr);
 }
 
@@ -31,7 +32,7 @@ async function getBalance(address) {
 
 // return network name specified in hardhat.config.js
 function getConfigNetworkName() {
-    return network.name
+  return network.name
 }
 
 // TODO
@@ -57,11 +58,11 @@ function isLiveNetwork() {
 }
 
 // "hardhat" network got same id
-function isLocalTestnet() { 
+function isLocalTestnet() {
   return (getConfigChainID() == 31337)
 }
 
-function getConfigNumConfirmations(){
+function getConfigNumConfirmations() {
   return network.config.numConfirmations
 }
 
@@ -76,10 +77,10 @@ class GasReporter {
   addGasRecord(functionName, gasUsed) {
     const gasPrice = process.env.GAS_PRICE_GWEI !== undefined ? process.env.GAS_PRICE_GWEI : 0
     const usd = process.env.ETH_USD_USD !== undefined ? process.env.ETH_USD_USD : 0
-    const gasCostsEth = parseFloat(ethers.formatEther(gasUsed * (ethers.parseUnits (gasPrice, "gwei"))))
+    const gasCostsEth = parseFloat(ethers.formatEther(gasUsed * (ethers.parseUnits(gasPrice, "gwei"))))
     const gasCostsUsd = gasCostsEth * usd
-    this.report += 
-    `${functionName}: ${gasUsed} gas | ${gasCostsEth} Eth | ${gasCostsUsd} USD | (gas price: ${gasPrice} Gwei, ETHUSD: ${usd}) \n`
+    this.report +=
+      `${functionName}: ${gasUsed} gas | ${gasCostsEth} Eth | ${gasCostsUsd} USD | (gas price: ${gasPrice} Gwei, ETHUSD: ${usd}) \n`
     this.totalGasCostEth += gasCostsEth  // converting to number
     this.totalGasCostsUsd += gasCostsUsd
   }
@@ -91,7 +92,8 @@ class GasReporter {
   }
 }
 
-async function resetHardhatToBlock(blockNumber){
+async function resetHardhatToBlock(blockNumber) {
+  console.log("getConfigNetworkUrl:", getConfigNetworkUrl())
   await helpers.reset(getConfigNetworkUrl(), blockNumber);
   // await network.provider.request({
   //     method: "hardhat_reset",
@@ -106,9 +108,9 @@ async function resetHardhatToBlock(blockNumber){
   //     });
 }
 
-module.exports = { 
-  GasReporter, 
-  increaseTimeBy, 
+module.exports = {
+  GasReporter,
+  increaseTimeBy,
   getBalance,
   getFormattedBalance,
   isForkedMainnet,

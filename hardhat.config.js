@@ -1,12 +1,7 @@
 require("dotenv").config();
-// require("@nomiclabs/hardhat-ethers");
-// require("@nomiclabs/hardhat-etherscan");
 require("@nomicfoundation/hardhat-toolbox");
 require('@openzeppelin/hardhat-upgrades');
-// require("hardhat-gas-reporter");
-// require("solidity-coverage");
-// require("@nomicfoundation/hardhat-chai-matchers");
-
+const conf = require('./conf.js');
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
@@ -75,20 +70,18 @@ module.exports = {
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
       url: "http://127.0.0.1:8545"
     },
-    /*
     hardhat: {
       // fork: "london",
       numConfirmations: 0,
       forking: {
+        // url: process.env.TENDERLY_API_KEY !== undefined ? "https://sepolia.gateway.tenderly.co/" + process.env.TENDERLY_API_KEY : "",
         url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
-        // blockNumber: 13132200 /// 13352488 //  // not paused contract
-        // see also conf.js for forkBlock parameter
-        blockNumber: 14979315 // fixed recent block number (contracts paused)
+        blockNumber: conf.forkBlock 
       },
       timeout: 12000000,
-      // gasPrice: 24377776494,
+      gas: "auto",
+      // gasPrice: 51815777556,
     },
-    */
     // read-only mainnet (for blocks import)
     readMain: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
