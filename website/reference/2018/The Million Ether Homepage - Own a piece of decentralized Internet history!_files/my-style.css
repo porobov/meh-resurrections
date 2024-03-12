@@ -1,0 +1,181 @@
+body {
+    min-width: 1010px;
+    font-family: Helvetica Neue, Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    }
+
+.button{
+    text-decoration:none; 
+    text-align:center; 
+    padding:8px; 
+    border:none; 
+    -webkit-border-radius:5px;
+    -moz-border-radius:5px; 
+    border-radius: 5px; 
+    font-weight:bold;
+    color:#ffffff; 
+    background:#45e026; 
+    }
+
+.button:hover{
+    background:#00ff1e;
+    }
+
+.button:active{
+    background:#5fe843; 
+    }
+
+.content {
+    position: relative;
+    min-width: 1010px;
+    max-width: 1010px;
+    _width: 1010px;
+    min-height: 0;
+    margin: 0 auto;
+    padding: 0;
+    background-color: #ffffff;
+    }
+
+h1 {
+    margin: 0px;
+    line-height: 36px;
+    padding: 0px;
+    }
+
+h2 {
+    text-align: center;
+    font-size: 38px;
+    }
+
+h3 {
+    text-align: center;
+    font-size: 31px;
+    }
+
+a:link {
+    color: grey; 
+    font-weight: bold; 
+    text-decoration: none;
+    }
+
+a:visited {
+    color: grey; 
+    font-weight: bold; 
+    text-decoration: none;
+    }
+
+a:hover {
+    color: #000000; 
+    }
+
+a.button:link, a.button:visited, a.button:hover {
+    color: #ffffff; 
+    }
+
+.eg {
+    text-align: left;
+    width: 300px;
+    margin: 0 auto;
+    font-size: 14px;
+    color: grey;
+}
+
+.align-left {
+    text-align: left;
+    width: 550px;
+    margin: 0 auto;
+}
+
+.cta {
+    margin-top: 40px;
+    margin-bottom: 120px;
+    font-weight: bold;
+    color: #8c8c8c;
+}
+
+.line-through {
+    text-decoration: line-through;
+}
+
+#header {
+    height: 56px;
+    margin: 0px;
+    padding: 5px 0px 5px 0px;
+}
+
+#title {
+    margin: 0px;
+    line-height: 20px;
+    padding: 0px;   
+}
+#navigation {
+    float: right;
+    margin: 0px;
+    padding: 20px; 
+}
+
+#banner {
+    position: absolute; 
+    z-index: 99; 
+    border: 1px solid rgb(255, 0, 0); 
+    background: rgb(255, 255, 255);
+}
+
+#pixels {
+	position: relative;	
+	top:0;
+	left:0;
+	width:1000;
+	height:1000;
+	border:1;
+	margin-left: auto; 
+	margin-right: auto;
+	text-align: center;
+    border: solid;
+    border-color: #1b5bcc;
+    border-width: 5px;
+	}
+
+#bigpng {
+    position: absolute; 
+    top: 0px; 
+    left: 0px; 
+    border: none;
+}
+
+#poweredBy {
+    margin-top: 20px;
+    }
+
+#smart {
+    padding-left: 350px;
+    width: 550px;
+}
+
+#ethereum {
+    float: left;
+    padding-top: 10px;
+    padding-left: 150px;
+}
+
+#how-it-works {
+    font-size: 57px;
+    text-transform: uppercase;
+    text-align: center;
+    margin: 71px;
+    color: #e0e0e0;
+    }
+
+#details {
+    text-align: center;
+    font-size: 21px;
+}
+
+#copyright {
+    width: 600px;
+    margin: 50px auto;
+    font-size: 12px;
+    color: grey;
+}

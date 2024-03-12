@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html><head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>The Million Ether Homepage - Own a piece of decentralized Internet history! </title>
+<meta name="keywords" content="million ether homepage, million, ethereum, blockchain, smart contract, ether, home, page, dollar, pixels, pixel, marketing, ideas, advertising, banner, ad, links">
+<meta name="description" content="The MillionEther smart contract owned by everyone and selling 1 million pixels of internet ad space for 1 ETH each.">
+<meta name="ROBOTS" content="ALL">
+<link rel="stylesheet" type="text/css" href="./files/my-style.css">
+</head><body>
+
+<!--Google Analytics-->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-44465879-9', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+<!--Banner-->
+<script type="text/javascript" src="./files/banner.js"></script>
+<div id="banner" style="left: 0px; top: 0px; display: none">
+	<span id="ad-text">Buy pixels</span>
+</div>
+
+
+<div class="content">
+
+<!--Header-->
+<div id="header">
+	<div id="navigation">
+		<a href="#how-it-works" class="button"/>Earn ether</a>
+		<a href="#buy-pixels" class="button"/>Place ad</a>
+	</div>
+
+	<h1>The Million Ether Homepage</h1>
+	<div id="title">1000x1000 px &#8226; 1 px = <span class="line-through">1 ETH</span> (now 0,01 ETH) &#8226; Income is decentralized (anyone can earn!)</div>
+</div>
+
+
+
+<!--Bigpicture-->
+<div id="pixels" style="z-index:1">
+
+	<map name="Map" id="Map">
+	{% for item in data %}
+		<area onmouseover="on(this)" onmouseout="out(this)" shape="rect" coords="{{ item.x1 }},{{ item.y1 }},{{ item.x2 }},{{ item.y2 }}" href="{{ item.href }}" title="{{ item.alt|e|truncate(length=145, killwords=True, end='... (exceeds 140 symbols)') }} {{item.error|e}}" target="_blank">
+	{% endfor %}
+	</map>
+
+	<img id="bigpng" src="{{ big_picture }}" width="1000" height="1000" border="0" ismap="" usemap="#Map">
+
+</div>
+
+<div style="float:right">Your referral: <span id="referral-id">Cannot read referral</span></div>
+<div style="clear:both"></div>
+
+<!--Content-->
+<div id = "description">
+	<div id="poweredBy">
+		<div id="ethereum"><img style="width: 150px"  src="http://i.imgur.com/VM3bEhY.png"></div>
+		<div id="smart">
+			<h3 style="text-align: left">Decentralized advertising platform:</h3>
+			<ol>
+				<li>1000х1000 pixels available.</li>
+				<li>Pixels may be bought, sold or used to place ads.</li>
+				<li>Income is shared between referrals and charity in 6 handshakes.</li>
+				<li>Interaction is done through ethereum smart contract.</li>
+				<li>Data will stay in the blockchain forever and may be accessed by third party apps.</li>
+			</ol>
+		</div>
+		<div style="clear:both"></div>
+	</div>
+
+<div id="how-it-works">- HOW IT WORKS -</div>	
+<div id="details">
+<iframe width="853" height="480" src="https://www.youtube.com/embed/izfLGd1olyo?ecver=1" frameborder="0" allowfullscreen></iframe>
+<h2>SIX HANDSHAKES</h2>
+
+<p><strong>Income is decentralized and goes entirely to referrals and charity</strong></p>
+<img style="width: 500px" src="http://i.imgur.com/bI1ukRD.jpg">
+<div class="eg">Somebody invited Bob,<br />
+Bob invites Ernest, Alice and July,<br />
+Alice invites Mike, July invites Sam,<br />
+Mike and Sam buy pixels,<br />
+Alice, July, Bob and those before Bob get rewards.</div>
+<p><strong>Payout chain is maximum 6 levels deep (6 handshakes)</strong></p>
+<img style="width: 700px" src="http://i.imgur.com/36Bx2Kl.jpg">	
+<div class="eg">...it turns out Jane invited Bob...</div>
+<p><strong> Shorter chains support the project and donate more to charity</strong></p>
+<img style="width: 430px" src="http://i.imgur.com/xgkuORP.jpg">
+<div class="cta">
+	<p><a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">Read white paper</a></p>
+	<a href="http://million-ether-homepage.readthedocs.io/en/latest/earn.html" class="button"/>Sign in</a>
+</div>
+
+
+<h2 id="buy-pixels">LIFETIME OWNERSHIP</h2>
+<h3>You do own your pixels</h3>
+<div class="align-left">
+<ul>
+	<li><strong>Place your ads</strong> (and replace it unlimited number of times).</li>
+	<li>Rent pixels out.</li>
+	<li>Sell pixels with no fees when the price gets higher.</li>
+	<li>Ownership is proved by the smart contract it will stay in the blockchain forever.</li>
+</ul>
+</div>
+<div class="cta">
+	<p><a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">Read white paper</a></p>
+	<a href="http://million-ether-homepage.readthedocs.io/en/latest/buy.html" class="button"/>Buy pixels</a>
+</div>
+
+
+<h2>POWERS OF TWO</h2>
+<h3>Price doubles every 100 000 pixels sold</h3>
+<img style="width: 550px" src="http://i.imgur.com/QulmRz9.jpg">
+<div class="cta">
+	<p><a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">Read white paper</a></p>
+	<a href="http://million-ether-homepage.readthedocs.io/en/latest/buy.html" class="button"/>Buy pixels early</a>
+</div>
+
+
+<h2>- WHY IS THIS GONNA WORK -</h2>
+<h3>Everyone is interested</h3>
+<div class="align-left">
+<p><strong>Referrals make money effortlessly</strong><br />
+
+	Easy. Just sign in and share your personal link. <br />
+	Earn a lot of ether. Sign in early. <br />
+	Trustless. Open and trackable.<br />
+</p>
+<p><strong>Advertisers get viral coverage</strong><br />
+
+	Everyone is interested to share.<br />
+	The very first blockchain advertising project.<br />
+	Likely to become the history of decentralized web.<br />
+</p>
+<p><strong>Investors get growing assets</strong><br />
+	Trustless lifetime ownership.<br />
+	Sell price doubles every 100 000 pixels sold.<br />
+	Third party applications possible.<br />
+</p>
+</div>
+<div class="cta">
+	<p><a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">Read white paper</a></p>
+	<a href="http://million-ether-homepage.readthedocs.io/en/latest/earn.html" class="button"/>Be among the first</a>
+</div>
+
+
+<h2>- WHY ARE WE DOING THIS -</h2>
+<div class="align-left">
+<strong>We believe in decentralized and more equal future.</strong>
+<p>We feel blockchain is the most transformative technology leading to that future.</p>
+<p>We want to be a part of it. </p>
+<p>And we want as many people as possible to be a part of it too.</p>
+<p>That is why we made a simple and motivating platform bringing real value here and now.</p>
+<p>We are so happy to introduce features which we believe will become common among decentralized organizations of the future.</p>
+</div>
+<div class="cta">
+	<p><a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">Read white paper</a></p>
+	<a href="http://million-ether-homepage.readthedocs.io/en/latest/earn.html" class="button"/>Join now</a>
+</div>
+
+
+<p><strong>- CONTACT -</strong></p>
+<img src="http://i.imgur.com/fTrIkLL.jpg">
+<p><strong>Peter Porobov</strong></p>
+
+<a href="https://www.facebook.com/porobov.p">Facebook</a><br />
+<a href="https://www.reddit.com/r/MillionEther/">Reddit</a><br />
+<a href="https://github.com/porobov/MillionEtherHomepage">Contract at GitHub</a><br />
+<a href="https://etherscan.io/address/0x15dbdB25f870f21eaf9105e68e249E0426DaE916">Contract at Etherscan.io</a><br />
+<a href="http://million-ether-homepage.readthedocs.io/en/latest/whitepaper.html">White paper</a><br />
+
+<!--copyright-->
+<div id="copyright"> The Million Ether Homepage © 2016 Peter Porobov. All rights reserved. I am not responsible for the featured images and for the content of external sites.
+</div>
+
+
+</div><!--//details-->
+</div><!--//description--> 
+</div><!--//content-->
+
+<script type="text/javascript" src="./files/referrals.js"></script>
+</body></html>
