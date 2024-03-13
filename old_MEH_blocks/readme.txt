@@ -1,3 +1,5 @@
+Two 2016 blocks were sold on 2018 contract. See minter.js
+
 WARNING!!! Do not use as source of truth!!!
 
 May be outdated! At least one block (100,100) in 2018 contract had outdated landlord.

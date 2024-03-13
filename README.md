@@ -1,9 +1,5 @@
 # MEH-ressurections
 
-## Node
-Using node version 18.
-`nvm use v16`
-
 ## Deploying 
 When releasing Wrapper to local testnet, remove addresses in constants and mocks (if present):
 test/mocking/31337_addresses.json
