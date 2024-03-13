@@ -7,12 +7,12 @@ const chalk = require('chalk')
 const NEW_PRICE_IN_ETH = "0.001"
 
 const newPrice = ethers.parseEther(NEW_PRICE_IN_ETH)
-async function pause() {
+async function setNewPrice() {
     ;[owner] = await ethers.getSigners()
     const exEnv = new ProjectEnvironment(owner)
     const deployer = new Deployer(exEnv, {})
     console.log("Setting new price", exEnv.chainID)
-    if (exEnv.chainID == 5) {
+    if (exEnv.chainID == 11155111) {
       await deployer.initialize()
       const tx = await deployer.mehWrapper.adminSetPrice(newPrice)
       console.log(chalk.gray("Tx:", tx?.hash))
@@ -22,7 +22,7 @@ async function pause() {
     }
 }
 
-pause()
+setNewPrice()
   .then(() => process.exit(0))
   .catch((error) => {
     console.error(error);
