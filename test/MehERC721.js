@@ -14,6 +14,7 @@ const { BigNumber } = require('ethers');
 
 const BLOCKS_FROM_2018_PATH = conf.BLOCKS_FROM_2018_PATH
 const BLOCKS_FROM_2016_PATH = conf.BLOCKS_FROM_2016_PATH
+const DEFAULT_BASE_URI = conf.NFT_BASE_URI
 const RESERVED_FOR_FOUNDER = conf.RESERVED_FOR_FOUNDER
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const bb16 = JSON.parse(fs.readFileSync(BLOCKS_FROM_2016_PATH))
@@ -431,7 +432,7 @@ makeSuite("Metadata", function () {
   it("(No-mocks env only). NFT base URI is available and can be reset by owner", async function () {
     
     // set base uri 
-    const defaultBaseURI = "https://img.themillionetherhomepage.com/?tokenid="
+    const defaultBaseURI = DEFAULT_BASE_URI
     await expect(wrapper.connect(joker).setBaseURI(defaultBaseURI))
       .to.be.revertedWith("Ownable: caller is not the owner")
     // commented the line below because now this URI is set up at deployment

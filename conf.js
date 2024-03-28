@@ -33,5 +33,5 @@ module.exports = {
     FOUNDER_SHARE_PERCENT: 85n,
     FOUNDER_ADDRESS: "0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4", // used in tests (ledger 7)
     MARKETING_PARTNER_ADDRESS: "0x0000000000000000000000000000000000000001", // any wrong address other than 0 for now
-    NFT_BASE_URI: "https://img.themillionetherhomepage.com/?tokenid=",  // prefix for token image uri
+    NFT_BASE_URI: "https://api.themillionetherhomepage.com/token/:",  // prefix for token image uri
 };
