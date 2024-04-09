@@ -10,6 +10,7 @@ contract Admin is Ownable {
     uint256 public royalties;
     address public founder = 0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4;
     address public partners = 0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990;
+    address public devs = 0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5;
     mapping(address => uint256) public internalBalOf;  // internal balances 
 
     // Coordinates reserved for founders
@@ -22,14 +23,16 @@ contract Admin is Ownable {
 
     // splitting income here to offload minting function
     function splitIncome() internal {
-        uint256 foundersShare = royalties * 85 / 100;
+        uint256 foundersShare = royalties * 84 / 100;
+        uint256 partnersShare = royalties * 15 / 100;
         internalBalOf[founder] += foundersShare;
-        internalBalOf[partners] += (royalties - foundersShare);
+        internalBalOf[partners] += partnersShare;
+        internalBalOf[devs] += (royalties - foundersShare - partnersShare);
         royalties = 0;
     }
 
     function withdrawShare() external {
-        require(msg.sender == founder || msg.sender == partners, 
+        require(msg.sender == founder || msg.sender == partners || msg.sender == devs, 
             "Admin: Not an authorized beneficiary");
         splitIncome();
         payable(msg.sender).transfer(internalBalOf[msg.sender]);
@@ -46,6 +49,12 @@ contract Admin is Ownable {
         require(msg.sender == partners, "Admin: Not partner");
         internalTransfer(partners, newPartnersAddress);
         partners = newPartnersAddress;
+    }
+    
+    function setDevs(address newDevsAddress) external {
+        require(msg.sender == devs, "Admin: Not devs");
+        internalTransfer(devs, newDevsAddress);
+        devs = newDevsAddress;
     }
 
     function internalTransfer(address from, address to) internal {

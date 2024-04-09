@@ -12,12 +12,19 @@ let gasCalculationAccuracy = 300
 let founder
 let partner
 
+function shares(value) {
+  const foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
+  const partnersShare = value * (conf.PARTNERS_SHARE_PERCENT) / (100n)
+  const devsShare = value - foundersShare - partnersShare
+  return [foundersShare, partnersShare, devsShare]
+}
+
 // function to share deployment sequence between blocks of tests
 // Solution from here https://stackoverflow.com/a/26111323
 function makeSuite(name, tests) {
   describe(name, function () {
     before('setup', async () => {
-      ;[ownerGlobal, stranger, friend, newFounder, newPartner] = await ethers.getSigners()
+      ;[ownerGlobal, stranger, friend, newFounder, newPartner, newDevs] = await ethers.getSigners()
       let env = await setupTestEnvironment({
         isDeployingMinterAdapter: true
       })
@@ -28,13 +35,16 @@ function makeSuite(name, tests) {
       beneficiaries = 
           {
             "founder": await wrapper.founder(),
-            "partner": await wrapper.partners()
+            "partner": await wrapper.partners(),
+            "devs": await wrapper.devs(),
           }
       founder = await getImpersonatedSigner(beneficiaries.founder)
       partner = await getImpersonatedSigner(beneficiaries.partner)
+      devs = await getImpersonatedSigner(beneficiaries.devs)
       let startinAmount = ethers.parseEther("1.0")
       await setBalance(partner.address, startinAmount)
       await setBalance(founder.address, startinAmount)
+      await setBalance(devs.address, startinAmount)
 
     })
       this.timeout(142000)
@@ -80,26 +90,32 @@ makeSuite("Basic", function () {
       return isFound
     }
     
-    let founderTxs = await getTransactions(founder.address)
-    let partnerTxs = await getTransactions(partner.address)
-    let gotFromPartner = searchSender(founderTxs, partner.address)
-    let gotFromFounder = searchSender(partnerTxs, founder.address)
+    // Partners send funds to devs, devs send to founder, founder sends to partners
+    const founderTxs = await getTransactions(founder.address)
+    const partnerTxs = await getTransactions(partner.address)
+    const devsTxs = await getTransactions(devs.address)
+
+    const gotFromPartner = searchSender(devsTxs, partner.address)
+    const gotFromDevs = searchSender(founderTxs, devs.address)
+    const gotFromFounder = searchSender(partnerTxs, founder.address)
+
     expect(gotFromPartner).to.be.equal(true)
+    expect(gotFromDevs).to.be.equal(true)
     expect(gotFromFounder).to.be.equal(true)
   })
 
   it("Is splitting income correctly", async function () {
     // send funds to wrapper and set royalties through test-adapter
-    let value = ethers.parseEther("1.0")
+    const value = ethers.parseEther("1.0")
     await wrapper.setRoyalties(value)
     await setBalance(wrapper.target, value)
     // split income through test-adapter
     await wrapper._splitIncomeExt()
     // check
-    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
-    let partnersShare = value - (foundersShare)
+    const [foundersShare, partnersShare, devsShare] = shares(value)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(foundersShare)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(partnersShare)
+    expect(await wrapper.internalBalOf(beneficiaries.devs)).to.be.equal(devsShare)
     expect(await wrapper.royalties()).to.be.equal(0)
   })
 
@@ -118,28 +134,40 @@ makeSuite("Withdrawals", function () {
     await wrapper.setRoyalties(value)
     await setBalance(wrapper.target, value)
 
-    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
-    let partnersShare = value - (foundersShare)
+    const [foundersShare, partnersShare, devsShare] = shares(value)
 
     // founder withdraws
     const founderBalBefore = await ethers.provider.getBalance(beneficiaries.founder)
-    let founderTx = await wrapper.connect(founder).withdrawShare()
+    const founderTx = await wrapper.connect(founder).withdrawShare()
     const founderBalAfter = await ethers.provider.getBalance(beneficiaries.founder)
     expect(await wrapper.royalties()).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(partnersShare)
-    let founderReceived = founderBalAfter - (founderBalBefore)
-    expect(foundersShare - (founderReceived)).to.be.equal(await getTotalGas([founderTx]))
+    expect(await wrapper.internalBalOf(beneficiaries.devs)).to.be.equal(devsShare)
+    const founderReceived = founderBalAfter - founderBalBefore
+    expect(foundersShare - founderReceived).to.be.equal(await getTotalGas([founderTx]))
 
     // partner withdraws (can call withdrawShare with 0 royalties)
     const partnerBalBefore = await ethers.provider.getBalance(beneficiaries.partner)
-    let partnerTx = await wrapper.connect(partner).withdrawShare()
+    const partnerTx = await wrapper.connect(partner).withdrawShare()
     const partnerBalAfter = await ethers.provider.getBalance(beneficiaries.partner)
     expect(await wrapper.royalties()).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(0)
     expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(0)
-    let partnerReceived = partnerBalAfter - (partnerBalBefore)
-    expect(partnersShare - (partnerReceived)).to.be.equal(await getTotalGas([partnerTx]))
+    expect(await wrapper.internalBalOf(beneficiaries.devs)).to.be.equal(devsShare)
+    const partnerReceived = partnerBalAfter - partnerBalBefore
+    expect(partnersShare - partnerReceived).to.be.equal(await getTotalGas([partnerTx]))
+
+    // devs withdrawals (can call withdrawShare with 0 royalties)
+    const devsBalBefore = await ethers.provider.getBalance(beneficiaries.devs)
+    const devsTx = await wrapper.connect(devs).withdrawShare()
+    const devsBalAfter = await ethers.provider.getBalance(beneficiaries.devs)
+    expect(await wrapper.royalties()).to.be.equal(0)
+    expect(await wrapper.internalBalOf(beneficiaries.founder)).to.be.equal(0)
+    expect(await wrapper.internalBalOf(beneficiaries.partner)).to.be.equal(0)
+    expect(await wrapper.internalBalOf(beneficiaries.devs)).to.be.equal(0)
+    const devsReceived = devsBalAfter - devsBalBefore
+    expect(devsShare - devsReceived).to.be.equal(await getTotalGas([devsTx]))
   })
 })
 
@@ -160,9 +188,8 @@ makeSuite("Settings", function () {
 
     // split income through test-adapter
     await wrapper._splitIncomeExt()
-    let foundersShare = value * (conf.FOUNDER_SHARE_PERCENT) / (100n)
-    let partnersShare = value - (foundersShare)
 
+    const [foundersShare, partnersShare, devsShare] = shares(value)
     // set new founder address
     await expect(wrapper.connect(stranger).setFounder(newFounder.address))
       .to.be.revertedWith("Admin: Not founder")
@@ -178,5 +205,13 @@ makeSuite("Settings", function () {
     expect(await wrapper.partners()).to.be.equal(newPartner.address)
     expect(await wrapper.internalBalOf(partner.address)).to.be.equal(0)
     expect(await wrapper.internalBalOf(newPartner.address)).to.be.equal(partnersShare)
+
+    // set new devs address
+    await expect(wrapper.connect(stranger).setDevs(newDevs.address))
+      .to.be.revertedWith("Admin: Not devs")
+    await wrapper.connect(devs).setDevs(newDevs.address)
+    expect(await wrapper.devs()).to.be.equal(newDevs.address)
+    expect(await wrapper.internalBalOf(devs.address)).to.be.equal(0)
+    expect(await wrapper.internalBalOf(newDevs.address)).to.be.equal(devsShare)
   })
 })

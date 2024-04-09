@@ -30,7 +30,8 @@ module.exports = {
     AVAILABLE_AREAS_PATH: "./old_MEH_blocks/vacant_areas.json",
     // RESERVED_FOR_FOUNDER: {fx: 30, fy: 62, tx: 69, ty: 86},  // 10% of blocks are reserved for founder
     RESERVED_FOR_FOUNDER: {fx: 55, fy: 70, tx: 94, ty: 94},  // 10% of blocks are reserved for founder
-    FOUNDER_SHARE_PERCENT: 85n,
+    FOUNDER_SHARE_PERCENT: 84n,
+    PARTNERS_SHARE_PERCENT: 15n,
     FOUNDER_ADDRESS: "0xa36c43FE4c9D56a4bd0Fbdc12ab70372fc75d7f4", // used in tests (ledger 7)
     MARKETING_PARTNER_ADDRESS: "0x0000000000000000000000000000000000000001", // any wrong address other than 0 for now
     NFT_BASE_URI: "https://api.themillionetherhomepage.com/token/:",  // prefix for token image uri
