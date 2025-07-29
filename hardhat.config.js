@@ -105,17 +105,14 @@ module.exports = {
       accounts: {
         mnemonic: process.env.MNEMONIC !== undefined ? process.env.MNEMONIC : "",
       },
-    }
+    },
 
-    // main: {
-      // chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
-      // numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-    //   url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
-    //   accounts: {
-    //     mnemonic: test test test test test test test test test test test junk
-    //   },
-    //   timeout: 200000,
-    // },
+    main: {
+      chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
+      numConfirmations: 8, // specifying numConfirmations manually, used in tools lib
+      url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+      timeout: 200000,
+    },
 
     // tenderly: {
     //   url: "https://rpc.tenderly.co/fork/deleted"

@@ -1,5 +1,7 @@
 const { ethers, network } = require("hardhat");
 const helpers = require("@nomicfoundation/hardhat-toolbox/network-helpers");
+const fs = require('fs');
+const readline = require('readline');
 
 // returns impersonated signer for local hardfork
 // if "ProviderError: unknown account..." see below
@@ -13,6 +15,32 @@ async function getImpersonatedSigner(addr) {
   // return ethers.getSigner(addr)
   // return await helpers.impersonateAccount(addr)
   return ethers.getImpersonatedSigner(addr);
+}
+
+// returns signer from a keystore file
+async function getRealMehAdminSigner() {
+  const keystorePath = process.env.MEH_ADMIN_KEYSTORE_PATH;
+  if (!keystorePath) {
+    throw new Error('MEH_ADMIN_KEYSTORE_PATH env variable not set');
+  }
+  const keystore = fs.readFileSync(keystorePath, 'utf8');
+
+  // Prompt for password
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    terminal: true
+  });
+  const password = await new Promise((resolve) => {
+    rl.question('Enter keystore password: ', (answer) => {
+      rl.close();
+      resolve(answer);
+    });
+  });
+
+  // Decrypt wallet
+  const wallet = await ethers.Wallet.fromEncryptedJson(keystore, password);
+  return wallet.connect(ethers.provider);
 }
 
 // open zeppelin's time doesn't work for some reason (maybe me, maybe hardfork)
@@ -109,5 +137,6 @@ module.exports = {
   resetHardhatToBlock,
   isLiveNetwork,
   isLocalTestnet,
-  getConfigNetworkUrl
+  getConfigNetworkUrl,
+  getRealMehAdminSigner
 }
