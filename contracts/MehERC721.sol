@@ -1,5 +1,5 @@
 // The ABI encoder is necessary, but older Solidity versions should work
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.30;
 import "./Receiver.sol";
 import "./UsingTools.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";

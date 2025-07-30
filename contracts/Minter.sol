@@ -1,4 +1,4 @@
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.30;
 import "./Flashloaner.sol";
 import "./Collector.sol";
 import "./MehERC721.sol";
