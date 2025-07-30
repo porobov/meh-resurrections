@@ -19,6 +19,9 @@ npx hardhat run scripts/releaseWrapper.js
 Run tests with empty mocks! Remove test/mocking/[chain_id]_addresses.json
 `npx hardhat test test/usingTools.js --network localhost`
 
+To test using forked mainnet:
+`npx hardhat test  --network hardhat`
+
 ## Website key-value storage notes
 UX fetches data from Cloudflare key-value storage using a key. There are 3 versions of UX, 3 corresponding keys(posted by MEH middleware) and 3 corresponding github branches. When using React or Next, this is not gonna be needed (will move MY_KEY constant to .env)
 
@@ -58,7 +61,14 @@ Use cloudflare wrangler:
 ...or use nodemon:
 `nodemon server/server.js`
 
-## Etherscan verify
+## Etherscan verify Referals
+1. Verify ReferalFactory:
+npx hardhat verify --network <network_name> <factory_contract_address_from_console_output> <oldMehAddr> <previousReferal>
+2. Verify Referal implementation (in OpenZeppelin terms):
+npx hardhat verify --network <network_name> <implementation_address_from_etherscan> 
+
+
+## Etherscan verify wrapper
 Verifying mehWrapper.sol
 
 constructor(address meh2016address, address meh2018address, address wethAddress, address soloMarginAddress)
