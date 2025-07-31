@@ -109,7 +109,7 @@ module.exports = {
 
     main: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
-      numConfirmations: 8, // specifying numConfirmations manually, used in tools lib
+      numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
       url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
       timeout: 200000,
     },

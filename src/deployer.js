@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance, getRealMehAdminSigner } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 
@@ -54,7 +54,12 @@ async function setupMocks() {
 
 // for live testnet 😱
 async function releaseWrapper() {
-    ;[owner] = await ethers.getSigners()
+    let owner;
+    if (getConfigChainID() === 1) {
+        owner = await getRealMehAdminSigner();
+    } else {
+        [owner] = await ethers.getSigners();
+    }
     const exEnv = new ProjectEnvironment(owner)
     const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
     return await deployer.deployAndSetup()

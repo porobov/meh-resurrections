@@ -2,9 +2,15 @@
 // npx hardhat run scripts/pause.js --network mainnet
 const { ethers } = require("hardhat")
 const { ProjectEnvironment, Deployer } = require("../src/deployer.js")
+const { getConfigChainID, getRealMehAdminSigner } = require("../src/tools.js")
 
 async function pause() {
-    ;[owner] = await ethers.getSigners()
+    let owner;
+    if (getConfigChainID() === 1) {
+        owner = await getRealMehAdminSigner();
+    } else {
+        [owner] = await ethers.getSigners();
+    }
     const exEnv = new ProjectEnvironment(owner)
     const deployer = new Deployer(exEnv, {})
     console.log("Pausing MEH on chain ID:", exEnv.chainID)
