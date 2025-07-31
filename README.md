@@ -63,10 +63,10 @@ Use cloudflare wrangler:
 
 ## Etherscan verify Referals
 1. Verify ReferalFactory:
-npx hardhat verify --network <network_name> <factory_contract_address_from_console_output> <oldMehAddr> <previousReferal>
+npx hardhat verify --network <network_name> <factory_contract_address_from_console_output> <oldMehAddr_from_constants> <mehAdmin_address_from_console_output>
 2. Verify Referal implementation (in OpenZeppelin terms):
 npx hardhat verify --network <network_name> <implementation_address_from_etherscan> 
-
+(Proxy Contract Verification -> Verify -> Copy Address)
 
 ## Etherscan verify wrapper
 Verifying mehWrapper.sol
