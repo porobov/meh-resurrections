@@ -25,16 +25,25 @@ async function getRealMehAdminSigner() {
   }
   const keystore = fs.readFileSync(keystorePath, 'utf8');
 
-  // Prompt for password
+  // Use password from environment variable
+  const password = process.env.MEH_ADMIN_KEYSTORE_PASSWORD;
+  if (!password) {
+    throw new Error('MEH_ADMIN_KEYSTORE_PASSWORD env variable not set');
+  }
+
+  // Always prompt user to proceed
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
     terminal: true
   });
-  const password = await new Promise((resolve) => {
-    rl.question('Enter keystore password: ', (answer) => {
+  await new Promise((resolve) => {
+    rl.question('You are about to use the admin key. Proceed? (y/N): ', (answer) => {
       rl.close();
-      resolve(answer);
+      if (answer.trim().toLowerCase() !== 'y') {
+        throw new Error('Aborted by user.');
+      }
+      resolve();
     });
   });
 
