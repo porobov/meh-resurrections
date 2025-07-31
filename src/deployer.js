@@ -460,7 +460,11 @@ class Deployer {
         await this.unpauseMeh2016()
         this.referralFactory = await deployContract(
             "ReferralFactory",
-            { "isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter },
+            { 
+              isVerbouse: IS_VERBOUSE, 
+              gasReporter: this.gasReporter, 
+              signer: this.exEnv.operatorWallet
+            },
             this.exEnv.meh2016.target, 
             this.getMehAdminAddr()
         )
@@ -542,7 +546,11 @@ class Deployer {
         let wrapperContractName = this.isDeployingMinterAdapter ? "MinterAdapter" : "MehWrapper"
         this.mehWrapper = await deployContract(
             wrapperContractName,
-            {"isVerbouse": IS_VERBOUSE, "gasReporter": this.gasReporter},
+            {
+                "isVerbouse": IS_VERBOUSE, 
+                "gasReporter": this.gasReporter, 
+                "signer": this.exEnv.operatorWallet
+            },
             this.exEnv.meh2016.target,
             this.exEnv.meh2018.target,
             this.exEnv.weth.target,
@@ -567,7 +575,7 @@ async function deployContract(contractName, options, ...args) {
             gasReporter = options.gasReporter
         }
     }
-    const contrFactory = await ethers.getContractFactory(contractName)
+    const contrFactory = await ethers.getContractFactory(contractName, options?.signer)
     const contr = await contrFactory.deploy(...args)
     isVerbouse ? console.log(chalk.gray(`Deploying ${contractName} Tx: ${contr?.deploymentTransaction().hash}`)) : null
     const reciept = await contr.deploymentTransaction().wait(getConfigNumConfirmations())
