@@ -315,7 +315,7 @@ class Deployer {
         let cnsts = this.constants.get()
 
         if (cnsts.referralFactoryAddr) {
-            this.referralFactory = await ethers.getContractAt("ReferralFactory", cnsts.referralFactoryAddr)
+            this.referralFactory = await ethers.getContractAt("ReferralFactory", cnsts.referralFactoryAddr, this.exEnv.operatorWallet)
         }
 
         if (cnsts.referralsAddresses) {
