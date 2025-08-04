@@ -38,7 +38,7 @@ async function getRealMehAdminSigner() {
     terminal: true
   });
   await new Promise((resolve) => {
-    rl.question('You are about to use the admin key. Proceed? (y/N): ', (answer) => {
+    rl.question('Deploying to Mainnet!!! Have you started recording? (y/N): ', (answer) => {
       rl.close();
       if (answer.trim().toLowerCase() !== 'y') {
         throw new Error('Aborted by user.');
