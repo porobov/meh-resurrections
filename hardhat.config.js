@@ -82,9 +82,13 @@ module.exports = {
         blockNumber: conf.forkBlock 
       },
       timeout: 12000000,
-      // gas: "auto", // this is one of the solutions for after-London forks. 
-      // But used another solution. Accept ultra-high gas prices for forked
-      // mainnet chain and increase balances
+      // Configure gas settings for forked mainnet
+      gasPrice: "auto",
+      gas: "auto",
+      // Increase account balances to handle high gas prices
+      accounts: {
+        accountsBalance: "1000000000000000000000000" // 1000 ETH
+      }
     },
     // read-only mainnet (for blocks import)
     readMain: {

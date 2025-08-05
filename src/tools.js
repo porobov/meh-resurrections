@@ -100,6 +100,20 @@ function isLocalTestnet() {
   return (getConfigChainID() == 31337)
 }
 
+// Helper function to get high gas settings for forked mainnet
+async function getGasOptions() {
+  if (isForkedMainnet()) {
+    const feeData = await ethers.provider.getFeeData()
+    return {
+      maxFeePerGas: feeData.maxFeePerGas ? feeData.maxFeePerGas * 3n : undefined, // Triple the max fee
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas ? feeData.maxPriorityFeePerGas * 3n : undefined, // Triple the priority fee
+      gasLimit: 5000000 // Set a high gas limit
+    }
+  } else {
+    return {}
+  }
+}
+
 function getConfigNumConfirmations() {
   return network.config.numConfirmations
 }
@@ -147,5 +161,6 @@ module.exports = {
   isLiveNetwork,
   isLocalTestnet,
   getConfigNetworkUrl,
-  getRealMehAdminSigner
+  getRealMehAdminSigner,
+  getGasOptions
 }

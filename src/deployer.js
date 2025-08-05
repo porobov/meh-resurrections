@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const chalk = require('chalk')
 const { ethers } = require("hardhat")
-const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance, getRealMehAdminSigner } = require("../src/tools.js")
+const { GasReporter, increaseTimeBy, getConfigChainID, getConfigNumConfirmations, getImpersonatedSigner, resetHardhatToBlock, isLocalTestnet, isLiveNetwork, isForkedMainnet, getFormattedBalance, getRealMehAdminSigner, getGasOptions } = require("../src/tools.js")
 const conf = require('../conf.js')
 const { setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 
@@ -29,8 +29,8 @@ async function setupTestEnvironment(options) {
     let isDeployingMinterAdapter = ("isDeployingMinterAdapter" in options) ? options.isDeployingMinterAdapter: false
     let isDeployingMocksForTets = conf.IS_DEPLOYING_MOCKS_FOR_TESTS
 
-    ;[owner] = await ethers.getSigners()
-    const exEnv = new ProjectEnvironment(owner)
+    const [operatorWallet] = await ethers.getSigners()
+    const exEnv = new ProjectEnvironment(operatorWallet)
 
     // reset fork or redeploy mocks
     if (isDeployingMocksForTets) {
@@ -47,20 +47,20 @@ async function setupTestEnvironment(options) {
 
 // for live testnet
 async function setupMocks() {
-    ;[owner] = await ethers.getSigners()
-    const exEnv = new ProjectEnvironment(owner)
+    const [operatorWallet] = await ethers.getSigners()
+    const exEnv = new ProjectEnvironment(operatorWallet)
     await exEnv.deployMocks(true)
 }
 
 // for live testnet 😱
 async function releaseWrapper() {
-    let owner;
+    let operatorWallet;
     if (getConfigChainID() === 1) {
-        owner = await getRealMehAdminSigner();
+        operatorWallet = await getRealMehAdminSigner();
     } else {
-        [owner] = await ethers.getSigners();
+        [operatorWallet] = await ethers.getSigners();
     }
-    const exEnv = new ProjectEnvironment(owner)
+    const exEnv = new ProjectEnvironment(operatorWallet)
     const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
     return await deployer.deployAndSetup()
 }
@@ -77,6 +77,7 @@ class ProjectEnvironment {
         this.mockAddressesJSON = {}
         this.mocksPath = this.getMocksPath(this.chainID)
         this.isLocalTestnet = isLocalTestnet()
+        // operatorWallet: The wallet that deploys contracts and interacts with most contracts
         this.operatorWallet = operatorWallet
         this.referralActivationTime = 3600
 
@@ -126,12 +127,10 @@ class ProjectEnvironment {
     // WETH and flash loan contracts on a network
     async deployMocks(isSavingToDisk = false) {
         if ( getConfigChainID() == 1) { throw ("Cannot use mocks on mainnet!") }
-        // ;[owner] = await ethers.getSigners()
-        const owner = this.operatorWallet
         IS_VERBOUSE ? console.log(
             chalk.red("DEPLOYING MOCKS TO CHAIN ID:"), getConfigChainID(), 
             "\nConfirmations:", getConfigNumConfirmations(),
-            "\nDeploying from address:", owner.address) : null
+            "\nDeploying from address:", this.operatorWallet.address) : null
 
         // Loan platform and WETH mocks
         // Will not deploy if got mocks on chain (e.g. goerli)
@@ -159,7 +158,7 @@ class ProjectEnvironment {
         if (!this.realAddressesJSON.meh2016 && !this.realAddressesJSON.meh2018) {
             this.meh2016 = await deployContract("MillionEtherMock", { "isVerbouse": IS_VERBOUSE })
             this.meh2018 = await deployContract("Meh2018Mock", { "isVerbouse": IS_VERBOUSE })
-            this.mehAdminAddress = owner.address
+            this.mehAdminAddress = this.operatorWallet.address
             console.log(chalk.green('Deployed MEHs (OldMeh may differ from the original).'))
         }
 
@@ -205,7 +204,8 @@ class ProjectEnvironment {
         IS_VERBOUSE ? console.log(addressesJSON) : null
         
         // LOAD MEH ADMIN
-        // only needed for MEH and referrals
+        // mehAdmin: The wallet that can interact with MEH2016 contract (admin functions)
+        // This can be the same as operatorWallet or an impersonated signer
         let mehAdmin
         // current operator wallet must be the same as the one who deployed mocks
         // ...or the real MEH admin when implementing to the main net
@@ -406,7 +406,8 @@ class Deployer {
     // unpause oldMEH (refferals register in oldMeh at deploy)
     // function adminContractSecurity (address violator, bool banViolator, bool pauseContract, bool refundInvestments)
     async unpauseMeh2016() {
-        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false)
+        const gasOptions = await getGasOptions()
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, false, false, gasOptions)
         IS_VERBOUSE ? console.log(chalk.gray("Unpausing meh. Tx:", tx?.hash)) : null
         let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
@@ -416,7 +417,8 @@ class Deployer {
     }
 
     async pauseMeh2016() {
-        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false)
+        const gasOptions = await getGasOptions()
+        let tx = await this.exEnv.meh2016.adminContractSecurity(ZERO_ADDRESS, false, true, false, gasOptions)
         IS_VERBOUSE ? console.log(chalk.gray("Pausing meh. Tx:", tx?.hash)) : null
         let receipt = await tx.wait(getConfigNumConfirmations())
         let gotReceipt = receipt ? true : false;
@@ -435,7 +437,9 @@ class Deployer {
     async finalMeh2016settings() {
         // charity can go to any referral addess (any of them can withdraw)
         let charityAddress = this.getLastReferral().target
-        let tx = await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0)
+        
+        const gasOptions = await getGasOptions()
+        let tx = await this.exEnv.meh2016.adminContractSettings(this.newDelay, charityAddress, 0, gasOptions)
         IS_VERBOUSE ? console.log(chalk.gray("Admin contract settings tx:", tx?.hash)) : null
         let receipt = await tx.wait(getConfigNumConfirmations())
         if (receipt) {
