@@ -20,7 +20,6 @@ module.exports = {
     /// 19389985 // fixed recent block number (contracts paused)
     // blockNumber: 13132200 /// 13352488 //  // not paused contract
     forkBlock: 19389985, // - latest mainnet height as of 08.03.24 // 16683483, 
-    WRAPPER_BLOCK_PRICE: ethers.parseEther("0.25"),
     NUM_OF_REFERRALS: 6, // 6 handshakes // num of referrals to deploy
     IS_DEPLOYING_MOCKS_FOR_TESTS: false,  // mocking (use without forking only if running tests i.e. not on hardhat network name)
     IS_VERBOUSE_TEST: false,  // verbous logs (applies to tests only)
