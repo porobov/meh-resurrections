@@ -240,9 +240,13 @@ class ProjectEnvironment {
         console.log("minted", amountInWeth, "weth to", recipient )
     }
 
+    getDelayBeforeNextSignIn(level) {
+        return this.referralActivationTime * (2 ** (level - 1))
+    }
+
     async waitForActivationTime(level) {
         if (this.isLocalTestnet) {
-            await increaseTimeBy(this.referralActivationTime * (2 ** (level - 1)))
+            await increaseTimeBy(this.getDelayBeforeNextSignIn(level))
         } else {
             throw("Live network cannot wait for activation time")
         }
@@ -301,6 +305,7 @@ class Deployer {
         this.exEnv = existingEnvironment
         this.constants = new Constants(getConfigChainID())
         this.gasReporter = new GasReporter()
+        this.delayBeforeNextSignIn = 0
     }
 
     // will initialize and load previous state
@@ -347,7 +352,7 @@ class Deployer {
             if (this.referralFactory && (this.numOfReferrals() < NUM_OF_REFERRALS)){
                 await this.deployReferrals()}
             
-            if ((this.numOfReferrals() >= NUM_OF_REFERRALS) && !this.mehWrapper) {   
+            if ((this.numOfReferrals() >= NUM_OF_REFERRALS) && this.delayBeforeNextSignIn == 0 && !this.mehWrapper) {   
                 await this.deployWrapper()}
 
             if (this.mehWrapper && !this.areRefsAndWrapperPaired){
@@ -508,7 +513,9 @@ class Deployer {
           this.referrals.push(newRef)
           currentReferralAddr = newRef.target
           if (isLiveNetwork()) {
+            this.delayBeforeNextSignIn = this.exEnv.getDelayBeforeNextSignIn(nOfRefs + 1)
             console.log(chalk.red("Live network. Wait for activation time and rerun script. The script must stop now!"))
+            console.log("Come back in: ", this.delayBeforeNextSignIn, " seconds")
             break 
           } else { 
             // level shows how far it is from mehAdmin (who is 0)
