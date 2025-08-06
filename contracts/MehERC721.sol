@@ -31,6 +31,11 @@ contract MehERC721 is Receiver, UsingTools, ERC721, Ownable {
     constructor() ERC721("Million Ether Homepage", "MEH") {
     }
 
+    // Below is wrap-unwrap functionality
+    // In both workflows it is absolutely essential to set HIGH sell price for blocks
+    // to prevent them from being bought by anyone!!!
+    // This is free for you. You get all the money back (except gas, of course).
+
     // 2016 block owners can "sell" their blocks and buy from themselves through wrapper
     // then they'll have to withdraw from the 2016 MEH contract
     // wrap flow: sell on 2016MEH -> call wrap on wrapper -> withdraw from 2016MEH
