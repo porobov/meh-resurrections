@@ -232,7 +232,7 @@ class ProjectEnvironment {
         // INIT CONTRACTS (only the ones that are not init yet)
         this.meh2018 = !this.meh2018 ? new ethers.Contract(addressesJSON.meh2018, newMehAbi, this.operatorWallet) : this.meh2018
         this.meh2016 = !this.meh2016 ? new ethers.Contract(addressesJSON.meh2016, oldMehAbi, mehAdmin) : this.meh2016
-        this.weth = !this.weth ? await ethers.getContractAt("WETH9", addressesJSON.weth) : this.weth
+        this.weth = !this.weth ? await ethers.getContractAt("WETH9", addressesJSON.weth, this.operatorWallet) : this.weth
         this.soloMarginAddress = !this.soloMarginAddress ? addressesJSON.soloMargin : this.soloMarginAddress
         this.mehAdminAddress = await mehAdmin.getAddress()
 
@@ -332,14 +332,14 @@ class Deployer {
         if (cnsts.referralsAddresses) {
             this.referrals = []
             for (let referralAddr of cnsts.referralsAddresses) {
-                this.referrals.push(await ethers.getContractAt("Referral", referralAddr))
+                this.referrals.push(await ethers.getContractAt("Referral", referralAddr, this.exEnv.operatorWallet))
             }
         } else {
             this.referrals = []
         }
         
         if (cnsts.wrapperAddresses) {
-            this.mehWrapper = await ethers.getContractAt("MehWrapper", cnsts.wrapperAddresses)
+            this.mehWrapper = await ethers.getContractAt("MehWrapper", cnsts.wrapperAddresses, this.exEnv.operatorWallet)
         }
         
         cnsts.areRefsAndWrapperPaired ? this.areRefsAndWrapperPaired = cnsts.areRefsAndWrapperPaired : {} 
@@ -499,7 +499,7 @@ class Deployer {
         const eventFilter = this.referralFactory.filters.NewReferral()
         const events = await this.referralFactory.queryFilter(eventFilter, blockNumber, blockNumber)
         const newRefAddress = events[0].args.newReferralAddr
-        const referral = await ethers.getContractAt("Referral", newRefAddress)
+        const referral = await ethers.getContractAt("Referral", newRefAddress, this.exEnv.operatorWallet)
         this.gasReporter.addGasRecord("Referral", reciept.gasUsed)
         IS_VERBOUSE ? console.log("Deployed referral:", referral.target) : null
         await this.pauseMeh2016()
