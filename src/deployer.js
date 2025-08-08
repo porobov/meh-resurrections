@@ -52,8 +52,8 @@ async function setupMocks() {
     await exEnv.deployMocks(true)
 }
 
-// for live testnet 😱
-async function releaseWrapper() {
+// Helper to get a Deployer instance for live testnet/mainnet
+async function getDeployer() {
     let operatorWallet;
     if (getConfigChainID() === 1) {
         operatorWallet = await getRealMehAdminSigner();
@@ -62,7 +62,13 @@ async function releaseWrapper() {
     }
     const exEnv = new ProjectEnvironment(operatorWallet)
     const deployer = new Deployer(exEnv, {isSavingOnDisk: true})
-    return await deployer.deployAndSetup()
+    return deployer;
+}
+
+// for live testnet 😱
+async function releaseWrapper() {
+    const deployer = await getDeployer();
+    return await deployer.deployAndSetup();
 }
 
 
@@ -607,4 +613,5 @@ module.exports = {
     Constants,
     releaseWrapper,
     setupMocks,
+    getDeployer
 }
