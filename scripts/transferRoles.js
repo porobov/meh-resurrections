@@ -1,5 +1,4 @@
 const { getDeployer } = require('../src/deployer.js');
-const { ask } = require('../src/tools.js');
 
 const NEW_OWNER = "0xB1ABEF373F22c123166fB032C6397820d64B761C";
 const NEW_FOUNDER = "0xB1ABEF373F22c123166fB032C6397820d64B761C";

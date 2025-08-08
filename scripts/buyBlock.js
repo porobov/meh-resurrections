@@ -1,5 +1,6 @@
 const { getDeployer } = require('../src/deployer.js');
-const cc = {fx: 55, fy: 70, tx: 55, ty: 70}; // singleBlock
+const cc = {fx: 55, fy: 70, tx: 55, ty: 70}; // singleBlock (reserved for founder)
+// (1x45) - vacant area for buying
 // const price = ethers.parseEther("0.25");
 
 async function main() {
