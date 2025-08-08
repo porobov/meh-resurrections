@@ -53,13 +53,13 @@ async function transferRole(deployer, roleName, roleConfig) {
     });
 
     const answer = await new Promise((resolve) => {
-      rl.question(`Are you sure you want to transfer ${roleConfig.description} from ${currentHolder} to ${roleConfig.newAddress}? (y/N): `, (input) => {
+      rl.question(`Are you sure you want to transfer ${roleConfig.description} from ${currentHolder} to ${roleConfig.newAddress}? (yes/N): `, (input) => {
         rl.close();
         resolve(input);
       });
     });
 
-    if (answer.trim().toLowerCase() === 'y') {
+    if (answer.trim().toLowerCase() === 'yes') {
       console.log(`Transferring ${roleConfig.description}...`);
       const tx = await deployer.mehWrapper[roleConfig.transferFunction](roleConfig.newAddress);
       console.log(`Sent tx for ${roleConfig.description}:`, tx.hash);
