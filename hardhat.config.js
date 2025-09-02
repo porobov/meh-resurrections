@@ -78,7 +78,7 @@ module.exports = {
       forking: {
         // url: "https://core.gashawk.io/rpc",
         // url: process.env.TENDERLY_API_KEY !== undefined ? "https://sepolia.gateway.tenderly.co/" + process.env.TENDERLY_API_KEY : "",
-        url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "", 
+        url: process.env.MAINNET_URL !== undefined ? process.env.MAINNET_URL : "", 
         blockNumber: conf.forkBlock 
       },
       timeout: 12000000,
@@ -94,7 +94,7 @@ module.exports = {
     readMain: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 0, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+      url: process.env.MAINNET_URL !== undefined ? process.env.MAINNET_URL : "",
       accounts: {
             mnemonic: "test test test test test test test test test test test junk"
           },
@@ -105,7 +105,7 @@ module.exports = {
     testnet: {
       chainId: 11155111,   // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_SEPOLIA_URL !== undefined ? process.env.ALCHEMY_SEPOLIA_URL : "",
+      url: process.env.SEPOLIA_URL !== undefined ? process.env.SEPOLIA_URL : "",
       accounts: {
         mnemonic: process.env.MNEMONIC !== undefined ? process.env.MNEMONIC : "",
       },
@@ -114,7 +114,7 @@ module.exports = {
     main: {
       chainId: 1,  // specifying chainId manually, used in getConfigChainID() function from tools
       numConfirmations: 2, // specifying numConfirmations manually, used in tools lib
-      url: process.env.ALCHEMY_MAINNET_URL !== undefined ? process.env.ALCHEMY_MAINNET_URL : "",
+      url: process.env.MAINNET_URL !== undefined ? process.env.MAINNET_URL : "",
       timeout: 200000,
     },
 
