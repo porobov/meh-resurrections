@@ -76,15 +76,15 @@ constructor(address meh2016address, address meh2018address, address wethAddress,
 1. Change file etherscan-verify-arguments.js:
 ```
 module.exports = [    
-    "0xCedaDc7a2E2291809cB0Cd8A6C092B16CDc7e833",
-    "0x2e3b15B8038406008192d8f855bAD3929AD22123",
-    "0x7b79995e5f793A07Bc00c21412e50Ecae098E7f9",
+    "0x15dbdB25f870f21eaf9105e68e249E0426DaE916",
+    "0xCEf41878Db032586C835eE0890484399402A64f6",
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
     "0xBA12222222228d8Ba445958a75a0704d566BF2C8",
   ];
 ```
 
 2 Run:
-`npx hardhat verify --constructor-args etherscan-verify-arguments.js --network testnet 0x40C82017a737f4aEe6850923ef2E2bc63af72D55`
+`npx hardhat verify --constructor-args etherscan-verify-arguments.js --network readMain 0xb287dB1734b1BE9Fd681658d7dC3f2169bE9e45c`
 
 ## Hardhat commands
 
